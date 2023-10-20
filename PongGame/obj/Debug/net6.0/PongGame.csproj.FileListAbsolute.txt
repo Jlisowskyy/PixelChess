@@ -23,3 +23,5 @@
 /home/Jlisowskyy/Repos/Games-Collection/PongGame/obj/Debug/net6.0/PongGame.pdb
 /home/Jlisowskyy/Repos/Games-Collection/PongGame/obj/Debug/net6.0/PongGame.genruntimeconfig.cache
 /home/Jlisowskyy/Repos/Games-Collection/PongGame/obj/Debug/net6.0/ref/PongGame.dll
+/home/Jlisowskyy/Repos/Games-Collection/PongGame/bin/Debug/net6.0/Content/pawn_white.xnb
+/home/Jlisowskyy/Repos/Games-Collection/PongGame/bin/Debug/net6.0/Content/board1.xnb
