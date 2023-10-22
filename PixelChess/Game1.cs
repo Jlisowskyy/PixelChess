@@ -34,7 +34,7 @@ public class Game1 : Game
     public Game1()
     {
         _graphics = new GraphicsDeviceManager(this);
-        _board = new Board();
+        _board = new Board(Board.basicBeginingLayout);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
     }
@@ -74,7 +74,19 @@ public class Game1 : Game
         GraphicsDevice.Clear(Color.White);
 
         _spriteBatch.Begin();
-// TODO: here loop on result of board
+        _spriteBatch.Draw(_componentsTextures[(int)_board.TextureIndex], new Vector2(0, 0), Color.White);
+
+        for (int i = 0; i < _board.FigureList.Length; ++i)
+        {
+            Figure actFig = _board.FigureList[i];
+            
+            if (actFig.IsAlive)
+            {
+                _spriteBatch.Draw(_componentsTextures[(int)actFig.TextureIndex], Board.Translate(actFig.Pos), Color.White);
+            }
+        }
+        
+        
         _spriteBatch.End();
         
         base.Draw(gameTime);

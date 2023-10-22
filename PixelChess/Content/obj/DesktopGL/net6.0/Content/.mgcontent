@@ -4,19 +4,19 @@
   <Platform>DesktopGL</Platform>
   <Config />
   <SourceFiles>
-    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/bishop_black.png</File>
-    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/bishop_white.png</File>
+    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/BlackBishop.png</File>
+    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/BlackKing.png</File>
+    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/BlackKnight.png</File>
+    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/BlackPawn.png</File>
+    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/BlackQueen.png</File>
+    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/BlackRook.png</File>
     <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/board1.png</File>
-    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/king_black.png</File>
-    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/king_white.png</File>
-    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/knight_black.png</File>
-    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/knight_white.png</File>
-    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/pawn_black.png</File>
-    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/pawn_white.png</File>
-    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/queen_black.png</File>
-    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/queen_white.png</File>
-    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/rook_black.png</File>
-    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/rook_white.png</File>
+    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/WhiteBishop.png</File>
+    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/WhiteKing.png</File>
+    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/WhiteKnight.png</File>
+    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/WhitePawn.png</File>
+    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/WhiteQueen.png</File>
+    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/WhiteRook.png</File>
   </SourceFiles>
   <DestFiles>
     <File xsi:nil="true" />
@@ -25,7 +25,7 @@
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
-    <File xsi:nil="true" />
+    <File>Board.png</File>
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />

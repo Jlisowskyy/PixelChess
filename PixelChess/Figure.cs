@@ -6,26 +6,126 @@ using Microsoft.Xna.Framework.Input;
 namespace PongGame;
 
 public abstract class Figure
+    // All figures expects to have array attached board attached, otherwise undefined
 {
-    public BoardPos Pos;
+    protected Figure(int x, int y, ColorT color)
+    {
+        Pos.X = x;
+        Pos.Y = y;
+        Color = color;
+    }
+    public Figure[,] Parent
+    {
+        set => _parent = value;
+    }
+    
     public abstract Game1.chessComponents TextureIndex
     {
         get;
     }
 
+    protected bool isEmpty(BoardPos pos)
+    {
+        return _parent[pos.X, pos.Y] == null;
+    }
+
+    protected bool isEnemy(BoardPos pos)
+    {
+        return _parent[pos.X, pos.Y].Color != this.Color;
+    }
+    
+    protected bool isEmpty(int x, int y)
+    {
+        return _parent[x, y] == null;
+    }
+
+    protected bool isEnemy(int x, int y)
+    {
+        return _parent[x, y].Color != this.Color;
+    }
+
     public abstract (BoardPos[] moves, int movesCount) GetMoves();
+
+    public enum ColorT
+    {
+        White,
+        Black,
+    }
+    
+    protected Figure[,] _parent;
+    public bool IsAlive = true;
+    public BoardPos Pos;
+
+    public ColorT Color
+    {
+        get;
+    }
 }
 
 public abstract class Pawn : Figure
 {
-    protected bool _isMoved = false;
+    private bool _isMoved = false;
+
+    Pawn(int x, int y, ColorT color) :
+        base(x, y, color) {}
+
+    public sealed override Game1.chessComponents TextureIndex
+    {
+        get
+        {
+            switch (Color)
+            {
+                case ColorT.White:
+                    return Game1.chessComponents.WhitePawn;
+                case ColorT.Black:
+                    return Game1.chessComponents.BlackPawn;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+    }
+
+    public sealed override (BoardPos[] moves, int movesCount) GetMoves()
+    {
+        switch (Color)
+        {
+            case ColorT.White:
+                if (_isMoved || isEnemy(Pos.X, Pos.Y + 1))
+                {
+                    return (new BoardPos[] { new BoardPos(Pos.X, Pos.Y + 1) }, 1);
+                }
+                else
+                {
+                    return (new BoardPos[]
+                    {
+                        new BoardPos(Pos.X, Pos.Y + 1),
+                        new BoardPos(Pos.X, Pos.Y + 2),
+                    }, 2);
+                }
+            case ColorT.Black:
+                if (_isMoved || isEnemy(Pos.X, Pos.Y - 1) || Pos.Y - 1 == BoardPos.MinPos)
+                {
+                    return (new BoardPos[] { new BoardPos(Pos.X, Pos.Y - 1) }, 1);
+                }
+                else
+                {
+                    return (new BoardPos[]
+                    {
+                        new BoardPos(Pos.X, Pos.Y - 1),
+                        new BoardPos(Pos.X, Pos.Y - 2),
+                    }, 2);
+                }
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
 }
 
 public abstract class Knight : Figure
 {
-    private const int MaxPossibleTiles = 8;
-    private static readonly int[] XPosTable = new[] { -2, -1, 1, 2 };
-    private static readonly int[] YPosTable = new[] { 1, 2, 2, 1 };
+    public Knight(int x, int y, ColorT color):
+        base(x, y, color) {}
+    
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] ret = new BoardPos[MaxPossibleTiles];
@@ -48,11 +148,48 @@ public abstract class Knight : Figure
 
         return (ret, arrPos);
     }
+
+    public sealed override Game1.chessComponents TextureIndex
+    {
+        get
+        {
+            switch (Color)
+            {
+                case ColorT.White:
+                    return Game1.chessComponents.WhiteKnight;
+                case ColorT.Black:
+                    return Game1.chessComponents.BlackKnight;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+    }
+
+    private const int MaxPossibleTiles = 8;
+    private static readonly int[] XPosTable = new[] { -2, -1, 1, 2 };
+    private static readonly int[] YPosTable = new[] { 1, 2, 2, 1 };
 }
 
 public abstract class Bishop : Figure
 {
-    internal const int MaxPossibleTiles = 13;
+    public Bishop(int x, int y, ColorT color) :
+        base(x, y, color) {}
+
+    public sealed override Game1.chessComponents TextureIndex
+    {
+        get
+        {
+            switch (Color)
+            {
+                case ColorT.White:
+                    return Game1.chessComponents.WhiteBishop;
+                case ColorT.Black:
+                    return Game1.chessComponents.BlackBishop;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+    }
 
     public static (BoardPos[] moves, int movesCount) GetBishopMoves(BoardPos pos)
     {
@@ -93,6 +230,7 @@ public abstract class Bishop : Figure
         return (ret, arrPos);
     }
 
+    internal const int MaxPossibleTiles = 13;
     public sealed override (BoardPos[] moves, int movesCount) GetMoves() => GetBishopMoves(Pos);
 }
 
@@ -160,160 +298,5 @@ public abstract class King : Figure
         }
 
         return (ret, arrPos);
-    }
-}
-
-public class WhitePawn: Pawn
-{
-    public WhitePawn(int x, int y)
-    {
-        Pos.X = x;
-        Pos.Y = y;
-    }
-    public override Game1.chessComponents TextureIndex => Game1.chessComponents.WhitePawn;
-
-    public override (BoardPos[] moves, int movesCount) GetMoves()
-    {
-        if (!_isMoved)
-        {
-            return (new[] { new BoardPos(Pos.X, Pos.Y + 1), new BoardPos(Pos.X, Pos.Y + 2) }, 2);
-        }
-        else
-        {
-            return (new[] { new BoardPos(Pos.X, Pos.Y + 1) }, 1);
-        }
-    }
-}
-
-public class BlackPawn: Pawn
-{
-    public BlackPawn(int x, int y)
-    {
-        Pos.X = x;
-        Pos.Y = y;
-    }
-    public override Game1.chessComponents TextureIndex => Game1.chessComponents.BlackPawn;
-
-    public override (BoardPos[] moves, int movesCount) GetMoves()
-    {
-        if (!_isMoved)
-        {
-            return (new[] { new BoardPos(Pos.X, Pos.Y - 1), new BoardPos(Pos.X, Pos.Y - 2) }, 2);
-        }
-        else
-        {
-            return (new[] { new BoardPos(Pos.X, Pos.Y - 1) }, 1);
-        }
-    }
-}
-
-public class WhiteKnight : Knight
-{
-    public override Game1.chessComponents TextureIndex => Game1.chessComponents.WhiteKnight;
-
-    public WhiteKnight(int x, int y)
-    {
-        Pos.X = x;
-        Pos.Y = y;
-    }
-    
-}
-
-public class BlackKnight : Knight
-{
-    public override Game1.chessComponents TextureIndex => Game1.chessComponents.BlackKnight;
-
-    public BlackKnight(int x, int y)
-    {
-        Pos.X = x;
-        Pos.Y = y;
-    }
-}
-
-public class WhiteBishop : Bishop
-{
-    public override Game1.chessComponents TextureIndex => Game1.chessComponents.WhiteBishop;
-
-    public WhiteBishop(int x, int y)
-    {
-        Pos.X = x;
-        Pos.Y = y;
-    }
-}
-
-public class BlackBishop : Bishop
-{
-    public override Game1.chessComponents TextureIndex => Game1.chessComponents.BlackBishop;
-
-    public BlackBishop(int x, int y)
-    {
-        Pos.X = x;
-        Pos.Y = y;
-    }
-}
-
-public class WhiteRook : Rook
-{
-    public override Game1.chessComponents TextureIndex => Game1.chessComponents.WhiteRook;
-
-    public WhiteRook(int x, int y)
-    {
-        Pos.X = x;
-        Pos.Y = y;
-    }
-}
-
-public class BlackRook : Rook
-{
-    public override Game1.chessComponents TextureIndex => Game1.chessComponents.BlackRook;
-
-    public BlackRook(int x, int y)
-    {
-        Pos.X = x;
-        Pos.Y = y;
-    }
-}
-
-public class WhiteQueen : Queen
-{
-    public override Game1.chessComponents TextureIndex => Game1.chessComponents.WhiteQueen;
-
-    public WhiteQueen(int x, int y)
-    {
-        Pos.X = x;
-        Pos.Y = y;
-    }
-}
-
-public class BlackQueen : Queen
-{
-    public override Game1.chessComponents TextureIndex => Game1.chessComponents.BlackQueen;
-
-    public BlackQueen(int x, int y)
-    {
-        Pos.X = x;
-        Pos.Y = y;
-    }
-}
-
-public class BlackKing : King
-{
-    public override Game1.chessComponents TextureIndex => Game1.chessComponents.BlackKing;
-
-    public BlackKing(int x, int y)
-    {
-        Pos.X = x;
-        Pos.Y = y;
-    }
-}
-
-public class WhiteKing : King
-{
-    public override Game1.chessComponents TextureIndex => Game1.chessComponents.WhiteKing;
-
-    public WhiteKing(int x, int y)
-    {
-        Pos.X = x;
-        Pos.Y = y;
     }
 }
