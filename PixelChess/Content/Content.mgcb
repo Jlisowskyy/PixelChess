@@ -23,7 +23,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:bishop_black.png
+/build:bishop_black.png;BlackBishop.png
 
 #begin bishop_white.png
 /importer:TextureImporter
@@ -35,7 +35,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:bishop_white.png
+/build:bishop_white.png;WhiteBishop.png
 
 #begin board1.png
 /importer:TextureImporter
@@ -47,7 +47,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:board1.png
+/build:board1.png;Board.png
 
 #begin king_black.png
 /importer:TextureImporter
@@ -59,7 +59,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:king_black.png
+/build:king_black.png;BlackKing.png
 
 #begin king_white.png
 /importer:TextureImporter
@@ -71,7 +71,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:king_white.png
+/build:king_white.png;WhiteKing.png
 
 #begin knight_black.png
 /importer:TextureImporter
@@ -83,7 +83,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:knight_black.png
+/build:knight_black.png;BlackKnight.png
 
 #begin knight_white.png
 /importer:TextureImporter
@@ -95,7 +95,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:knight_white.png
+/build:knight_white.png;WhiteKnight.png
 
 #begin pawn_black.png
 /importer:TextureImporter
@@ -107,7 +107,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:pawn_black.png
+/build:pawn_black.png;BlackPawn.png
 
 #begin pawn_white.png
 /importer:TextureImporter
@@ -119,7 +119,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:pawn_white.png
+/build:pawn_white.png;WhitePawn.png
 
 #begin queen_black.png
 /importer:TextureImporter
@@ -131,7 +131,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:queen_black.png
+/build:queen_black.png;BlackQueen.png
 
 #begin queen_white.png
 /importer:TextureImporter
@@ -143,7 +143,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:queen_white.png
+/build:queen_white.png;WhiteQueen.png
 
 #begin rook_black.png
 /importer:TextureImporter
@@ -155,7 +155,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:rook_black.png
+/build:rook_black.png;BlackRook.png
 
 #begin rook_white.png
 /importer:TextureImporter
@@ -167,5 +167,5 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:rook_white.png
+/build:rook_white.png;WhiteRook.png
 

@@ -4,7 +4,18 @@ using Microsoft.Xna.Framework.Input;
 
 namespace PongGame;
 
-public struct BoardPos{
+public struct BoardPos
+{
+    public BoardPos(int x, int y)
+    {
+        this.X = x;
+        this.Y = y;
+    }
+    
+    public const int MinPos = 0;
+    public const int MaxPos = 7;
+    public int X;
+    public int Y;
 }
 
 public class Board

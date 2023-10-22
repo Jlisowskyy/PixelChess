@@ -29,8 +29,7 @@ public class Game1 : Game
         BlackKing,
     }
 
-    private static readonly string[] ComponentsNames;
-    private Texture2D[] _componentsTextures = new Texture2D[ComponentsNames.Length];
+    private Texture2D[] _componentsTextures = new Texture2D[Enum.GetNames(typeof(chessComponents)).Length];
     
     public Game1()
     {
@@ -38,25 +37,6 @@ public class Game1 : Game
         _board = new Board();
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
-    }
-
-    static Game1()
-    {
-        ComponentsNames = new[] {
-            "board1",
-            "pawn_white",
-            "knight_white",
-            "bishop_white",
-            "rook_white",
-            "queen_white",
-            "king_white",
-            "pawn_black",
-            "knight_black",
-            "bishop_black",
-            "rook_black",
-            "queen_black",
-            "king_black",
-        };
     }
 
     protected override void Initialize()
@@ -75,8 +55,7 @@ public class Game1 : Game
 
         foreach (var val in Enum.GetValues<chessComponents>())
         {
-            // _componentsTextures[val] = Content.Load<Texture2D>(ComponentsNames[val]);
-            System.Console.WriteLine(Enum.GetName(val));
+            _componentsTextures[(int)val] = Content.Load<Texture2D>(Enum.GetName(val));
         }
     }
 
@@ -95,7 +74,7 @@ public class Game1 : Game
         GraphicsDevice.Clear(Color.White);
 
         _spriteBatch.Begin();
-        // _spriteBatch.Draw(_pawnWhite, new Vector2(0,0), Color.White);
+// TODO: here loop on result of board
         _spriteBatch.End();
         
         base.Draw(gameTime);
