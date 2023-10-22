@@ -165,7 +165,7 @@ public abstract class King : Figure
 
 public class WhitePawn: Pawn
 {
-    WhitePawn(int x, int y)
+    public WhitePawn(int x, int y)
     {
         Pos.X = x;
         Pos.Y = y;
@@ -187,7 +187,7 @@ public class WhitePawn: Pawn
 
 public class BlackPawn: Pawn
 {
-    BlackPawn(int x, int y)
+    public BlackPawn(int x, int y)
     {
         Pos.X = x;
         Pos.Y = y;
@@ -211,7 +211,7 @@ public class WhiteKnight : Knight
 {
     public override Game1.chessComponents TextureIndex => Game1.chessComponents.WhiteKnight;
 
-    WhiteKnight(int x, int y)
+    public WhiteKnight(int x, int y)
     {
         Pos.X = x;
         Pos.Y = y;
@@ -223,7 +223,7 @@ public class BlackKnight : Knight
 {
     public override Game1.chessComponents TextureIndex => Game1.chessComponents.BlackKnight;
 
-    BlackKnight(int x, int y)
+    public BlackKnight(int x, int y)
     {
         Pos.X = x;
         Pos.Y = y;
@@ -234,7 +234,7 @@ public class WhiteBishop : Bishop
 {
     public override Game1.chessComponents TextureIndex => Game1.chessComponents.WhiteBishop;
 
-    WhiteBishop(int x, int y)
+    public WhiteBishop(int x, int y)
     {
         Pos.X = x;
         Pos.Y = y;
@@ -245,7 +245,7 @@ public class BlackBishop : Bishop
 {
     public override Game1.chessComponents TextureIndex => Game1.chessComponents.BlackBishop;
 
-    BlackBishop(int x, int y)
+    public BlackBishop(int x, int y)
     {
         Pos.X = x;
         Pos.Y = y;
@@ -256,7 +256,7 @@ public class WhiteRook : Rook
 {
     public override Game1.chessComponents TextureIndex => Game1.chessComponents.WhiteRook;
 
-    WhiteRook(int x, int y)
+    public WhiteRook(int x, int y)
     {
         Pos.X = x;
         Pos.Y = y;
@@ -267,7 +267,7 @@ public class BlackRook : Rook
 {
     public override Game1.chessComponents TextureIndex => Game1.chessComponents.BlackRook;
 
-    BlackRook(int x, int y)
+    public BlackRook(int x, int y)
     {
         Pos.X = x;
         Pos.Y = y;
@@ -278,7 +278,7 @@ public class WhiteQueen : Queen
 {
     public override Game1.chessComponents TextureIndex => Game1.chessComponents.WhiteQueen;
 
-    WhiteQueen(int x, int y)
+    public WhiteQueen(int x, int y)
     {
         Pos.X = x;
         Pos.Y = y;
@@ -289,7 +289,7 @@ public class BlackQueen : Queen
 {
     public override Game1.chessComponents TextureIndex => Game1.chessComponents.BlackQueen;
 
-    BlackQueen(int x, int y)
+    public BlackQueen(int x, int y)
     {
         Pos.X = x;
         Pos.Y = y;
@@ -300,7 +300,7 @@ public class BlackKing : King
 {
     public override Game1.chessComponents TextureIndex => Game1.chessComponents.BlackKing;
 
-    BlackKing(int x, int y)
+    public BlackKing(int x, int y)
     {
         Pos.X = x;
         Pos.Y = y;
@@ -311,7 +311,7 @@ public class WhiteKing : King
 {
     public override Game1.chessComponents TextureIndex => Game1.chessComponents.WhiteKing;
 
-    WhiteKing(int x, int y)
+    public WhiteKing(int x, int y)
     {
         Pos.X = x;
         Pos.Y = y;
