@@ -14,6 +14,13 @@ public struct BoardPos
         MoveT = mov;
     }
 
+    public static bool isOnBoard(int x, int y)
+    {
+        return x >= MinPos && y >= MinPos && x <= MaxPos && y <= MaxPos;
+    }
+
+    public bool isOnBoard() => isOnBoard(X, Y);
+
     [Flags]
     public enum MoveType
     {
@@ -30,7 +37,28 @@ public struct BoardPos
 }
 
 public class Board
-{ 
+{
+    public void SelectFigure(BoardPos pos)
+    {
+        _selectedFigure = _boardFigures[pos.X, pos.Y];
+    }
+
+    public void UnselectFigure()
+    {
+        _selectedFigure = null;
+    }
+
+    public bool IsSelectedFigure()
+    {
+        return _selectedFigure != null;
+    }
+
+    public (BoardPos[] moves, int moveCont) GetSelFigMoves()
+    {
+        return _selectedFigure.GetMoves();
+    }
+
+    public BoardPos GetSelectedFigurePos() => _selectedFigure.Pos;
     public Board(Figure[] figuresList)
     {
         _startFiguresLayout = new Figure[figuresList.Length];
@@ -46,6 +74,11 @@ public class Board
     {
         _figuresList = new Figure[_startFiguresLayout.Length];
         _startFiguresLayout.CopyTo(_figuresList, 0);
+
+        foreach (var fig in _figuresList)
+        {
+            _boardFigures[fig.Pos.X, fig.Pos.Y] = fig;
+        }
     }
 
     public static Vector2 Translate(BoardPos pos)
@@ -53,9 +86,9 @@ public class Board
         return new Vector2(XTilesCordBeg + pos.X * FigureWidth, YTilesCordBeg - pos.Y * FigureHeight);
     }
 
-    public static BoardPos Translate(Vector2 pos)
+    public static BoardPos Translate(int x, int y)
     {
-        return new BoardPos((int)(pos.X - XTilesCordBeg) / FigureWidth, (int)-(pos.Y - YTilesCordBeg) / FigureHeight);
+        return new BoardPos((int)((x - XTilesCordBeg) / FigureWidth), (int)((YTilesCordBeg- y) / FigureHeight));
     }
     
     public Game1.chessComponents TextureIndex = Game1.chessComponents.Board;
@@ -65,6 +98,7 @@ public class Board
     private readonly Figure[] _startFiguresLayout;
     private Figure[] _figuresList;
     public Figure[] FigureList => _figuresList;
+    private Figure _selectedFigure;
 
     public const int XTilesBeg = 51;
     public const int YTilesBeg = 0;
@@ -75,7 +109,7 @@ public class Board
     public const int FigureHeight = 68;
     public const int FigureWidth = 68;
     
-    public static readonly Figure[] basicBeginingLayout = new Figure[]
+    public static readonly Figure[] BasicBeginingLayout = new Figure[]
     {
         new Pawn(0,1, Figure.ColorT.White),
         new Pawn(1,1, Figure.ColorT.White),
@@ -109,5 +143,10 @@ public class Board
         new Bishop(5,7, Figure.ColorT.Black),
         new Knight(6, 7, Figure.ColorT.Black),
         new Rook(7, 7, Figure.ColorT.Black),
+    };
+
+    public static readonly Figure[] TestLayout = new Figure[]
+    {
+        new Knight(4, 4, Figure.ColorT.Black)
     };
 }

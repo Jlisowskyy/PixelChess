@@ -146,8 +146,7 @@ public class Knight : Figure
             int tempX = Pos.X + XPosTable[i];
             int tempY = Pos.Y + YPosTable[i];
 
-            if (tempX >= BoardPos.MinPos && tempX <= BoardPos.MaxPos && tempY >= BoardPos.MinPos &&
-                tempY <= BoardPos.MaxPos)
+            if (BoardPos.isOnBoard(tempX, tempY))
             {
                 if (IsEmpty(tempX, tempY))
                     ret[arrPos++] = new BoardPos(tempX, tempY);
@@ -157,8 +156,8 @@ public class Knight : Figure
 
             tempX = Pos.X + XPosTable[i];
             tempY = Pos.Y - YPosTable[i];
-            if (tempX >= BoardPos.MinPos && tempX <= BoardPos.MaxPos && tempY >= BoardPos.MinPos &&
-                tempY <= BoardPos.MaxPos)
+            
+            if (BoardPos.isOnBoard(tempX, tempY))
             {
                 if (IsEmpty(tempX, tempY))
                     ret[arrPos++] = new BoardPos(tempX, tempY);
@@ -385,7 +384,7 @@ public class King : Figure
 
                 int tempX = Pos.X + i;
                 int tempY = Pos.Y + j;
-                if (tempX >= BoardPos.MinPos && tempX <= BoardPos.MaxPos && tempY >= BoardPos.MinPos && tempY <= BoardPos.MaxPos)
+                if (BoardPos.isOnBoard(tempX, tempY))
                 {
                     if (IsEmpty(tempX, tempY))
                         ret[arrPos++] = new BoardPos(tempX, tempY);

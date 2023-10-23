@@ -29,12 +29,21 @@ public class Game1 : Game
         BlackKing,
     }
 
+    public enum TileHighliters
+    {
+        MoveTile,
+        BasicAttackTile,
+        KingAttackTile,
+        SelectedTile,
+    }
+
     private Texture2D[] _componentsTextures = new Texture2D[Enum.GetNames(typeof(chessComponents)).Length];
+    private Texture2D[] _tileHighlightersTextures = new Texture2D[Enum.GetNames(typeof(TileHighliters)).Length];
     
     public Game1()
     {
         _graphics = new GraphicsDeviceManager(this);
-        _board = new Board(Board.basicBeginingLayout);
+        _board = new Board(Board.TestLayout);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
     }
@@ -52,6 +61,11 @@ public class Game1 : Game
     protected override void LoadContent()
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
+        
+        foreach (var val in Enum.GetValues<TileHighliters>())
+        {
+            _tileHighlightersTextures[(int)val] = Content.Load<Texture2D>(Enum.GetName(val));
+        }
 
         foreach (var val in Enum.GetValues<chessComponents>())
         {
@@ -61,11 +75,23 @@ public class Game1 : Game
 
     protected override void Update(GameTime gameTime)
     {
-        if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+        if (Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
 
-        // TODO: Add your update logic here
+        var mstate = Mouse.GetState();
 
+        if (mstate.LeftButton == ButtonState.Pressed)
+        {
+            var tilePos = Board.Translate(mstate.X, mstate.Y);
+
+            if (BoardPos.isOnBoard(tilePos.X, tilePos.Y))
+                _board.SelectFigure(tilePos);
+            else
+                _board.UnselectFigure();
+            
+            // Draw(gameTime);
+        }
+        
         base.Update(gameTime);
     }
 
@@ -75,6 +101,18 @@ public class Game1 : Game
 
         _spriteBatch.Begin();
         _spriteBatch.Draw(_componentsTextures[(int)_board.TextureIndex], new Vector2(0, 0), Color.White);
+
+        if (_board.IsSelectedFigure())
+        {
+            var movs = _board.GetSelFigMoves();
+            
+            _spriteBatch.Draw(_tileHighlightersTextures[(int)TileHighliters.SelectedTile], Board.Translate(_board.GetSelectedFigurePos()), Color.White);
+
+            for (int i = 0; i < movs.moveCont; ++i)
+            {
+                _spriteBatch.Draw(_tileHighlightersTextures[(int)movs.moves[i].MoveT], Board.Translate(movs.moves[i]), Color.White);
+            }
+        }
 
         for (int i = 0; i < _board.FigureList.Length; ++i)
         {
