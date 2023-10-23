@@ -56,7 +56,7 @@ public abstract class Figure
         Black,
     }
 
-    private Figure[,] _parent;
+    protected Figure[,] _parent;
     public bool IsAlive = true;
     public BoardPos Pos;
 
@@ -84,9 +84,10 @@ public class Pawn : Figure
         
         if (_isMoved)
         {
-            if (IsEmpty(Pos.X, _moveFunc(Pos.Y)))
+            if (IsEmpty(Pos.X, _moveFunc(Pos.Y, 1)))
             {
-                moves[arrPos++] = new BoardPos(Pos.X, _moveFunc(Pos.Y), _moveFunc(Pos.Y) == _promTile ? BoardPos.MoveType.PromotionMove : BoardPos.MoveType.NormalMove);
+                moves[arrPos++] = new BoardPos(Pos.X, _moveFunc(Pos.Y, 1), _moveFunc(Pos.Y, 1) == 
+                                                                           _promTile ? BoardPos.MoveType.PromotionMove : BoardPos.MoveType.NormalMove);
             }
         }
         else
@@ -95,7 +96,7 @@ public class Pawn : Figure
             {
                 if (IsEmpty(Pos.X, _moveFunc(Pos.Y, dist)))
                 {
-                    moves[arrPos++] = new BoardPos(Pos.X, _moveFunc(Pos.X, dist));
+                    moves[arrPos++] = new BoardPos(Pos.X, _moveFunc(Pos.Y, dist)); 
                 }
                 else
                 {
@@ -104,18 +105,18 @@ public class Pawn : Figure
             }
         }
 
-        if (Pos.X - 1 >= BoardPos.MinPos && !IsEmpty(Pos.X - 1, _moveFunc(Pos.Y)) && IsEnemy(Pos.X - 1, _moveFunc(Pos.Y)))
+        if (Pos.X - 1 >= BoardPos.MinPos && !IsEmpty(Pos.X - 1, _moveFunc(Pos.Y, 1)) && IsEnemy(Pos.X - 1, _moveFunc(Pos.Y, 1)))
         {
-            moves[arrPos++] = new BoardPos(Pos.X - 1, _moveFunc(Pos.Y),
-                _moveFunc(Pos.Y) == _promTile
+            moves[arrPos++] = new BoardPos(Pos.X - 1, _moveFunc(Pos.Y, 1),
+                _moveFunc(Pos.Y, 1) == _promTile
                     ? BoardPos.MoveType.AttackMove | BoardPos.MoveType.PromotionMove
                     : BoardPos.MoveType.AttackMove);
         }
         
-        if (Pos.X + 1 >= BoardPos.MinPos && !IsEmpty(Pos.X + 1, _moveFunc(Pos.Y)) && IsEnemy(Pos.X + 1, _moveFunc(Pos.Y)))
+        if (Pos.X + 1 <= BoardPos.MaxPos && !IsEmpty(Pos.X + 1, _moveFunc(Pos.Y, 1)) && IsEnemy(Pos.X + 1, _moveFunc(Pos.Y, 1)))
         {
-            moves[arrPos++] = new BoardPos(Pos.X + 1, _moveFunc(Pos.Y),
-                _moveFunc(Pos.Y) == _promTile
+            moves[arrPos++] = new BoardPos(Pos.X + 1, _moveFunc(Pos.Y, 1),
+                _moveFunc(Pos.Y, 1) == _promTile
                     ? BoardPos.MoveType.AttackMove | BoardPos.MoveType.PromotionMove
                     : BoardPos.MoveType.AttackMove);
         }
@@ -126,7 +127,7 @@ public class Pawn : Figure
     private bool _isMoved = false;
     private int _promTile;
     private const int MaxMoves = 4;
-    private delegate int MoveFuncDelegate(int cord, int dist = 1);
+    private delegate int MoveFuncDelegate(int cord, int dist);
 
     private MoveFuncDelegate _moveFunc;
 }
@@ -354,14 +355,16 @@ public class Queen : Figure
         // TODO: speedup???
         Figure rook = new Rook(Pos.X, Pos.Y, Color);
         Figure bishop = new Bishop(Pos.X, Pos.Y, Color);
-
+        rook.Parent = _parent;
+        bishop.Parent = _parent;
+        
         var rookRet = rook.GetMoves();
         var bishopRet = bishop.GetMoves();
         
         rookRet.moves.CopyTo(ret, 0);
         bishopRet.moves.CopyTo(ret, rookRet.movesCount);
 
-        return (ret, Rook.RookCorrectTiles + bishopRet.movesCount);
+        return (ret, rookRet.movesCount + bishopRet.movesCount);
     }
     
     private const int QueenMaxTiles = Rook.RookCorrectTiles + Bishop.MaxPossibleTiles;

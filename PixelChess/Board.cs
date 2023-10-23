@@ -88,7 +88,7 @@ public class Board
 
     public static BoardPos Translate(int x, int y)
     {
-        return new BoardPos((int)((x - XTilesCordBeg) / FigureWidth), (int)((YTilesCordBeg- y) / FigureHeight));
+        return new BoardPos((int)((x - XTilesCordBeg) / FigureWidth), (int)((YTilesCordBeg + 68 - y) / FigureHeight));
     }
     
     public Game1.chessComponents TextureIndex = Game1.chessComponents.Board;

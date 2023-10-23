@@ -43,7 +43,7 @@ public class Game1 : Game
     public Game1()
     {
         _graphics = new GraphicsDeviceManager(this);
-        _board = new Board(Board.TestLayout);
+        _board = new Board(Board.BasicBeginingLayout);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
     }
@@ -107,7 +107,7 @@ public class Game1 : Game
             var movs = _board.GetSelFigMoves();
             
             _spriteBatch.Draw(_tileHighlightersTextures[(int)TileHighliters.SelectedTile], Board.Translate(_board.GetSelectedFigurePos()), Color.White);
-
+            
             for (int i = 0; i < movs.moveCont; ++i)
             {
                 _spriteBatch.Draw(_tileHighlightersTextures[(int)movs.moves[i].MoveT], Board.Translate(movs.moves[i]), Color.White);
