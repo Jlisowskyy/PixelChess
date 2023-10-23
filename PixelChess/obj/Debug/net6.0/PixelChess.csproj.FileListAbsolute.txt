@@ -37,3 +37,7 @@
 /home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/WhitePawn.xnb
 /home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/WhiteQueen.xnb
 /home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/WhiteRook.xnb
+/home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/BasicAttackTile.xnb
+/home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/KingAttackTile.xnb
+/home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/MoveTile.xnb
+/home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/SelectedTile.xnb

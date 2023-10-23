@@ -4,24 +4,28 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 namespace PongGame;
+    
+    /*  GENERAL TODO:
+     * - MAKE THIS SHIT TEMPLATED
+     * - consider faster solutions
+     * - make fen translator
+     * 
+     */
 
 public abstract class Figure
     // All figures expects to have array attached board attached, otherwise undefined
 {
-    protected Figure(int x, int y, ColorT color)
+    public readonly Game1.chessComponents TextureIndex;
+    protected Figure(int x, int y, ColorT color, Game1.chessComponents textureIndex)
     {
         Pos.X = x;
         Pos.Y = y;
         Color = color;
+        TextureIndex = textureIndex;
     }
     public Figure[,] Parent
     {
         set => _parent = value;
-    }
-    
-    public abstract Game1.chessComponents TextureIndex
-    {
-        get;
     }
 
     protected bool isEmpty(BoardPos pos)
@@ -34,12 +38,12 @@ public abstract class Figure
         return _parent[pos.X, pos.Y].Color != this.Color;
     }
     
-    protected bool isEmpty(int x, int y)
+    protected bool IsEmpty(int x, int y)
     {
         return _parent[x, y] == null;
     }
 
-    protected bool isEnemy(int x, int y)
+    protected bool IsEnemy(int x, int y)
     {
         return _parent[x, y].Color != this.Color;
     }
@@ -51,8 +55,8 @@ public abstract class Figure
         White,
         Black,
     }
-    
-    protected Figure[,] _parent;
+
+    private Figure[,] _parent;
     public bool IsAlive = true;
     public BoardPos Pos;
 
@@ -62,223 +66,312 @@ public abstract class Figure
     }
 }
 
-public abstract class Pawn : Figure
+public class Pawn : Figure
 {
-    private bool _isMoved = false;
+    private int _moveWhite(int cord, int dist) => cord + dist;
+    private int _moveBlack(int cord, int dist) => cord - dist;
 
-    Pawn(int x, int y, ColorT color) :
-        base(x, y, color) {}
-
-    public sealed override Game1.chessComponents TextureIndex
+    public Pawn(int x, int y, ColorT color) :
+        base(x, y, color, color == ColorT.White ? Game1.chessComponents.WhitePawn : Game1.chessComponents.BlackPawn)
     {
-        get
-        {
-            switch (Color)
-            {
-                case ColorT.White:
-                    return Game1.chessComponents.WhitePawn;
-                case ColorT.Black:
-                    return Game1.chessComponents.BlackPawn;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
+        _moveFunc = color == ColorT.White ? _moveWhite : _moveBlack;
+        _promTile = color == ColorT.White ? BoardPos.MaxPos : BoardPos.MinPos;
     }
-
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
-        switch (Color)
+        BoardPos[] moves = new BoardPos[MaxMoves];
+        int arrPos = 0;
+        
+        if (_isMoved)
         {
-            case ColorT.White:
-                if (_isMoved || isEnemy(Pos.X, Pos.Y + 1))
-                {
-                    return (new BoardPos[] { new BoardPos(Pos.X, Pos.Y + 1) }, 1);
-                }
-                else
-                {
-                    return (new BoardPos[]
-                    {
-                        new BoardPos(Pos.X, Pos.Y + 1),
-                        new BoardPos(Pos.X, Pos.Y + 2),
-                    }, 2);
-                }
-            case ColorT.Black:
-                if (_isMoved || isEnemy(Pos.X, Pos.Y - 1) || Pos.Y - 1 == BoardPos.MinPos)
-                {
-                    return (new BoardPos[] { new BoardPos(Pos.X, Pos.Y - 1) }, 1);
-                }
-                else
-                {
-                    return (new BoardPos[]
-                    {
-                        new BoardPos(Pos.X, Pos.Y - 1),
-                        new BoardPos(Pos.X, Pos.Y - 2),
-                    }, 2);
-                }
-            default:
-                throw new ArgumentOutOfRangeException();
+            if (IsEmpty(Pos.X, _moveFunc(Pos.Y)))
+            {
+                moves[arrPos++] = new BoardPos(Pos.X, _moveFunc(Pos.Y), _moveFunc(Pos.Y) == _promTile ? BoardPos.MoveType.PromotionMove : BoardPos.MoveType.NormalMove);
+            }
         }
+        else
+        {
+            for (int dist = 1; dist < 3; ++dist)
+            {
+                if (IsEmpty(Pos.X, _moveFunc(Pos.Y, dist)))
+                {
+                    moves[arrPos++] = new BoardPos(Pos.X, _moveFunc(Pos.X, dist));
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        if (Pos.X - 1 >= BoardPos.MinPos && !IsEmpty(Pos.X - 1, _moveFunc(Pos.Y)) && IsEnemy(Pos.X - 1, _moveFunc(Pos.Y)))
+        {
+            moves[arrPos++] = new BoardPos(Pos.X - 1, _moveFunc(Pos.Y),
+                _moveFunc(Pos.Y) == _promTile
+                    ? BoardPos.MoveType.AttackMove | BoardPos.MoveType.PromotionMove
+                    : BoardPos.MoveType.AttackMove);
+        }
+        
+        if (Pos.X + 1 >= BoardPos.MinPos && !IsEmpty(Pos.X + 1, _moveFunc(Pos.Y)) && IsEnemy(Pos.X + 1, _moveFunc(Pos.Y)))
+        {
+            moves[arrPos++] = new BoardPos(Pos.X + 1, _moveFunc(Pos.Y),
+                _moveFunc(Pos.Y) == _promTile
+                    ? BoardPos.MoveType.AttackMove | BoardPos.MoveType.PromotionMove
+                    : BoardPos.MoveType.AttackMove);
+        }
+        
+        return (moves, arrPos);
     }
+    
+    private bool _isMoved = false;
+    private int _promTile;
+    private const int MaxMoves = 4;
+    private delegate int MoveFuncDelegate(int cord, int dist = 1);
+
+    private MoveFuncDelegate _moveFunc;
 }
 
-public abstract class Knight : Figure
+public class Knight : Figure
 {
     public Knight(int x, int y, ColorT color):
-        base(x, y, color) {}
-    
+        base(x, y, color, color == ColorT.White ? Game1.chessComponents.WhiteKnight : Game1.chessComponents.BlackKnight) {}
+
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] ret = new BoardPos[MaxPossibleTiles];
         int arrPos = 0;
-        
+
         for (int i = 0; i < 4; ++i)
         {
-            if (Pos.X + XPosTable[i] >= 0 && Pos.X + XPosTable[i] <= BoardPos.MaxPos && Pos.Y + YPosTable[i] >= 0 &&
-                Pos.Y + YPosTable[i] <= BoardPos.MaxPos)
+            int tempX = Pos.X + XPosTable[i];
+            int tempY = Pos.Y + YPosTable[i];
+
+            if (tempX >= BoardPos.MinPos && tempX <= BoardPos.MaxPos && tempY >= BoardPos.MinPos &&
+                tempY <= BoardPos.MaxPos)
             {
-                ret[arrPos++] = new BoardPos(Pos.X + XPosTable[i], Pos.Y + YPosTable[i]);
+                if (IsEmpty(tempX, tempY))
+                    ret[arrPos++] = new BoardPos(tempX, tempY);
+                else if (IsEnemy(tempX, tempY))
+                    ret[arrPos++] = new BoardPos(tempX, tempY, BoardPos.MoveType.AttackMove);
             }
-            
-            if (Pos.X + XPosTable[i] >= 0 && Pos.X + XPosTable[i] <= BoardPos.MaxPos && Pos.Y - YPosTable[i] >= 0 &&
-                Pos.Y - YPosTable[i] <= BoardPos.MaxPos)
+
+            tempX = Pos.X + XPosTable[i];
+            tempY = Pos.Y - YPosTable[i];
+            if (tempX >= BoardPos.MinPos && tempX <= BoardPos.MaxPos && tempY >= BoardPos.MinPos &&
+                tempY <= BoardPos.MaxPos)
             {
-                ret[arrPos++] = new BoardPos(Pos.X + XPosTable[i], Pos.Y - YPosTable[i]);
+                if (IsEmpty(tempX, tempY))
+                    ret[arrPos++] = new BoardPos(tempX, tempY);
+                else if (IsEnemy(tempX, tempY))
+                    ret[arrPos++] = new BoardPos(tempX, tempY, BoardPos.MoveType.AttackMove);
             }
         }
 
         return (ret, arrPos);
     }
-
-    public sealed override Game1.chessComponents TextureIndex
-    {
-        get
-        {
-            switch (Color)
-            {
-                case ColorT.White:
-                    return Game1.chessComponents.WhiteKnight;
-                case ColorT.Black:
-                    return Game1.chessComponents.BlackKnight;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-    }
-
+    
     private const int MaxPossibleTiles = 8;
     private static readonly int[] XPosTable = new[] { -2, -1, 1, 2 };
     private static readonly int[] YPosTable = new[] { 1, 2, 2, 1 };
 }
 
-public abstract class Bishop : Figure
+public class Bishop : Figure
 {
     public Bishop(int x, int y, ColorT color) :
-        base(x, y, color) {}
+        base(x, y, color, color == ColorT.White ? Game1.chessComponents.WhiteBishop : Game1.chessComponents.BlackBishop) {}
 
-    public sealed override Game1.chessComponents TextureIndex
-    {
-        get
-        {
-            switch (Color)
-            {
-                case ColorT.White:
-                    return Game1.chessComponents.WhiteBishop;
-                case ColorT.Black:
-                    return Game1.chessComponents.BlackBishop;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-    }
-
-    public static (BoardPos[] moves, int movesCount) GetBishopMoves(BoardPos pos)
+    public sealed override (BoardPos[] moves, int movesCount) GetMoves()
+    
     {
         BoardPos[] ret = new BoardPos[MaxPossibleTiles];
         int arrPos = 0;
         
-        int offset = Math.Min(pos.X, pos.Y);
-
-        int xTemp = pos.X - offset;
-        int yTemp = pos.Y - offset;
+        int xTemp = Pos.X + 1;
+        int yTemp = Pos.Y + 1;
 
         while (xTemp <= BoardPos.MaxPos && yTemp <= BoardPos.MaxPos)
         {
-            if (xTemp != pos.X && yTemp != pos.Y)
+            if (IsEmpty(xTemp, yTemp))
             {
                 ret[arrPos++] = new BoardPos(xTemp, yTemp);
+            }
+            else
+            {
+                if (IsEnemy(xTemp, yTemp))
+                {
+                    ret[arrPos++] = new BoardPos(xTemp, yTemp, BoardPos.MoveType.AttackMove);
+                }
+
+                break;
             }
 
             ++xTemp;
             ++yTemp;
         }
-
-        offset = Math.Min(pos.X, BoardPos.MaxPos - pos.Y);
-        xTemp = pos.X - offset;
-        yTemp = pos.Y - offset;
         
+        xTemp = Pos.X + 1;
+        yTemp = Pos.Y - 1;
+
         while (xTemp <= BoardPos.MaxPos && yTemp >= BoardPos.MinPos)
         {
-            if (xTemp != pos.X && yTemp != pos.Y)
+            if (IsEmpty(xTemp, yTemp))
             {
                 ret[arrPos++] = new BoardPos(xTemp, yTemp);
+            }
+            else
+            {
+                if (IsEnemy(xTemp, yTemp))
+                {
+                    ret[arrPos++] = new BoardPos(xTemp, yTemp, BoardPos.MoveType.AttackMove);
+                }
+
+                break;
             }
 
             ++xTemp;
             --yTemp;
         }
 
+        xTemp = Pos.X - 1;
+        yTemp = Pos.Y + 1;
+
+        while (xTemp >= BoardPos.MinPos && yTemp <= BoardPos.MaxPos)
+        {
+            if (IsEmpty(xTemp, yTemp))
+            {
+                ret[arrPos++] = new BoardPos(xTemp, yTemp);
+            }
+            else
+            {
+                if (IsEnemy(xTemp, yTemp))
+                {
+                    ret[arrPos++] = new BoardPos(xTemp, yTemp, BoardPos.MoveType.AttackMove);
+                }
+
+                break;
+            }
+
+            --xTemp;
+            ++yTemp;
+        }
+
+        xTemp = Pos.X - 1;
+        yTemp = Pos.Y - 1;
+
+        while (xTemp >= BoardPos.MaxPos && yTemp >= BoardPos.MaxPos)
+        {
+            if (IsEmpty(xTemp, yTemp))
+            {
+                ret[arrPos++] = new BoardPos(xTemp, yTemp);
+            }
+            else
+            {
+                if (IsEnemy(xTemp, yTemp))
+                {
+                    ret[arrPos++] = new BoardPos(xTemp, yTemp, BoardPos.MoveType.AttackMove);
+                }
+
+                break;
+            }
+
+            --xTemp;
+            --yTemp;
+        }
+        
         return (ret, arrPos);
     }
-
+    
     internal const int MaxPossibleTiles = 13;
-    public sealed override (BoardPos[] moves, int movesCount) GetMoves() => GetBishopMoves(Pos);
 }
 
-public abstract class Rook : Figure
+public class Rook : Figure
 {
-    internal const int RookCorrectTiles = 14;
+    public Rook(int x, int y, ColorT color) :
+        base(x, y, color, color == ColorT.White ? Game1.chessComponents.WhiteRook : Game1.chessComponents.BlackRook) {}
 
-    public static (BoardPos[] moves, int movesCount) GetRookMoves(BoardPos pos)
+    public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] ret = new BoardPos[RookCorrectTiles];
         int arrPos = 0;
-        
-        for (int i = BoardPos.MinPos; i <= BoardPos.MaxPos; ++i)
+
+        for (int i = Pos.X - 1; i >= BoardPos.MinPos; --i)
         {
-            if (i != pos.X)
-                ret[arrPos++] = new BoardPos(i, pos.Y);
-
-            if (i != pos.Y)
-                ret[arrPos++] = new BoardPos(pos.X, i);
+            if (IsEmpty(i, Pos.Y))
+                ret[arrPos++] = new BoardPos(i, Pos.Y);
+            else
+            {
+                if (IsEnemy(i, Pos.Y)) ret[arrPos++] = new BoardPos(i, Pos.Y, BoardPos.MoveType.AttackMove);
+                break;
+            }
         }
-        return (ret, RookCorrectTiles);
+        
+        for (int i = Pos.X + 1; i <= BoardPos.MaxPos; ++i)
+        {
+            if (IsEmpty(i, Pos.Y))
+                ret[arrPos++] = new BoardPos(i, Pos.Y);
+            else
+            {
+                if (IsEnemy(i, Pos.Y)) ret[arrPos++] = new BoardPos(i, Pos.Y, BoardPos.MoveType.AttackMove);
+                break;
+            }
+        }
+        
+        for (int i = Pos.Y - 1; i >= BoardPos.MinPos; --i)
+        {
+            if (IsEmpty(Pos.X, i))
+                ret[arrPos++] = new BoardPos(Pos.X, i);
+            else
+            {
+                if (IsEnemy(Pos.X, i)) ret[arrPos++] = new BoardPos(Pos.X, i, BoardPos.MoveType.AttackMove);
+                break;
+            }
+        }
+        
+        for (int i = Pos.Y + 1; i <= BoardPos.MaxPos; ++i)
+        {
+            if (IsEmpty(Pos.X, i))
+                ret[arrPos++] = new BoardPos(Pos.X, i);
+            else
+            {
+                if (IsEnemy(Pos.X, i)) ret[arrPos++] = new BoardPos(Pos.X, i, BoardPos.MoveType.AttackMove);
+                break;
+            }
+        }
+ 
+        return (ret, arrPos);
     }
-
-    public sealed override (BoardPos[] moves, int movesCount) GetMoves() => GetRookMoves(Pos);
+    
+    internal const int RookCorrectTiles = 14;
 }
 
-public abstract class Queen : Figure
+public class Queen : Figure
 {
-    private const int QueenMaxTiles = Rook.RookCorrectTiles + Bishop.MaxPossibleTiles;
-
+    public Queen(int x, int y, ColorT color) :
+        base(x, y, color, color == ColorT.White ? Game1.chessComponents.WhiteQueen : Game1.chessComponents.BlackQueen){}
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] ret = new BoardPos[QueenMaxTiles];
         
-        var rookMoves = Rook.GetRookMoves(Pos);
-        var bishopMoves = Bishop.GetBishopMoves(Pos);
-        
-        rookMoves.moves.CopyTo(ret, 0);
-        bishopMoves.moves.CopyTo(ret, Rook.RookCorrectTiles);
+        // TODO: speedup???
+        Figure rook = new Rook(Pos.X, Pos.Y, Color);
+        Figure bishop = new Bishop(Pos.X, Pos.Y, Color);
 
-        return (ret, Rook.RookCorrectTiles + bishopMoves.movesCount);
+        var rookRet = rook.GetMoves();
+        var bishopRet = bishop.GetMoves();
+        
+        rookRet.moves.CopyTo(ret, 0);
+        bishopRet.moves.CopyTo(ret, rookRet.movesCount);
+
+        return (ret, Rook.RookCorrectTiles + bishopRet.movesCount);
     }
+    
+    private const int QueenMaxTiles = Rook.RookCorrectTiles + Bishop.MaxPossibleTiles;
 }
 
-public abstract class King : Figure
+public class King : Figure
 {
-    private const int KingMaxTiles = 8;
-
+    public King(int x, int y, ColorT color):
+        base(x, y, color, color == ColorT.White? Game1.chessComponents.WhiteKing : Game1.chessComponents.BlackKing) {}
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] ret = new BoardPos[KingMaxTiles];
@@ -290,13 +383,20 @@ public abstract class King : Figure
             {
                 if (i == 0 && j == 0) continue;
 
-                if (Pos.X + i >= 0 && Pos.X + i <= BoardPos.MaxPos && Pos.Y + j >= 0 && Pos.Y + j <= BoardPos.MaxPos)
+                int tempX = Pos.X + i;
+                int tempY = Pos.Y + j;
+                if (tempX >= BoardPos.MinPos && tempX <= BoardPos.MaxPos && tempY >= BoardPos.MinPos && tempY <= BoardPos.MaxPos)
                 {
-                    ret[arrPos++] = new BoardPos(Pos.X + i, Pos.Y + j);
+                    if (IsEmpty(tempX, tempY))
+                        ret[arrPos++] = new BoardPos(tempX, tempY);
+                    else if (IsEnemy(tempX, tempY))
+                        ret[arrPos++] = new BoardPos(tempX, tempY, BoardPos.MoveType.AttackMove);
                 }
             }
         }
 
         return (ret, arrPos);
     }
+    
+    private const int KingMaxTiles = 8;
 }

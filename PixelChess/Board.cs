@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -6,12 +7,22 @@ namespace PongGame;
 
 public struct BoardPos
 {
-    public BoardPos(int x, int y)
+    public BoardPos(int x, int y, MoveType mov = MoveType.NormalMove)
     {
         this.X = x;
         this.Y = y;
+        MoveT = mov;
     }
-    
+
+    [Flags]
+    public enum MoveType
+    {
+        NormalMove,
+        AttackMove,
+        PromotionMove,
+    }
+
+    public readonly MoveType MoveT;
     public const int MinPos = 0;
     public const int MaxPos = 7;
     public int X;
@@ -66,37 +77,37 @@ public class Board
     
     public static readonly Figure[] basicBeginingLayout = new Figure[]
     {
-        new WhitePawn(0,1),
-        new WhitePawn(1,1),
-        new WhitePawn(2,1),
-        new WhitePawn(3,1),
-        new WhitePawn(4,1),
-        new WhitePawn(5,1),
-        new WhitePawn(6,1),
-        new WhitePawn(7,1),
-        new WhiteRook(0, 0),
-        new WhiteKnight(1, 0),
-        new WhiteBishop(2,0),
-        new WhiteQueen(3, 0),
-        new WhiteKing(4,0),
-        new WhiteBishop(5,0),
-        new WhiteKnight(6, 0),
-        new WhiteRook(7, 0),
-        new BlackPawn(0,6),
-        new BlackPawn(1,6),
-        new BlackPawn(2,6),
-        new BlackPawn(3,6),
-        new BlackPawn(4,6),
-        new BlackPawn(5,6),
-        new BlackPawn(6,6),
-        new BlackPawn(7,6),
-        new BlackRook(0, 7),
-        new BlackKnight(1, 7),
-        new BlackBishop(2,7),
-        new BlackQueen(3, 7),
-        new BlackKing(4,7),
-        new BlackBishop(5,7),
-        new BlackKnight(6, 7),
-        new BlackRook(7, 7),
+        new Pawn(0,1, Figure.ColorT.White),
+        new Pawn(1,1, Figure.ColorT.White),
+        new Pawn(2,1, Figure.ColorT.White),
+        new Pawn(3,1, Figure.ColorT.White),
+        new Pawn(4,1, Figure.ColorT.White),
+        new Pawn(5,1, Figure.ColorT.White),
+        new Pawn(6,1, Figure.ColorT.White),
+        new Pawn(7,1, Figure.ColorT.White),
+        new Rook(0, 0, Figure.ColorT.White),
+        new Knight(1, 0, Figure.ColorT.White),
+        new Bishop(2,0, Figure.ColorT.White),
+        new Queen(3, 0, Figure.ColorT.White),
+        new King(4,0, Figure.ColorT.White),
+        new Bishop(5,0, Figure.ColorT.White),
+        new Knight(6, 0, Figure.ColorT.White),
+        new Rook(7, 0, Figure.ColorT.White),
+        new Pawn(0,6, Figure.ColorT.Black),
+        new Pawn(1,6, Figure.ColorT.Black),
+        new Pawn(2,6, Figure.ColorT.Black),
+        new Pawn(3,6, Figure.ColorT.Black),
+        new Pawn(4,6, Figure.ColorT.Black),
+        new Pawn(5,6, Figure.ColorT.Black),
+        new Pawn(6,6, Figure.ColorT.Black),
+        new Pawn(7,6, Figure.ColorT.Black),
+        new Rook(0, 7, Figure.ColorT.Black),
+        new Knight(1, 7, Figure.ColorT.Black),
+        new Bishop(2,7, Figure.ColorT.Black),
+        new Queen(3, 7, Figure.ColorT.Black),
+        new King(4,7, Figure.ColorT.Black),
+        new Bishop(5,7, Figure.ColorT.Black),
+        new Knight(6, 7, Figure.ColorT.Black),
+        new Rook(7, 7, Figure.ColorT.Black),
     };
 }
