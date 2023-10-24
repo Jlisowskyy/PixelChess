@@ -15,8 +15,8 @@ namespace PongGame;
 public abstract class Figure
     // All figures expects to have array attached board attached, otherwise undefined
 {
-    public readonly Game1.chessComponents TextureIndex;
-    protected Figure(int x, int y, ColorT color, Game1.chessComponents textureIndex)
+    public readonly PixelChess.chessComponents TextureIndex;
+    protected Figure(int x, int y, ColorT color, PixelChess.chessComponents textureIndex)
     {
         Pos.X = x;
         Pos.Y = y;
@@ -72,7 +72,7 @@ public class Pawn : Figure
     private int _moveBlack(int cord, int dist) => cord - dist;
 
     public Pawn(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? Game1.chessComponents.WhitePawn : Game1.chessComponents.BlackPawn)
+        base(x, y, color, color == ColorT.White ? PixelChess.chessComponents.WhitePawn : PixelChess.chessComponents.BlackPawn)
     {
         _moveFunc = color == ColorT.White ? _moveWhite : _moveBlack;
         _promTile = color == ColorT.White ? BoardPos.MaxPos : BoardPos.MinPos;
@@ -135,7 +135,7 @@ public class Pawn : Figure
 public class Knight : Figure
 {
     public Knight(int x, int y, ColorT color):
-        base(x, y, color, color == ColorT.White ? Game1.chessComponents.WhiteKnight : Game1.chessComponents.BlackKnight) {}
+        base(x, y, color, color == ColorT.White ? PixelChess.chessComponents.WhiteKnight : PixelChess.chessComponents.BlackKnight) {}
 
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
@@ -178,7 +178,7 @@ public class Knight : Figure
 public class Bishop : Figure
 {
     public Bishop(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? Game1.chessComponents.WhiteBishop : Game1.chessComponents.BlackBishop) {}
+        base(x, y, color, color == ColorT.White ? PixelChess.chessComponents.WhiteBishop : PixelChess.chessComponents.BlackBishop) {}
 
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     
@@ -287,7 +287,7 @@ public class Bishop : Figure
 public class Rook : Figure
 {
     public Rook(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? Game1.chessComponents.WhiteRook : Game1.chessComponents.BlackRook) {}
+        base(x, y, color, color == ColorT.White ? PixelChess.chessComponents.WhiteRook : PixelChess.chessComponents.BlackRook) {}
 
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
@@ -347,7 +347,7 @@ public class Rook : Figure
 public class Queen : Figure
 {
     public Queen(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? Game1.chessComponents.WhiteQueen : Game1.chessComponents.BlackQueen){}
+        base(x, y, color, color == ColorT.White ? PixelChess.chessComponents.WhiteQueen : PixelChess.chessComponents.BlackQueen){}
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] ret = new BoardPos[QueenMaxTiles];
@@ -373,7 +373,7 @@ public class Queen : Figure
 public class King : Figure
 {
     public King(int x, int y, ColorT color):
-        base(x, y, color, color == ColorT.White? Game1.chessComponents.WhiteKing : Game1.chessComponents.BlackKing) {}
+        base(x, y, color, color == ColorT.White? PixelChess.chessComponents.WhiteKing : PixelChess.chessComponents.BlackKing) {}
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] ret = new BoardPos[KingMaxTiles];

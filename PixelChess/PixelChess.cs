@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace PongGame;
 
-public class Game1 : Game
+public class PixelChess : Game
 {
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
@@ -40,7 +40,7 @@ public class Game1 : Game
     private Texture2D[] _componentsTextures = new Texture2D[Enum.GetNames(typeof(chessComponents)).Length];
     private Texture2D[] _tileHighlightersTextures = new Texture2D[Enum.GetNames(typeof(TileHighliters)).Length];
     
-    public Game1()
+    public PixelChess()
     {
         _graphics = new GraphicsDeviceManager(this);
         _board = new Board(Board.BasicBeginingLayout);
@@ -75,21 +75,58 @@ public class Game1 : Game
 
     protected override void Update(GameTime gameTime)
     {
+        bool isMouseHold = false;
         if (Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
 
-        var mstate = Mouse.GetState();
+        // var mstate = Mouse.GetState();
+        //
+        // if (mstate.LeftButton == ButtonState.Pressed)
+        // {
+        //     if (isMoseHold) return;
+        //
+        //     isMoseHold = true;
+        //     var tilePos = Board.Translate(mstate.X, mstate.Y);
+        //
+        //     if (tilePos.isOnBoard())
+        //     {
+        //         _board.SelectFigure(tilePos);
+        //     }else
+        //         _board.UnselectFigure();
+        //     
+        //     // Draw(gameTime);
+        // }
+        // else
+        // {
+        //     if (isMoseHold)
+        //     {
+        //         _board.DropFigure(Board.Translate(mstate.X, mstate.Y));
+        //         isMoseHold = false;
+        //     }
+        // }
 
-        if (mstate.LeftButton == ButtonState.Pressed)
+        var mState = Mouse.GetState();
+
+        if (mState.LeftButton == ButtonState.Pressed)
         {
-            var tilePos = Board.Translate(mstate.X, mstate.Y);
+            if (isMouseHold == false)
+            {
+                if (BoardPos.isOnBoard(mState.X, mState.Y))
+                {
+                    _board.SelectFigure(Board.Translate(mState.X, mState.Y));
+                }
+            }
 
-            if (BoardPos.isOnBoard(tilePos.X, tilePos.Y))
-                _board.SelectFigure(tilePos);
-            else
-                _board.UnselectFigure();
+            isMouseHold = true;
+        }
+        else
+        {
+            if (isMouseHold == true)
+            {
+                _board.DropFigure(Board.Translate(mState.X, mState.Y));
+            }
             
-            // Draw(gameTime);
+            isMouseHold = false;
         }
         
         base.Update(gameTime);
@@ -106,11 +143,19 @@ public class Game1 : Game
         {
             var movs = _board.GetSelFigMoves();
             
-            _spriteBatch.Draw(_tileHighlightersTextures[(int)TileHighliters.SelectedTile], Board.Translate(_board.GetSelectedFigurePos()), Color.White);
+            _spriteBatch.Draw(_tileHighlightersTextures[(int)TileHighliters.SelectedTile], Board.Translate(_board.SelFigPos), Color.White);
             
             for (int i = 0; i < movs.moveCont; ++i)
             {
                 _spriteBatch.Draw(_tileHighlightersTextures[(int)movs.moves[i].MoveT], Board.Translate(movs.moves[i]), Color.White);
+            }
+
+            if (_board.IsHold)
+            {
+                var mState = Mouse.GetState();
+                
+                _spriteBatch.Draw(_componentsTextures[(int)_board.SelFigTextIndex],
+                    _board.CenterFigurePosOnMouse(mState.X, mState.Y), Color.White);
             }
         }
 

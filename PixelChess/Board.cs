@@ -14,10 +14,7 @@ public struct BoardPos
         MoveT = mov;
     }
 
-    public static bool isOnBoard(int x, int y)
-    {
-        return x >= MinPos && y >= MinPos && x <= MaxPos && y <= MaxPos;
-    }
+    public static bool isOnBoard(int x, int y)  => x >= MinPos && y >= MinPos && x <= MaxPos && y <= MaxPos;
 
     public bool isOnBoard() => isOnBoard(X, Y);
 
@@ -40,7 +37,23 @@ public class Board
 {
     public void SelectFigure(BoardPos pos)
     {
+        if (_boardFigures[pos.X, pos.Y] == null)
+        {
+            _selectedFigure = null;
+            return;
+        }
+        
         _selectedFigure = _boardFigures[pos.X, pos.Y];
+        _isHold = true;
+        _selectedFigure.IsAlive = false;
+    }
+
+    public void DropFigure(BoardPos pos)
+    {
+        if (!_isHold) return;
+        _selectedFigure.IsAlive = true;
+        
+        _isHold = false;
     }
 
     public void UnselectFigure()
@@ -58,16 +71,18 @@ public class Board
         return _selectedFigure.GetMoves();
     }
 
-    public BoardPos GetSelectedFigurePos() => _selectedFigure.Pos;
+    public Vector2 CenterFigurePosOnMouse(int x, int y) => new(x + _mouseCentX, y + _mouseCentY);
+
+    public PixelChess.chessComponents SelFigTextIndex => _selectedFigure.TextureIndex;
+
+    public BoardPos SelFigPos => _selectedFigure.Pos;
     public Board(Figure[] figuresList)
     {
         _startFiguresLayout = new Figure[figuresList.Length];
         figuresList.CopyTo(_startFiguresLayout, 0);
         
         foreach (var fig in _startFiguresLayout)
-        {
             fig.Parent = this._boardFigures;
-        }
     }
 
     public void Initialize()
@@ -76,28 +91,24 @@ public class Board
         _startFiguresLayout.CopyTo(_figuresList, 0);
 
         foreach (var fig in _figuresList)
-        {
             _boardFigures[fig.Pos.X, fig.Pos.Y] = fig;
-        }
     }
 
     public static Vector2 Translate(BoardPos pos)
-    {
-        return new Vector2(XTilesCordBeg + pos.X * FigureWidth, YTilesCordBeg - pos.Y * FigureHeight);
-    }
+        => new Vector2(XTilesCordBeg + pos.X * FigureWidth, YTilesCordBeg - pos.Y * FigureHeight);
 
     public static BoardPos Translate(int x, int y)
-    {
-        return new BoardPos((int)((x - XTilesCordBeg) / FigureWidth), (int)((YTilesCordBeg + 68 - y) / FigureHeight));
-    }
+        => new BoardPos((int)((x - XTilesCordBeg) / FigureWidth), (int)((YTilesCordBeg + 68 - y) / FigureHeight));
     
-    public Game1.chessComponents TextureIndex = Game1.chessComponents.Board;
+    public PixelChess.chessComponents TextureIndex = PixelChess.chessComponents.Board;
     private const int BoardSize = 8;
     
     private Figure[,] _boardFigures = new Figure[BoardSize, BoardSize];
     private readonly Figure[] _startFiguresLayout;
     private Figure[] _figuresList;
     public Figure[] FigureList => _figuresList;
+    private bool _isHold = false;
+    public bool IsHold => _isHold;
     private Figure _selectedFigure;
 
     public const int XTilesBeg = 51;
@@ -108,6 +119,8 @@ public class Board
     public const int Height = 600;
     public const int FigureHeight = 68;
     public const int FigureWidth = 68;
+    private const int _mouseCentX = - FigureWidth / 2;
+    private const int _mouseCentY = - FigureHeight / 2;
     
     public static readonly Figure[] BasicBeginingLayout = new Figure[]
     {
