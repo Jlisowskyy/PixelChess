@@ -14,6 +14,10 @@ public struct BoardPos
         MoveT = mov;
     }
 
+    public static bool operator ==(BoardPos a, BoardPos b) => a.X == b.X && a.Y == b.Y;
+    public static bool operator !=(BoardPos a, BoardPos b) => a.X != b.X || a.Y != b.Y;
+
+
     public static bool isOnBoard(int x, int y)  => x >= MinPos && y >= MinPos && x <= MaxPos && y <= MaxPos;
 
     public bool isOnBoard() => isOnBoard(X, Y);
@@ -24,6 +28,8 @@ public struct BoardPos
         NormalMove,
         AttackMove,
         PromotionMove,
+        KingAttackMove,
+        CastlingMove
     }
 
     public readonly MoveType MoveT;
@@ -37,7 +43,7 @@ public class Board
 {
     public void SelectFigure(BoardPos pos)
     {
-        if (_boardFigures[pos.X, pos.Y] == null)
+        if (!pos.isOnBoard() || _boardFigures[pos.X, pos.Y] == null)
         {
             _selectedFigure = null;
             return;
@@ -48,17 +54,70 @@ public class Board
         _selectedFigure.IsAlive = false;
     }
 
-    public void DropFigure(BoardPos pos)
+    public BoardPos.MoveType DropFigure(BoardPos pos)
     {
-        if (!_isHold) return;
-        _selectedFigure.IsAlive = true;
+        if (!_isHold || !pos.isOnBoard()) return BoardPos.MoveType.NormalMove;
         
+        _selectedFigure.IsAlive = true;
         _isHold = false;
+
+        var moves = _selectedFigure.GetMoves();
+        
+        for (int i = 0; i < moves.movesCount; ++i)
+            if (pos == moves.moves[i])
+                return _processFigure(moves.moves[i]);
+
+        return BoardPos.MoveType.NormalMove;
     }
 
-    public void UnselectFigure()
+    private BoardPos.MoveType _processFigure(BoardPos move)
     {
+        switch (move.MoveT)
+        {
+            case BoardPos.MoveType.NormalMove:
+                break;
+            case BoardPos.MoveType.AttackMove:
+                _killFigure(move);
+                break;
+            case BoardPos.MoveType.PromotionMove:
+                _promotionPawn = _selectedFigure;
+                break;
+            case BoardPos.MoveType.KingAttackMove:
+                break;
+        }
+        
+        _moveFigure(move);
         _selectedFigure = null;
+        return move.MoveT;
+    }
+
+    private void _moveFigure(BoardPos move)
+    {
+        _boardFigures[_selectedFigure.Pos.X, _selectedFigure.Pos.Y] = null;
+        _boardFigures[move.X, move.Y] = _selectedFigure;
+        _selectedFigure.Pos = move;
+        _selectedFigure.IsMoved = true;
+    }
+
+    public void Promote(Figure promFig)
+    {
+        if (promFig == null)
+            return;
+        
+#if DEBUG
+        if (_promotionPawn == null)
+        {
+            Console.Error.WriteLine("[ERROR] Promotion pawn is null");
+            return;
+        }
+#endif
+        
+        
+    }
+
+    private void _killFigure(BoardPos move)
+    {
+        _boardFigures[move.X, move.Y].IsAlive = false;
     }
 
     public bool IsSelectedFigure()
@@ -73,11 +132,12 @@ public class Board
 
     public Vector2 CenterFigurePosOnMouse(int x, int y) => new(x + _mouseCentX, y + _mouseCentY);
 
-    public PixelChess.chessComponents SelFigTextIndex => _selectedFigure.TextureIndex;
+    public PixelChess.ChessComponents SelFigTextIndex => _selectedFigure.TextureIndex;
 
     public BoardPos SelFigPos => _selectedFigure.Pos;
     public Board(Figure[] figuresList)
     {
+        _boardFigures = new Figure[BoardSize, BoardSize];
         _startFiguresLayout = new Figure[figuresList.Length];
         figuresList.CopyTo(_startFiguresLayout, 0);
         
@@ -100,16 +160,19 @@ public class Board
     public static BoardPos Translate(int x, int y)
         => new BoardPos((int)((x - XTilesCordBeg) / FigureWidth), (int)((YTilesCordBeg + 68 - y) / FigureHeight));
     
-    public PixelChess.chessComponents TextureIndex = PixelChess.chessComponents.Board;
+    public PixelChess.ChessComponents TextureIndex = PixelChess.ChessComponents.Board;
     private const int BoardSize = 8;
     
-    private Figure[,] _boardFigures = new Figure[BoardSize, BoardSize];
+    private readonly Figure[,] _boardFigures;
+    private Figure _selectedFigure;
+    private Figure _promotionPawn;
     private readonly Figure[] _startFiguresLayout;
     private Figure[] _figuresList;
     public Figure[] FigureList => _figuresList;
+    
+    
     private bool _isHold = false;
     public bool IsHold => _isHold;
-    private Figure _selectedFigure;
 
     public const int XTilesBeg = 51;
     public const int YTilesBeg = 0;
@@ -158,8 +221,8 @@ public class Board
         new Rook(7, 7, Figure.ColorT.Black),
     };
 
-    public static readonly Figure[] TestLayout = new Figure[]
+    public static readonly Figure[] PawnPromLayout = new Figure[]
     {
-        new Knight(4, 4, Figure.ColorT.Black)
+        new Pawn(4, 4, Figure.ColorT.White)
     };
 }

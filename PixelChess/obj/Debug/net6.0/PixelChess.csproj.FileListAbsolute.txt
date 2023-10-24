@@ -41,3 +41,5 @@
 /home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/KingAttackTile.xnb
 /home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/MoveTile.xnb
 /home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/SelectedTile.xnb
+/home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/CastlingMove.xnb
+/home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/PromotionTile.xnb

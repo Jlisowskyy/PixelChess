@@ -15,8 +15,8 @@ namespace PongGame;
 public abstract class Figure
     // All figures expects to have array attached board attached, otherwise undefined
 {
-    public readonly PixelChess.chessComponents TextureIndex;
-    protected Figure(int x, int y, ColorT color, PixelChess.chessComponents textureIndex)
+    public readonly PixelChess.ChessComponents TextureIndex;
+    protected Figure(int x, int y, ColorT color, PixelChess.ChessComponents textureIndex)
     {
         Pos.X = x;
         Pos.Y = y;
@@ -58,6 +58,7 @@ public abstract class Figure
 
     protected Figure[,] _parent;
     public bool IsAlive = true;
+    public bool IsMoved = false;
     public BoardPos Pos;
 
     public ColorT Color
@@ -72,7 +73,7 @@ public class Pawn : Figure
     private int _moveBlack(int cord, int dist) => cord - dist;
 
     public Pawn(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? PixelChess.chessComponents.WhitePawn : PixelChess.chessComponents.BlackPawn)
+        base(x, y, color, color == ColorT.White ? PixelChess.ChessComponents.WhitePawn : PixelChess.ChessComponents.BlackPawn)
     {
         _moveFunc = color == ColorT.White ? _moveWhite : _moveBlack;
         _promTile = color == ColorT.White ? BoardPos.MaxPos : BoardPos.MinPos;
@@ -82,7 +83,7 @@ public class Pawn : Figure
         BoardPos[] moves = new BoardPos[MaxMoves];
         int arrPos = 0;
         
-        if (_isMoved)
+        if (IsMoved)
         {
             if (IsEmpty(Pos.X, _moveFunc(Pos.Y, 1)))
             {
@@ -124,7 +125,6 @@ public class Pawn : Figure
         return (moves, arrPos);
     }
     
-    private bool _isMoved = false;
     private int _promTile;
     private const int MaxMoves = 4;
     private delegate int MoveFuncDelegate(int cord, int dist);
@@ -135,7 +135,7 @@ public class Pawn : Figure
 public class Knight : Figure
 {
     public Knight(int x, int y, ColorT color):
-        base(x, y, color, color == ColorT.White ? PixelChess.chessComponents.WhiteKnight : PixelChess.chessComponents.BlackKnight) {}
+        base(x, y, color, color == ColorT.White ? PixelChess.ChessComponents.WhiteKnight : PixelChess.ChessComponents.BlackKnight) {}
 
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
@@ -178,7 +178,7 @@ public class Knight : Figure
 public class Bishop : Figure
 {
     public Bishop(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? PixelChess.chessComponents.WhiteBishop : PixelChess.chessComponents.BlackBishop) {}
+        base(x, y, color, color == ColorT.White ? PixelChess.ChessComponents.WhiteBishop : PixelChess.ChessComponents.BlackBishop) {}
 
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     
@@ -287,7 +287,7 @@ public class Bishop : Figure
 public class Rook : Figure
 {
     public Rook(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? PixelChess.chessComponents.WhiteRook : PixelChess.chessComponents.BlackRook) {}
+        base(x, y, color, color == ColorT.White ? PixelChess.ChessComponents.WhiteRook : PixelChess.ChessComponents.BlackRook) {}
 
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
@@ -347,7 +347,7 @@ public class Rook : Figure
 public class Queen : Figure
 {
     public Queen(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? PixelChess.chessComponents.WhiteQueen : PixelChess.chessComponents.BlackQueen){}
+        base(x, y, color, color == ColorT.White ? PixelChess.ChessComponents.WhiteQueen : PixelChess.ChessComponents.BlackQueen){}
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] ret = new BoardPos[QueenMaxTiles];
@@ -373,7 +373,7 @@ public class Queen : Figure
 public class King : Figure
 {
     public King(int x, int y, ColorT color):
-        base(x, y, color, color == ColorT.White? PixelChess.chessComponents.WhiteKing : PixelChess.chessComponents.BlackKing) {}
+        base(x, y, color, color == ColorT.White? PixelChess.ChessComponents.WhiteKing : PixelChess.ChessComponents.BlackKing) {}
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] ret = new BoardPos[KingMaxTiles];
@@ -396,9 +396,58 @@ public class King : Figure
                 }
             }
         }
+        
+        if (!IsMoved)
+            arrPos = GetRochadeMoves(ret, arrPos);
 
         return (ret, arrPos);
     }
     
-    private const int KingMaxTiles = 8;
+    
+    int GetRochadeMoves(BoardPos[] moves, int arrPos)
+    {
+        const int shortRoshadeX= 6;
+        const int longRoshadeX = 2;
+        PixelChess.ChessComponents rookType =
+            Color == ColorT.White ? PixelChess.ChessComponents.WhiteRook : PixelChess.ChessComponents.BlackRook; 
+        int i;
+        
+        // TODO: ADD PROTECTION FROM DOUBLE TOWER MOVE THEN ROSHADE XDDDD 
+
+        if (!IsEmpty(BoardPos.MinPos, Pos.Y) 
+            && _parent[BoardPos.MinPos, Pos.Y].TextureIndex == rookType 
+            && _parent[BoardPos.MinPos, Pos.Y].IsMoved == false)
+        {
+            for (i = Pos.X; i < BoardPos.MaxPos; ++i)
+            {
+                if (!IsEmpty(i, Pos.Y))
+                    break;
+
+                // TODO: check for attacks
+            }
+
+            if (i == BoardPos.MaxPos)
+                moves[arrPos++] = new BoardPos(shortRoshadeX, Pos.Y, BoardPos.MoveType.CastlingMove);
+        }
+
+        if (!IsEmpty(BoardPos.MaxPos, Pos.Y) 
+            && _parent[BoardPos.MaxPos, Pos.Y].TextureIndex == rookType 
+            && _parent[BoardPos.MaxPos, Pos.Y].IsMoved == false)
+        {
+            for (i = Pos.X; i > BoardPos.MinPos; --i)
+            {
+                if (!IsEmpty(i, Pos.Y))
+                    break;
+
+                // TODO: check for attacks
+            }
+
+            if (i == BoardPos.MinPos)
+                moves[arrPos++] = new BoardPos(longRoshadeX, Pos.Y, BoardPos.MoveType.CastlingMove);
+        }
+
+        return arrPos;
+    }
+    
+    private const int KingMaxTiles = 8 + 2;
 }
