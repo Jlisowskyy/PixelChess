@@ -265,12 +265,12 @@ public class Board
     public const int Height = 600;
     public const int FigureHeight = 68;
     public const int FigureWidth = 68;
+    public const int BoardSize = 8;
     
 // ------------------------------
 // private variables
 // ------------------------------
     
-    private const int BoardSize = 8;
     private readonly Figure[,] _boardFigures;
     private Figure _selectedFigure;
     private Figure _promotionPawn;
@@ -343,5 +343,12 @@ public class Board
     {
         new Pawn(6, 3, Figure.ColorT.White),
         new Pawn(5,6, Figure.ColorT.Black)
+    };
+
+    public static readonly Figure[] CastlingLayout = new Figure[]
+    {
+        new King(4, 0, Figure.ColorT.White),
+        new Rook(0, 0, Figure.ColorT.White),
+        new Rook(7, 0, Figure.ColorT.White)
     };
 }

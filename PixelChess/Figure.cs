@@ -85,7 +85,6 @@ public abstract class Figure
 
 public class Pawn : Figure
 {
-    
 // --------------------------------
 // type construction / setups
 // --------------------------------
@@ -199,8 +198,27 @@ public class Pawn : Figure
 
 public class Knight : Figure
 {
+// --------------------------------
+// type construction / setups
+// --------------------------------
     public Knight(int x, int y, ColorT color):
         base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhiteKnight : Board.ChessComponents.BlackKnight) {}
+
+    static Knight()
+        // precalculates moves for all fields
+    {
+        for (int i = 0; i < Board.BoardSize; ++i)
+        {
+            for (int j = 0; j < Board.BoardSize; ++j)
+            {
+                
+            }
+        }
+    }
+
+// --------------------------------
+// abstract method overwrite
+// --------------------------------
 
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
@@ -238,6 +256,7 @@ public class Knight : Figure
     private const int MaxPossibleTiles = 8;
     private static readonly int[] XPosTable = new[] { -2, -1, 1, 2 };
     private static readonly int[] YPosTable = new[] { 1, 2, 2, 1 };
+    private static BoardPos[,][] movesTable = new BoardPos[8,8][];
 }
 
 public class Bishop : Figure
