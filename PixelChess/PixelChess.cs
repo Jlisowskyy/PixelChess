@@ -10,22 +10,26 @@ public class PixelChess : Game
     public PixelChess()
     {
         _graphics = new GraphicsDeviceManager(this);
-        _board = new Board(Board.BasicBeginingLayout);
-        _promMenu = new PromotionMenu(_spriteBatch, Board.Width, Board.Height);
+        _board = new Board(Board.PawnPromLayout);
+        _promMenu = new PromotionMenu();
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
-        
-        _componentsTextures = new Texture2D[Enum.GetNames(typeof(ChessComponents)).Length];
-        _tileHighlightersTextures = new Texture2D[Enum.GetNames(typeof(TileHighlighters)).Length];
     }
 
     protected override void Initialize()
     {
         base.Initialize();
-        _board.Initialize();
+        
+        var display = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
+        _graphics.PreferredBackBufferHeight = Math.Max(Board.Height, display.Height / 2);
+        _graphics.PreferredBackBufferWidth = Math.Max(Board.Width, display.Width / 2);
 
-        _graphics.PreferredBackBufferHeight = Board.Height;
-        _graphics.PreferredBackBufferWidth = Board.Width;
+        int boardHorOffset = (_graphics.PreferredBackBufferWidth - Board.Width) / 2;
+        int boardVerOffset = (_graphics.PreferredBackBufferHeight - Board.Height) / 2;
+        _board.Initialize(boardHorOffset, boardVerOffset);
+        _promMenu.Initialize(boardHorOffset, _spriteBatch);
+        Board.SpriteBatch = _spriteBatch;
+        
         _graphics.ApplyChanges();
     }
 
@@ -33,14 +37,14 @@ public class PixelChess : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         
-        foreach (var val in Enum.GetValues<TileHighlighters>())
+        foreach (var val in Enum.GetValues<Board.TileHighlighters>())
         {
-            _tileHighlightersTextures[(int)val] = Content.Load<Texture2D>(Enum.GetName(val));
+            Board.TileHighlightersTextures[(int)val] = Content.Load<Texture2D>(Enum.GetName(val));
         }
 
-        foreach (var val in Enum.GetValues<ChessComponents>())
+        foreach (var val in Enum.GetValues<Board.ChessComponents>())
         {
-            _componentsTextures[(int)val] = Content.Load<Texture2D>(Enum.GetName(val));
+            Board.ComponentsTextures[(int)val] = Content.Load<Texture2D>(Enum.GetName(val));
         }
 
         _promMenu.Texture = Content.Load<Texture2D>(_promMenu.TextureName);
@@ -52,32 +56,39 @@ public class PixelChess : Game
             Exit();
         
         var mState = Mouse.GetState();
-
-        if (_promMenu.IsOn)
-        {
-            var fig = _promMenu.ProcessMouseClick(mState.X, mState.Y);
-            _board.Promote(fig);
-            
-            base.Update(gameTime);
-            return;
-        }
+        
         
         if (mState.LeftButton == ButtonState.Pressed)
         {
+            if (_promMenu.IsOn)
+            {
+                var fig = _promMenu.ProcessMouseClick(mState.X, mState.Y);
+                _board.Promote(fig);
+            
+                base.Update(gameTime);
+                return;
+            }
+            
             if (_isMouseHold == false)
             {
-                _board.SelectFigure(Board.Translate(mState.X, mState.Y));
-            }
+                bool wasHold = _board.IsHold;
+                var res = _board.DropFigure(_board.Translate(mState.X, mState.Y));
 
+                if (res.mType == BoardPos.MoveType.PromotionMove)
+                    _promMenu.RequestPromotion(_board.PromotionPawn);
+                
+                if (!wasHold && !res.WasHit)
+                    _board.SelectFigure(_board.Translate(mState.X, mState.Y));
+            }
             _isMouseHold = true;
         }
         else
         {
             if (_isMouseHold == true)
             {
-                var pos = Board.Translate(mState.X, mState.Y);
+                var pos = _board.Translate(mState.X, mState.Y);
                 
-                if (_board.DropFigure(pos) == BoardPos.MoveType.PromotionMove)
+                if (_board.DropFigure(pos).mType == BoardPos.MoveType.PromotionMove)
                     _promMenu.RequestPromotion(_board.PromotionPawn);
             }
 
@@ -92,60 +103,13 @@ public class PixelChess : Game
         GraphicsDevice.Clear(Color.White);
 
         _spriteBatch.Begin();
-
-        _drawBoard();
-        _drawHighlightedTiles();
-        _drawStaticFigures();
-        _drawHoveringFigure();
+        
+        _board.Draw();
         _promMenu.Draw();
         
         _spriteBatch.End();
         
         base.Draw(gameTime);
-    }
-
-    private void _drawBoard()
-    {
-        _spriteBatch.Draw(_componentsTextures[(int)_board.TextureIndex], new Vector2(0, 0), Color.White);
-    }
-
-    private void _drawHighlightedTiles()
-    {
-        if (_board.IsSelectedFigure())
-        {
-            var movs = _board.GetSelFigMoves();
-            
-            _spriteBatch.Draw(_tileHighlightersTextures[(int)TileHighlighters.SelectedTile], Board.Translate(_board.SelFigPos), Color.White);
-            
-            for (int i = 0; i < movs.moveCont; ++i)
-            {
-                _spriteBatch.Draw(_tileHighlightersTextures[(int)movs.moves[i].MoveT], Board.Translate(movs.moves[i]), Color.White);
-            }
-        }
-    }
-
-    private void _drawStaticFigures()
-    {
-        for (int i = 0; i < _board.FigureList.Length; ++i)
-        {
-            Figure actFig = _board.FigureList[i];
-            
-            if (actFig.IsAlive)
-            {
-                _spriteBatch.Draw(_componentsTextures[(int)actFig.TextureIndex], Board.Translate(actFig.Pos), Color.White);
-            }
-        }
-    }
-
-    private void _drawHoveringFigure()
-    {
-        if (_board.IsHold)
-        {
-            var mState = Mouse.GetState();
-                
-            _spriteBatch.Draw(_componentsTextures[(int)_board.SelFigTextIndex],
-                _board.CenterFigurePosOnMouse(mState.X, mState.Y), Color.White);
-        }
     }
     
     private readonly GraphicsDeviceManager _graphics;
@@ -154,34 +118,4 @@ public class PixelChess : Game
     private readonly PromotionMenu _promMenu;
     private readonly Board _board;
     private bool _isMouseHold = false;
-
-    public enum ChessComponents
-    {
-        Board,
-        WhitePawn,
-        WhiteKnight,
-        WhiteBishop,
-        WhiteRook,
-        WhiteQueen,
-        WhiteKing,
-        BlackPawn,
-        BlackKnight,
-        BlackBishop,
-        BlackRook,
-        BlackQueen,
-        BlackKing,
-    }
-
-    private enum TileHighlighters
-    {
-        MoveTile,
-        BasicAttackTile,
-        PromotionTile,
-        KingAttackTile,
-        CastlingMove,
-        SelectedTile,
-    }
-
-    private readonly Texture2D[] _componentsTextures;
-    private readonly Texture2D[] _tileHighlightersTextures;
 }

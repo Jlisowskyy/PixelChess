@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PipelineBuildEvent xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <SourceFile>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/PromotionTile.png</SourceFile>
-  <SourceTime>2023-10-25T13:01:10.3866671+02:00</SourceTime>
+  <SourceTime>2023-10-24T21:24:27.1299118+02:00</SourceTime>
   <DestFile>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/bin/DesktopGL/Content/PromotionTile.xnb</DestFile>
-  <DestTime>2023-10-25T13:09:23.860015+02:00</DestTime>
+  <DestTime>2023-10-25T17:45:00.6832904+02:00</DestTime>
   <Importer>TextureImporter</Importer>
   <ImporterTime>2022-07-26T13:44:56+02:00</ImporterTime>
   <Processor>TextureProcessor</Processor>

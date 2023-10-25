@@ -15,50 +15,66 @@ namespace PongGame;
 public abstract class Figure
     // All figures expects to have array attached board attached, otherwise undefined
 {
-    public readonly PixelChess.ChessComponents TextureIndex;
-    protected Figure(int x, int y, ColorT color, PixelChess.ChessComponents textureIndex)
+// --------------------------------
+// type construction / setups
+// --------------------------------
+
+    protected Figure(int x, int y, ColorT color, Board.ChessComponents textureIndex)
     {
         Pos.X = x;
         Pos.Y = y;
         Color = color;
         TextureIndex = textureIndex;
     }
-    public Figure[,] Parent
-    {
-        set => _parent = value;
-    }
-
-    protected bool isEmpty(BoardPos pos)
-    {
-        return _parent[pos.X, pos.Y] == null;
-    }
-
-    protected bool isEnemy(BoardPos pos)
-    {
-        return _parent[pos.X, pos.Y].Color != this.Color;
-    }
     
+    public abstract (BoardPos[] moves, int movesCount) GetMoves();
+    
+    
+// ------------------------------
+// helping protected fields
+// ------------------------------
+
     protected bool IsEmpty(int x, int y)
     {
-        return _parent[x, y] == null;
+        return Parent.BoardFigures[x, y] == null;
     }
 
     protected bool IsEnemy(int x, int y)
     {
-        return _parent[x, y].Color != this.Color;
+        return Parent.BoardFigures[x, y].Color != this.Color;
     }
+    
+    protected BoardPos.MoveType AddAttackTile(BoardPos.MoveType move, int x, int y)
+    {
+        move = move | BoardPos.MoveType.AttackMove;
+        Board.ChessComponents enemyKingId = Color == ColorT.White ? Board.ChessComponents.BlackKing : Board.ChessComponents.WhiteKing;
 
-    public abstract (BoardPos[] moves, int movesCount) GetMoves();
+        if (Parent.BoardFigures[x, y].TextureIndex == enemyKingId)
+        {
+            move = move | BoardPos.MoveType.AttackMove;
+        }
+        
+        return move;
+    }
+    
+// ------------------------------
+// public types
+// ------------------------------
 
     public enum ColorT
     {
         White,
         Black,
     }
+    
+// ------------------------------
+// variables and properties
+// ------------------------------
 
-    protected Figure[,] _parent;
+    public Board Parent;
     public bool IsAlive = true;
     public bool IsMoved = false;
+    public readonly Board.ChessComponents TextureIndex;
     public BoardPos Pos;
 
     public ColorT Color
@@ -69,15 +85,33 @@ public abstract class Figure
 
 public class Pawn : Figure
 {
-    private int _moveWhite(int cord, int dist) => cord + dist;
-    private int _moveBlack(int cord, int dist) => cord - dist;
-
+    
+// --------------------------------
+// type construction / setups
+// --------------------------------
     public Pawn(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? PixelChess.ChessComponents.WhitePawn : PixelChess.ChessComponents.BlackPawn)
+        base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhitePawn : Board.ChessComponents.BlackPawn)
     {
-        _moveFunc = color == ColorT.White ? _moveWhite : _moveBlack;
-        _promTile = color == ColorT.White ? BoardPos.MaxPos : BoardPos.MinPos;
+        if (color == ColorT.White)
+        {
+            _mvCord = 1;
+            _promTile = BoardPos.MaxPos;
+            _enemyPawnId = Board.ChessComponents.BlackPawn;
+        }
+        else
+        {
+            _mvCord = -1;
+            _promTile = BoardPos.MinPos;
+            _enemyPawnId = Board.ChessComponents.WhitePawn;
+        }
+
+        _elPassantX = _promTile - 3 * _mvCord;
     }
+    
+// --------------------------------
+// abstract method overwrite
+// --------------------------------
+
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] moves = new BoardPos[MaxMoves];
@@ -85,57 +119,88 @@ public class Pawn : Figure
         
         if (IsMoved)
         {
-            if (IsEmpty(Pos.X, _moveFunc(Pos.Y, 1)))
+            if (IsEmpty(Pos.X, Pos.Y + _mvCord))
             {
-                moves[arrPos++] = new BoardPos(Pos.X, _moveFunc(Pos.Y, 1), _moveFunc(Pos.Y, 1) == 
-                                                                           _promTile ? BoardPos.MoveType.PromotionMove : BoardPos.MoveType.NormalMove);
+                BoardPos.MoveType mt = _addPromTile(BoardPos.MoveType.NormalMove, Pos.Y + _mvCord);
+                moves[arrPos++] = new BoardPos(Pos.X, Pos.Y + _mvCord, mt);
+            }
+
+            if (Pos.Y == _elPassantX)
+            {
+                for (int i = 0; i < 2; ++i)
+                {
+                    int nx = Pos.X + XAttackCords[i];
+                    if (nx >= BoardPos.MinPos && !IsEmpty(nx, Pos.Y) && _isElPassPossible(nx, Pos.Y))
+                    {
+                        moves[arrPos++] = new BoardPos(nx, Pos.Y + _mvCord, BoardPos.MoveType.ElPass);
+                    }
+                }
             }
         }
         else
         {
             for (int dist = 1; dist < 3; ++dist)
             {
-                if (IsEmpty(Pos.X, _moveFunc(Pos.Y, dist)))
+                if (IsEmpty(Pos.X, Pos.Y + _mvCord))
                 {
-                    moves[arrPos++] = new BoardPos(Pos.X, _moveFunc(Pos.Y, dist)); 
+                    moves[arrPos++] = new BoardPos(Pos.X, Pos.Y + dist * _mvCord);
                 }
-                else
-                {
-                    break;
-                }
+                else break;
             }
         }
 
-        if (Pos.X - 1 >= BoardPos.MinPos && !IsEmpty(Pos.X - 1, _moveFunc(Pos.Y, 1)) && IsEnemy(Pos.X - 1, _moveFunc(Pos.Y, 1)))
+        int ny = Pos.Y + _mvCord;
+        for (int i = 0; i < 2; ++i)
         {
-            moves[arrPos++] = new BoardPos(Pos.X - 1, _moveFunc(Pos.Y, 1),
-                _moveFunc(Pos.Y, 1) == _promTile
-                    ? BoardPos.MoveType.AttackMove | BoardPos.MoveType.PromotionMove
-                    : BoardPos.MoveType.AttackMove);
-        }
-        
-        if (Pos.X + 1 <= BoardPos.MaxPos && !IsEmpty(Pos.X + 1, _moveFunc(Pos.Y, 1)) && IsEnemy(Pos.X + 1, _moveFunc(Pos.Y, 1)))
-        {
-            moves[arrPos++] = new BoardPos(Pos.X + 1, _moveFunc(Pos.Y, 1),
-                _moveFunc(Pos.Y, 1) == _promTile
-                    ? BoardPos.MoveType.AttackMove | BoardPos.MoveType.PromotionMove
-                    : BoardPos.MoveType.AttackMove);
+            int nx = Pos.X + XAttackCords[i];
+            if (nx >= BoardPos.MinPos && !IsEmpty(nx, ny) && IsEnemy(nx, ny))
+            {
+                moves[arrPos++] = new BoardPos(nx, ny, _getAttackMoveType(nx, ny));
+            }
         }
         
         return (moves, arrPos);
     }
     
-    private int _promTile;
-    private const int MaxMoves = 4;
-    private delegate int MoveFuncDelegate(int cord, int dist);
+// ------------------------------
+// helping methods
+// ------------------------------
 
-    private MoveFuncDelegate _moveFunc;
+    private BoardPos.MoveType _addPromTile(BoardPos.MoveType move, int y)
+        => y == _promTile ? move | BoardPos.MoveType.PromotionMove : move;
+
+    private BoardPos.MoveType _getAttackMoveType(int x, int y)
+    {
+        BoardPos.MoveType mt = AddAttackTile(BoardPos.MoveType.NormalMove, x, y);
+        mt = _addPromTile(mt, y);
+
+        return mt;
+    }
+
+    private bool _isElPassPossible(int nx, int ny)
+    {
+        if (Parent.BoardFigures[nx, ny].TextureIndex == _enemyPawnId && Parent.MovesList.Last.Value.FigT == _enemyPawnId
+            && Math.Abs(Parent.MovesList.Last.Value.OldY - Parent.MovesList.Last.Value.NewPos.Y) == 2) return true;
+        else return false;
+    }
+    
+// ------------------------------
+// variables and properties
+// ------------------------------
+
+    private readonly int _promTile;
+    private readonly int _mvCord;
+    private readonly int _elPassantX;
+    private readonly Board.ChessComponents _enemyPawnId;
+    private const int MaxMoves = 4;
+
+    private static readonly int[] XAttackCords = new int[2] { -1, 1 };
 }
 
 public class Knight : Figure
 {
     public Knight(int x, int y, ColorT color):
-        base(x, y, color, color == ColorT.White ? PixelChess.ChessComponents.WhiteKnight : PixelChess.ChessComponents.BlackKnight) {}
+        base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhiteKnight : Board.ChessComponents.BlackKnight) {}
 
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
@@ -178,7 +243,7 @@ public class Knight : Figure
 public class Bishop : Figure
 {
     public Bishop(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? PixelChess.ChessComponents.WhiteBishop : PixelChess.ChessComponents.BlackBishop) {}
+        base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhiteBishop : Board.ChessComponents.BlackBishop) {}
 
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     
@@ -287,7 +352,7 @@ public class Bishop : Figure
 public class Rook : Figure
 {
     public Rook(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? PixelChess.ChessComponents.WhiteRook : PixelChess.ChessComponents.BlackRook) {}
+        base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhiteRook : Board.ChessComponents.BlackRook) {}
 
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
@@ -347,7 +412,7 @@ public class Rook : Figure
 public class Queen : Figure
 {
     public Queen(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? PixelChess.ChessComponents.WhiteQueen : PixelChess.ChessComponents.BlackQueen){}
+        base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhiteQueen : Board.ChessComponents.BlackQueen){}
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] ret = new BoardPos[QueenMaxTiles];
@@ -355,8 +420,8 @@ public class Queen : Figure
         // TODO: speedup???
         Figure rook = new Rook(Pos.X, Pos.Y, Color);
         Figure bishop = new Bishop(Pos.X, Pos.Y, Color);
-        rook.Parent = _parent;
-        bishop.Parent = _parent;
+        rook.Parent = Parent;
+        bishop.Parent = Parent;
         
         var rookRet = rook.GetMoves();
         var bishopRet = bishop.GetMoves();
@@ -373,7 +438,7 @@ public class Queen : Figure
 public class King : Figure
 {
     public King(int x, int y, ColorT color):
-        base(x, y, color, color == ColorT.White? PixelChess.ChessComponents.WhiteKing : PixelChess.ChessComponents.BlackKing) {}
+        base(x, y, color, color == ColorT.White? Board.ChessComponents.WhiteKing : Board.ChessComponents.BlackKing) {}
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] ret = new BoardPos[KingMaxTiles];
@@ -408,15 +473,15 @@ public class King : Figure
     {
         const int shortRoshadeX= 6;
         const int longRoshadeX = 2;
-        PixelChess.ChessComponents rookType =
-            Color == ColorT.White ? PixelChess.ChessComponents.WhiteRook : PixelChess.ChessComponents.BlackRook; 
+        Board.ChessComponents rookType =
+            Color == ColorT.White ? Board.ChessComponents.WhiteRook : Board.ChessComponents.BlackRook; 
         int i;
         
         // TODO: ADD PROTECTION FROM DOUBLE TOWER MOVE THEN ROSHADE XDDDD 
 
         if (!IsEmpty(BoardPos.MinPos, Pos.Y) 
-            && _parent[BoardPos.MinPos, Pos.Y].TextureIndex == rookType 
-            && _parent[BoardPos.MinPos, Pos.Y].IsMoved == false)
+            && Parent.BoardFigures[BoardPos.MinPos, Pos.Y].TextureIndex == rookType 
+            && Parent.BoardFigures[BoardPos.MinPos, Pos.Y].IsMoved == false)
         {
             for (i = Pos.X; i < BoardPos.MaxPos; ++i)
             {
@@ -431,8 +496,8 @@ public class King : Figure
         }
 
         if (!IsEmpty(BoardPos.MaxPos, Pos.Y) 
-            && _parent[BoardPos.MaxPos, Pos.Y].TextureIndex == rookType 
-            && _parent[BoardPos.MaxPos, Pos.Y].IsMoved == false)
+            && Parent.BoardFigures[BoardPos.MaxPos, Pos.Y].TextureIndex == rookType 
+            && Parent.BoardFigures[BoardPos.MaxPos, Pos.Y].IsMoved == false)
         {
             for (i = Pos.X; i > BoardPos.MinPos; --i)
             {

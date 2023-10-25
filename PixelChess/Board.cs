@@ -1,46 +1,58 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 namespace PongGame;
 
-public struct BoardPos
-{
-    public BoardPos(int x, int y, MoveType mov = MoveType.NormalMove)
-    {
-        this.X = x;
-        this.Y = y;
-        MoveT = mov;
-    }
-
-    public static bool operator ==(BoardPos a, BoardPos b) => a.X == b.X && a.Y == b.Y;
-    public static bool operator !=(BoardPos a, BoardPos b) => a.X != b.X || a.Y != b.Y;
-
-
-    public static bool isOnBoard(int x, int y)  => x >= MinPos && y >= MinPos && x <= MaxPos && y <= MaxPos;
-
-    public bool isOnBoard() => isOnBoard(X, Y);
-
-    [Flags]
-    public enum MoveType
-    {
-        NormalMove,
-        AttackMove,
-        PromotionMove,
-        KingAttackMove,
-        CastlingMove
-    }
-
-    public readonly MoveType MoveT;
-    public const int MinPos = 0;
-    public const int MaxPos = 7;
-    public int X;
-    public int Y;
-}
-
 public class Board
 {
+    
+// --------------------------------
+// type construction / setups
+// --------------------------------
+    public Board(Figure[] figuresList)
+    {
+        _boardFigures = new Figure[BoardSize, BoardSize];
+        _startFiguresLayout = new Figure[figuresList.Length];
+        figuresList.CopyTo(_startFiguresLayout, 0);
+        
+        foreach (var fig in _startFiguresLayout)
+            fig.Parent = this;
+
+        _yTilesCordOnScreenBeg = YTilesBoardCordBeg;
+        _xTilesCordOnScreenBeg = XTilesBoardCordBeg;
+
+
+        _movesList = new LinkedList<Move>();
+        // Sentinel
+        _movesList.AddFirst(new Move(0, 0, new BoardPos(0,0), ChessComponents.Board));
+    }
+
+    static Board()
+    {
+        ComponentsTextures = new Texture2D[Enum.GetNames(typeof(Board.ChessComponents)).Length];
+        TileHighlightersTextures = new Texture2D[Enum.GetNames(typeof(Board.TileHighlighters)).Length];
+    }
+
+    public void Initialize(int xOffset, int yOffset)
+    {
+        _figuresList = new Figure[_startFiguresLayout.Length];
+        _startFiguresLayout.CopyTo(_figuresList, 0);
+
+        foreach (var fig in _figuresList)
+            _boardFigures[fig.Pos.X, fig.Pos.Y] = fig;
+
+        _xOffset = xOffset;
+        _yOffset = yOffset;
+        _xTilesCordOnScreenBeg = XTilesBoardCordBeg + xOffset;
+        _yTilesCordOnScreenBeg = YTilesBoardCordBeg + yOffset;
+    }
+    
+// ------------------------------
+// type interaction
+// ------------------------------
     public void SelectFigure(BoardPos pos)
     {
         if (!pos.isOnBoard() || _boardFigures[pos.X, pos.Y] == null)
@@ -54,9 +66,9 @@ public class Board
         _selectedFigure.IsAlive = false;
     }
 
-    public BoardPos.MoveType DropFigure(BoardPos pos)
+    public (bool WasHit, BoardPos.MoveType mType) DropFigure(BoardPos pos)
     {
-        if (!_isHold || !pos.isOnBoard()) return BoardPos.MoveType.NormalMove;
+        if (_selectedFigure == null || !pos.isOnBoard()) return (false, BoardPos.MoveType.NormalMove);
         
         _selectedFigure.IsAlive = true;
         _isHold = false;
@@ -65,40 +77,11 @@ public class Board
         
         for (int i = 0; i < moves.movesCount; ++i)
             if (pos == moves.moves[i])
-                return _processFigure(moves.moves[i]);
+                return (true, _processFigure(moves.moves[i]));
 
-        return BoardPos.MoveType.NormalMove;
+        return (false, BoardPos.MoveType.NormalMove);
     }
-
-    private BoardPos.MoveType _processFigure(BoardPos move)
-    {
-        switch (move.MoveT)
-        {
-            case BoardPos.MoveType.NormalMove:
-                break;
-            case BoardPos.MoveType.AttackMove:
-                _killFigure(move);
-                break;
-            case BoardPos.MoveType.PromotionMove:
-                _promotionPawn = _selectedFigure;
-                break;
-            case BoardPos.MoveType.KingAttackMove:
-                break;
-        }
-        
-        _moveFigure(move);
-        _selectedFigure = null;
-        return move.MoveT;
-    }
-
-    private void _moveFigure(BoardPos move)
-    {
-        _boardFigures[_selectedFigure.Pos.X, _selectedFigure.Pos.Y] = null;
-        _boardFigures[move.X, move.Y] = _selectedFigure;
-        _selectedFigure.Pos = move;
-        _selectedFigure.IsMoved = true;
-    }
-
+    
     public void Promote(Figure promFig)
     {
         if (promFig == null)
@@ -114,7 +97,7 @@ public class Board
 
         for(int i = 0; i < _figuresList.Length; ++i)
         {
-            if (Object.ReferenceEquals(_figuresList[i], _promotionPawn) == true)
+            if (Object.ReferenceEquals(_figuresList[i], _promotionPawn))
             {
                 _figuresList[i] = promFig;
                 _boardFigures[promFig.Pos.X, promFig.Pos.Y] = promFig;
@@ -122,79 +105,205 @@ public class Board
             }
         }
     }
-
-    private void _killFigure(BoardPos move)
-    {
-        _boardFigures[move.X, move.Y].IsAlive = false;
-    }
-
+    
     public bool IsSelectedFigure()
     {
         return _selectedFigure != null;
     }
-
-    public (BoardPos[] moves, int moveCont) GetSelFigMoves()
-    {
-        return _selectedFigure.GetMoves();
-    }
+    
 
     public Vector2 CenterFigurePosOnMouse(int x, int y) => new(x + _mouseCentX, y + _mouseCentY);
+    
+    public Vector2 Translate(BoardPos pos)
+        => new Vector2(_xTilesCordOnScreenBeg + pos.X * FigureWidth, _yTilesCordOnScreenBeg - pos.Y * FigureHeight);
 
-    public PixelChess.ChessComponents SelFigTextIndex => _selectedFigure.TextureIndex;
+    public BoardPos Translate(int x, int y)
+        => new BoardPos((int)((x - _xTilesCordOnScreenBeg) / FigureWidth), (int)((_yTilesCordOnScreenBeg + 68 - y) / FigureHeight));
+    
 
-    public BoardPos SelFigPos => _selectedFigure.Pos;
-    public Board(Figure[] figuresList)
+// ------------------------------
+// drawing method
+// ------------------------------
+    public void Draw()
     {
-        _boardFigures = new Figure[BoardSize, BoardSize];
-        _startFiguresLayout = new Figure[figuresList.Length];
-        figuresList.CopyTo(_startFiguresLayout, 0);
+        _drawBoard();
+        _drawHighlightedTiles();
+        _drawStaticFigures();
+        _drawHoveringFigure();
+    }
+    
+    private void _drawBoard()
+    {
+        _spriteBatch.Draw(ComponentsTextures[(int)ChessComponents.Board], new Vector2(_xOffset, _yOffset), Color.White);
+    }
+
+    private void _drawHighlightedTiles()
+    {
+        if (IsSelectedFigure())
+        {
+            var movs = _selectedFigure.GetMoves();
+            
+            _spriteBatch.Draw(TileHighlightersTextures[(int)Board.TileHighlighters.SelectedTile], Translate(_selectedFigure.Pos), Color.White);
+            
+            for (int i = 0; i < movs.movesCount; ++i)
+            {
+                _spriteBatch.Draw(TileHighlightersTextures[(int)movs.moves[i].MoveT], Translate(movs.moves[i]), Color.White);
+            }
+        }
+    }
+
+    private void _drawStaticFigures()
+    {
+        foreach (var actFig in _figuresList)
+        {
+            if (actFig.IsAlive)
+            {
+                _spriteBatch.Draw(ComponentsTextures[(int)actFig.TextureIndex], Translate(actFig.Pos), Color.White);
+            }
+        }
+    }
+
+    private void _drawHoveringFigure()
+    {
+        if (_isHold)
+        {
+            var mState = Mouse.GetState();
+                
+            _spriteBatch.Draw(ComponentsTextures[(int)_selectedFigure.TextureIndex],
+                CenterFigurePosOnMouse(mState.X, mState.Y), Color.White);
+        }
+    }
+    
+// ------------------------------
+// Private methods zone
+// ------------------------------
+
+    private BoardPos.MoveType _processFigure(BoardPos move)
+    {
+        switch (move.MoveT)
+        {
+            case BoardPos.MoveType.NormalMove:
+                break;
+            case BoardPos.MoveType.AttackMove:
+                _killFigure(move);
+                break;
+            case BoardPos.MoveType.PromotionMove:
+                _promotionPawn = _selectedFigure;
+                break;
+            case BoardPos.MoveType.KingAttackMove:
+                break;
+            case BoardPos.MoveType.ElPass:
+                _killFigure(MovesList.Last.Value.NewPos);
+                break;
+        }
         
-        foreach (var fig in _startFiguresLayout)
-            fig.Parent = this._boardFigures;
+        _moveFigure(move);
+        _selectedFigure = null;
+        return move.MoveT;
     }
 
-    public void Initialize()
+    private void _moveFigure(BoardPos move)
     {
-        _figuresList = new Figure[_startFiguresLayout.Length];
-        _startFiguresLayout.CopyTo(_figuresList, 0);
-
-        foreach (var fig in _figuresList)
-            _boardFigures[fig.Pos.X, fig.Pos.Y] = fig;
+        _movesList.AddLast(new Move(_selectedFigure.Pos.X, _selectedFigure.Pos.Y, move, _selectedFigure.TextureIndex));
+        
+        _boardFigures[_selectedFigure.Pos.X, _selectedFigure.Pos.Y] = null;
+        _boardFigures[move.X, move.Y] = _selectedFigure;
+        _selectedFigure.Pos = move;
+        _selectedFigure.IsMoved = true;
     }
 
-    public static Vector2 Translate(BoardPos pos)
-        => new Vector2(XTilesCordBeg + pos.X * FigureWidth, YTilesCordBeg - pos.Y * FigureHeight);
+    private void _killFigure(BoardPos move)
+    {
+        _boardFigures[move.X, move.Y].IsAlive = false;
+        _boardFigures[move.X, move.Y] = null;
+    }
 
-    public static BoardPos Translate(int x, int y)
-        => new BoardPos((int)((x - XTilesCordBeg) / FigureWidth), (int)((YTilesCordBeg + 68 - y) / FigureHeight));
+// ------------------------------
+// public types
+// ------------------------------
+
+    public enum ChessComponents
+    {
+        Board,
+        WhitePawn,
+        WhiteKnight,
+        WhiteBishop,
+        WhiteRook,
+        WhiteQueen,
+        WhiteKing,
+        BlackPawn,
+        BlackKnight,
+        BlackBishop,
+        BlackRook,
+        BlackQueen,
+        BlackKing,
+    }
+
+    public enum TileHighlighters
+    {
+        MoveTile,
+        BasicAttackTile,
+        PromotionTile,
+        KingAttackTile,
+        CastlingMove,
+        SelectedTile,
+    }
     
-    public PixelChess.ChessComponents TextureIndex = PixelChess.ChessComponents.Board;
-    private const int BoardSize = 8;
-    
-    private readonly Figure[,] _boardFigures;
-    private Figure _selectedFigure;
-    private Figure _promotionPawn;
+// ------------------------------
+// public properties
+// ------------------------------
     public Figure PromotionPawn => _promotionPawn;
-    private readonly Figure[] _startFiguresLayout;
-    private Figure[] _figuresList;
-    public Figure[] FigureList => _figuresList;
-    
-    
-    private bool _isHold = false;
+    public LinkedList<Move> MovesList => _movesList;
+    public Figure[,] BoardFigures => _boardFigures;
     public bool IsHold => _isHold;
-
+    
     public const int XTilesBeg = 51;
     public const int YTilesBeg = 0;
-    public const int XTilesCordBeg = 51;
-    public const int YTilesCordBeg = 477;
+    public const int XTilesBoardCordBeg = 51;
+    public const int YTilesBoardCordBeg = 477;
     public const int Width = 600;
     public const int Height = 600;
     public const int FigureHeight = 68;
     public const int FigureWidth = 68;
+    
+// ------------------------------
+// private variables
+// ------------------------------
+    
+    private const int BoardSize = 8;
+    private readonly Figure[,] _boardFigures;
+    private Figure _selectedFigure;
+    private Figure _promotionPawn;
+
+    private readonly Figure[] _startFiguresLayout;
+    private Figure[] _figuresList;
+
+    private readonly LinkedList<Move> _movesList;
+    
+    private bool _isHold = false;
+    private int _yTilesCordOnScreenBeg;
+    private int _xTilesCordOnScreenBeg;
+    private int _xOffset;
+    private int _yOffset;
+
     private const int _mouseCentX = - FigureWidth / 2;
     private const int _mouseCentY = - FigureHeight / 2;
     
-    public static readonly Figure[] BasicBeginingLayout = new Figure[]
+    public static readonly Texture2D[] ComponentsTextures; 
+    public static readonly Texture2D[] TileHighlightersTextures;
+    
+// ------------------------------
+// static fields
+// ------------------------------
+
+    private static SpriteBatch _spriteBatch;
+
+    public static SpriteBatch SpriteBatch
+    {
+        set => _spriteBatch = value;
+    }
+
+    public static readonly Figure[] BasicBeginningLayout = new Figure[]
     {
         new Pawn(0,1, Figure.ColorT.White),
         new Pawn(1,1, Figure.ColorT.White),
@@ -232,6 +341,7 @@ public class Board
 
     public static readonly Figure[] PawnPromLayout = new Figure[]
     {
-        new Pawn(4, 4, Figure.ColorT.White)
+        new Pawn(6, 3, Figure.ColorT.White),
+        new Pawn(5,6, Figure.ColorT.Black)
     };
 }
