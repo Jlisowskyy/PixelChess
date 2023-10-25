@@ -53,7 +53,9 @@ public class PixelChess : Game
 
         if (_promMenu.IsOn)
         {
-            _promMenu.ProcessMouseClick(mState.X, mState.Y);
+            var fig = _promMenu.ProcessMouseClick(mState.X, mState.Y);
+            _board.Promote(fig);
+            
             base.Update(gameTime);
             return;
         }
@@ -74,7 +76,7 @@ public class PixelChess : Game
                 var pos = Board.Translate(mState.X, mState.Y);
                 
                 if (_board.DropFigure(pos) == BoardPos.MoveType.PromotionMove)
-                    _promMenu.RequestPromotion();
+                    _promMenu.RequestPromotion(_board.PromotionPawn);
             }
 
             _isMouseHold = false;

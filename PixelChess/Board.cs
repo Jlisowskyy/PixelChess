@@ -111,8 +111,16 @@ public class Board
             return;
         }
 #endif
-        
-        
+
+        for(int i = 0; i < _figuresList.Length; ++i)
+        {
+            if (Object.ReferenceEquals(_figuresList[i], _promotionPawn) == true)
+            {
+                _figuresList[i] = promFig;
+                _boardFigures[promFig.Pos.X, promFig.Pos.Y] = promFig;
+                _promotionPawn = null;
+            }
+        }
     }
 
     private void _killFigure(BoardPos move)
@@ -166,6 +174,7 @@ public class Board
     private readonly Figure[,] _boardFigures;
     private Figure _selectedFigure;
     private Figure _promotionPawn;
+    public Figure PromotionPawn => _promotionPawn;
     private readonly Figure[] _startFiguresLayout;
     private Figure[] _figuresList;
     public Figure[] FigureList => _figuresList;

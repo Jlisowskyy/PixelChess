@@ -12,20 +12,24 @@ public class PromotionMenu
         _height = height;
     }
 
-    public void RequestPromotion()
+    public void RequestPromotion(Figure promPawn)
     {
-        
+        _isOn = true;
+        _promotionPawn = promPawn;
     }
 
-    public void ProcessMouseClick(int x, int y)
+    public Figure ProcessMouseClick(int x, int y)
     {
-        
+
+
+        return null;
     }
     
     
     private readonly SpriteBatch _spriteBatch;
     private readonly int _width;
     private readonly int _height;
+    private Figure _promotionPawn;
     
     private bool _isOn = false;
     public bool IsOn => _isOn;

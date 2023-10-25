@@ -15,6 +15,7 @@
     <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/CastlingMove.png</File>
     <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/KingAttackTile.png</File>
     <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/MoveTile.png</File>
+    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/PromotionMenu.png</File>
     <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/PromotionTile.png</File>
     <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/SelectedTile.png</File>
     <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/WhiteBishop.png</File>
@@ -33,6 +34,7 @@
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File>Board.png</File>
+    <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
