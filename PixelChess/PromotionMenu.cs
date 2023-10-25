@@ -1,3 +1,5 @@
+using System;
+
 namespace PongGame;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -24,12 +26,24 @@ public class PromotionMenu
 
         return null;
     }
+
+    public void Draw()
+    {
+        
+    }
     
     
     private readonly SpriteBatch _spriteBatch;
     private readonly int _width;
     private readonly int _height;
     private Figure _promotionPawn;
+    private Texture2D _texture;
+    public readonly String TextureName = "PromotionMenu";
+
+    public Texture2D Texture
+    {
+        set => _texture = value;
+    }
     
     private bool _isOn = false;
     public bool IsOn => _isOn;

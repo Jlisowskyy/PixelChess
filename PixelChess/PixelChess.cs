@@ -42,6 +42,8 @@ public class PixelChess : Game
         {
             _componentsTextures[(int)val] = Content.Load<Texture2D>(Enum.GetName(val));
         }
+
+        _promMenu.Texture = Content.Load<Texture2D>(_promMenu.TextureName);
     }
 
     protected override void Update(GameTime gameTime)
@@ -95,6 +97,7 @@ public class PixelChess : Game
         _drawHighlightedTiles();
         _drawStaticFigures();
         _drawHoveringFigure();
+        _promMenu.Draw();
         
         _spriteBatch.End();
         
@@ -143,11 +146,6 @@ public class PixelChess : Game
             _spriteBatch.Draw(_componentsTextures[(int)_board.SelFigTextIndex],
                 _board.CenterFigurePosOnMouse(mState.X, mState.Y), Color.White);
         }
-    }
-
-    private void _drawPromotionMenu()
-    {
-        
     }
     
     private readonly GraphicsDeviceManager _graphics;
