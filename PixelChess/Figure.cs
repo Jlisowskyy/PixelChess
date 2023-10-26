@@ -44,11 +44,11 @@ public abstract class Figure
         return Parent.BoardFigures[x, y].Color != this.Color;
     }
     
-    protected BoardPos.MoveType AddAttackTile(BoardPos.MoveType move, int x, int y)
+    protected BoardPos.MoveType CheckForKingAttack(int x, int y)
     {
-        move = move | BoardPos.MoveType.AttackMove;
         Board.ChessComponents enemyKingId = Color == ColorT.White ? Board.ChessComponents.BlackKing : Board.ChessComponents.WhiteKing;
-
+        BoardPos.MoveType move = BoardPos.MoveType.AttackMove;
+        
         if (Parent.BoardFigures[x, y].TextureIndex == enemyKingId)
         {
             move = move | BoardPos.MoveType.AttackMove;
@@ -170,7 +170,7 @@ public class Pawn : Figure
 
     private BoardPos.MoveType _getAttackMoveType(int x, int y)
     {
-        BoardPos.MoveType mt = AddAttackTile(BoardPos.MoveType.NormalMove, x, y);
+        BoardPos.MoveType mt = CheckForKingAttack(x, y);
         mt = _addPromTile(mt, y);
 
         return mt;
@@ -207,11 +207,29 @@ public class Knight : Figure
     static Knight()
         // precalculates moves for all fields
     {
-        for (int i = 0; i < Board.BoardSize; ++i)
+        for (int i = 0; i < Board.BoardSize; ++i) // X - pos
         {
-            for (int j = 0; j < Board.BoardSize; ++j)
+            for (int j = 0; j < Board.BoardSize; ++j) // Y - pos
             {
+                BoardPos[] ret = new BoardPos[MaxPossibleTiles];
+                int arrPos = 0;
                 
+                for (int k = 0; k < 4; ++k)
+                {
+                    int tempX = i + XPosTable[k];
+                    int tempY = j + YPosTable[k];
+
+                    if (BoardPos.isOnBoard(tempX, tempY))
+                        ret[arrPos++] = new BoardPos(tempX, tempY);
+
+                    tempX = i + XPosTable[k];
+                    tempY = j - YPosTable[k];
+            
+                    if (BoardPos.isOnBoard(tempX, tempY))
+                        ret[arrPos++] = new BoardPos(tempX, tempY);
+                }
+
+                movesTable[i, j] = ret[..arrPos];
             }
         }
     }
@@ -225,31 +243,19 @@ public class Knight : Figure
         BoardPos[] ret = new BoardPos[MaxPossibleTiles];
         int arrPos = 0;
 
-        for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < movesTable[Pos.X, Pos.Y].Length; ++i)
         {
-            int tempX = Pos.X + XPosTable[i];
-            int tempY = Pos.Y + YPosTable[i];
-
-            if (BoardPos.isOnBoard(tempX, tempY))
+            if (!IsEmpty(movesTable[Pos.X, Pos.Y][i].X, movesTable[Pos.X, Pos.Y][i].Y))
             {
-                if (IsEmpty(tempX, tempY))
-                    ret[arrPos++] = new BoardPos(tempX, tempY);
-                else if (IsEnemy(tempX, tempY))
-                    ret[arrPos++] = new BoardPos(tempX, tempY, BoardPos.MoveType.AttackMove);
+                if (IsEnemy(movesTable[Pos.X, Pos.Y][i].X, movesTable[Pos.X, Pos.Y][i].Y))
+                {
+                    var dt = movesTable[Pos.X, Pos.Y][i]; 
+                    ret[arrPos++] = new BoardPos(dt.X, dt.Y, CheckForKingAttack(dt.X, dt.Y));
+                }
             }
-
-            tempX = Pos.X + XPosTable[i];
-            tempY = Pos.Y - YPosTable[i];
-            
-            if (BoardPos.isOnBoard(tempX, tempY))
-            {
-                if (IsEmpty(tempX, tempY))
-                    ret[arrPos++] = new BoardPos(tempX, tempY);
-                else if (IsEnemy(tempX, tempY))
-                    ret[arrPos++] = new BoardPos(tempX, tempY, BoardPos.MoveType.AttackMove);
-            }
+            else ret[arrPos++] = movesTable[Pos.X, Pos.Y][i];
         }
-
+        
         return (ret, arrPos);
     }
     

@@ -1,14 +1,14 @@
 {
   "version": 2,
-  "dgSpecHash": "+kNfPm5vQfxIxvvLU6FjaC6Kwg9pv2ThlROFQj9bXXJQdJCTTQHEZDYxPlN2r+swKmwB+WMiSVxlavQqeoUUuA==",
+  "dgSpecHash": "IyLD03K4ok5Gf9Z6bMGjegr5zzM8mcB7tBSf0bWYoGXftjGHis/F3xOQfVU9OIevXsUwRb9y8hZk5lUsUhBKiw==",
   "success": true,
   "projectFilePath": "/home/Jlisowskyy/Repos/Games-Collection/PixelChess/PixelChess.csproj",
   "expectedPackageFiles": [
     "/home/Jlisowskyy/.nuget/packages/monogame.content.builder.task/3.8.1.303/monogame.content.builder.task.3.8.1.303.nupkg.sha512",
     "/home/Jlisowskyy/.nuget/packages/monogame.framework.desktopgl/3.8.1.303/monogame.framework.desktopgl.3.8.1.303.nupkg.sha512",
-    "/home/Jlisowskyy/.nuget/packages/microsoft.netcore.app.ref/6.0.23/microsoft.netcore.app.ref.6.0.23.nupkg.sha512",
-    "/home/Jlisowskyy/.nuget/packages/microsoft.aspnetcore.app.ref/6.0.23/microsoft.aspnetcore.app.ref.6.0.23.nupkg.sha512",
-    "/home/Jlisowskyy/.nuget/packages/microsoft.netcore.app.host.linux-x64/6.0.23/microsoft.netcore.app.host.linux-x64.6.0.23.nupkg.sha512"
+    "/home/Jlisowskyy/.nuget/packages/microsoft.netcore.app.ref/6.0.24/microsoft.netcore.app.ref.6.0.24.nupkg.sha512",
+    "/home/Jlisowskyy/.nuget/packages/microsoft.aspnetcore.app.ref/6.0.24/microsoft.aspnetcore.app.ref.6.0.24.nupkg.sha512",
+    "/home/Jlisowskyy/.nuget/packages/microsoft.netcore.app.host.linux-x64/6.0.24/microsoft.netcore.app.host.linux-x64.6.0.24.nupkg.sha512"
   ],
   "logs": []
 }
