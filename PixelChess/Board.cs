@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -8,54 +9,89 @@ namespace PongGame;
 
 public class Board
 {
-    
 // --------------------------------
 // type construction / setups
 // --------------------------------
     public Board(Figure[] figuresList)
     {
-        _boardFigures = new Figure[BoardSize, BoardSize];
         _startFiguresLayout = new Figure[figuresList.Length];
         figuresList.CopyTo(_startFiguresLayout, 0);
-        
-        foreach (var fig in _startFiguresLayout)
-            fig.Parent = this;
 
         _yTilesCordOnScreenBeg = YTilesBoardCordBeg;
         _xTilesCordOnScreenBeg = XTilesBoardCordBeg;
-
-
-        _movesList = new LinkedList<Move>();
-        // Sentinel
-        _movesList.AddFirst(new Move(0, 0, new BoardPos(0,0), ChessComponents.Board));
     }
 
     static Board()
     {
         ComponentsTextures = new Texture2D[Enum.GetNames(typeof(Board.ChessComponents)).Length];
-        TileHighlightersTextures = new Texture2D[Enum.GetNames(typeof(Board.TileHighlighters)).Length];
+        TileHighlightersTextures = new Texture2D[(int)Enum.GetValues(typeof(TileHighlighters)).Cast<TileHighlighters>().Max()];
     }
 
     public void Initialize(int xOffset, int yOffset)
     {
+        _xOffset = xOffset;
+        _yOffset = yOffset;
+        _xTilesCordOnScreenBeg = XTilesBoardCordBeg + xOffset;
+        _yTilesCordOnScreenBeg = YTilesBoardCordBeg + yOffset;
+
+        ResetBoard();
+    }
+
+    public void ResetBoard()
+    {
+        _boardFigures = new Figure[BoardSize, BoardSize];
+        foreach (var fig in _startFiguresLayout)
+            fig.Parent = this;
+
         _figuresList = new Figure[_startFiguresLayout.Length];
         _startFiguresLayout.CopyTo(_figuresList, 0);
 
         foreach (var fig in _figuresList)
             _boardFigures[fig.Pos.X, fig.Pos.Y] = fig;
 
-        _xOffset = xOffset;
-        _yOffset = yOffset;
-        _xTilesCordOnScreenBeg = XTilesBoardCordBeg + xOffset;
-        _yTilesCordOnScreenBeg = YTilesBoardCordBeg + yOffset;
+        _movesList = new LinkedList<Move>();
+        // Sentinel
+        _movesList.AddFirst(new Move(0, 0, new BoardPos(0, 0), ChessComponents.Board));
+
+        _moveCounter = 0;
+        _movingColor = Figure.ColorT.White;
     }
-    
+
+    public void ProcTimers(double spentTime)
+    {
+        if (_moveCounter == 0) return;
+
+        if (_movingColor == Figure.ColorT.White)
+        {
+            _whiteTime -= spentTime;
+            
+            // TODO:
+            if (_whiteTime < 0){}
+        }
+        else
+        {
+            _blackTime -= spentTime;
+            
+            // TODO:
+            if (_blackTime < 0){}
+        }
+        
+    }
+
+
 // ------------------------------
 // type interaction
 // ------------------------------
+
+    public void StartGame(double whiteTime, double blackTime)
+    {
+        _whiteTime = whiteTime;
+        _blackTime = blackTime;
+    }
+
     public void SelectFigure(BoardPos pos)
     {
-        if (!pos.isOnBoard() || _boardFigures[pos.X, pos.Y] == null)
+        if (!pos.isOnBoard() || _boardFigures[pos.X, pos.Y] == null || _boardFigures[pos.X, pos.Y].Color != _movingColor)
         {
             _selectedFigure = null;
             return;
@@ -190,6 +226,10 @@ public class Board
             case BoardPos.MoveType.PromotionMove:
                 _promotionPawn = _selectedFigure;
                 break;
+            case BoardPos.MoveType.PromAndAttack:
+                _promotionPawn = _selectedFigure;
+                _killFigure(move);
+                break;
             case BoardPos.MoveType.KingAttackMove:
                 break;
             case BoardPos.MoveType.ElPass:
@@ -199,6 +239,7 @@ public class Board
         
         _moveFigure(move);
         _selectedFigure = null;
+        _changePlayingColor();
         return move.MoveT;
     }
 
@@ -216,6 +257,11 @@ public class Board
     {
         _boardFigures[move.X, move.Y].IsAlive = false;
         _boardFigures[move.X, move.Y] = null;
+    }
+
+    private void _changePlayingColor()
+    {
+        _movingColor = _movingColor == Figure.ColorT.White ? Figure.ColorT.Black : Figure.ColorT.White;
     }
 
 // ------------------------------
@@ -241,12 +287,12 @@ public class Board
 
     public enum TileHighlighters
     {
-        MoveTile,
-        BasicAttackTile,
-        PromotionTile,
-        KingAttackTile,
-        CastlingMove,
-        SelectedTile,
+        MoveTile = 0,
+        BasicAttackTile = 1,
+        PromotionTile = 2,
+        CastlingMove = 4,
+        ElPass = 8,
+        SelectedTile = 9,
     }
     
 // ------------------------------
@@ -271,33 +317,43 @@ public class Board
 // private variables
 // ------------------------------
     
-    private readonly Figure[,] _boardFigures;
+    private Figure[,] _boardFigures;
     private Figure _selectedFigure;
     private Figure _promotionPawn;
 
-    private readonly Figure[] _startFiguresLayout;
+    private Figure.ColorT _movingColor;
+
+    private Figure[] _startFiguresLayout;
     private Figure[] _figuresList;
 
-    private readonly LinkedList<Move> _movesList;
+    private LinkedList<Move> _movesList;
     
     private bool _isHold = false;
     private int _yTilesCordOnScreenBeg;
     private int _xTilesCordOnScreenBeg;
     private int _xOffset;
     private int _yOffset;
+    
+    private double _whiteTime;
+    private double _blackTime;
+
+    private int _moveCounter;
 
     private const int _mouseCentX = - FigureWidth / 2;
     private const int _mouseCentY = - FigureHeight / 2;
-    
-    public static readonly Texture2D[] ComponentsTextures; 
-    public static readonly Texture2D[] TileHighlightersTextures;
     
 // ------------------------------
 // static fields
 // ------------------------------
 
     private static SpriteBatch _spriteBatch;
+    
+    public static readonly Texture2D[] ComponentsTextures; 
+    public static readonly Texture2D[] TileHighlightersTextures;
 
+    public static double BasicWhiteTime = 600;
+    public static double BasicBlackTIme = 600;
+    
     public static SpriteBatch SpriteBatch
     {
         set => _spriteBatch = value;

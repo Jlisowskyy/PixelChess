@@ -44,19 +44,6 @@ public abstract class Figure
         return Parent.BoardFigures[x, y].Color != this.Color;
     }
     
-    protected BoardPos.MoveType AddAttackTile(BoardPos.MoveType move, int x, int y)
-    {
-        move = move | BoardPos.MoveType.AttackMove;
-        Board.ChessComponents enemyKingId = Color == ColorT.White ? Board.ChessComponents.BlackKing : Board.ChessComponents.WhiteKing;
-
-        if (Parent.BoardFigures[x, y].TextureIndex == enemyKingId)
-        {
-            move = move | BoardPos.MoveType.AttackMove;
-        }
-        
-        return move;
-    }
-    
 // ------------------------------
 // public types
 // ------------------------------
@@ -154,7 +141,7 @@ public class Pawn : Figure
             int nx = Pos.X + XAttackCords[i];
             if (nx >= BoardPos.MinPos && !IsEmpty(nx, ny) && IsEnemy(nx, ny))
             {
-                moves[arrPos++] = new BoardPos(nx, ny, _getAttackMoveType(nx, ny));
+                moves[arrPos++] = new BoardPos(nx, ny, _addPromTile(BoardPos.MoveType.AttackMove, ny));
             }
         }
         
@@ -167,14 +154,6 @@ public class Pawn : Figure
 
     private BoardPos.MoveType _addPromTile(BoardPos.MoveType move, int y)
         => y == _promTile ? move | BoardPos.MoveType.PromotionMove : move;
-
-    private BoardPos.MoveType _getAttackMoveType(int x, int y)
-    {
-        BoardPos.MoveType mt = AddAttackTile(BoardPos.MoveType.NormalMove, x, y);
-        mt = _addPromTile(mt, y);
-
-        return mt;
-    }
 
     private bool _isElPassPossible(int nx, int ny)
     {

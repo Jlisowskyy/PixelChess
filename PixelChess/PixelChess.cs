@@ -10,7 +10,7 @@ public class PixelChess : Game
     public PixelChess()
     {
         _graphics = new GraphicsDeviceManager(this);
-        _board = new Board(Board.PawnPromLayout);
+        _board = new Board(Board.BasicBeginningLayout);
         _promMenu = new PromotionMenu();
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
@@ -29,6 +29,7 @@ public class PixelChess : Game
         _board.Initialize(boardHorOffset, boardVerOffset);
         _promMenu.Initialize(boardHorOffset, _spriteBatch);
         Board.SpriteBatch = _spriteBatch;
+        _board.StartGame(Board.BasicWhiteTime, Board.BasicBlackTIme);
         
         _graphics.ApplyChanges();
     }
