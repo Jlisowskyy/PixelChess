@@ -24,7 +24,7 @@ public class Board
     static Board()
     {
         ComponentsTextures = new Texture2D[Enum.GetNames(typeof(Board.ChessComponents)).Length];
-        TileHighlightersTextures = new Texture2D[(int)Enum.GetValues(typeof(TileHighlighters)).Cast<TileHighlighters>().Max()];
+        TileHighlightersTextures = new Texture2D[(int)Enum.GetValues(typeof(TileHighlighters)).Cast<TileHighlighters>().Max() + 1];
     }
 
     public void Initialize(int xOffset, int yOffset)
@@ -230,7 +230,8 @@ public class Board
                 _promotionPawn = _selectedFigure;
                 _killFigure(move);
                 break;
-            case BoardPos.MoveType.KingAttackMove:
+            case BoardPos.MoveType.CastlingMove:
+                _castleKing(move);
                 break;
             case BoardPos.MoveType.ElPass:
                 _killFigure(MovesList.Last.Value.NewPos);
@@ -259,9 +260,28 @@ public class Board
         _boardFigures[move.X, move.Y] = null;
     }
 
+
     private void _changePlayingColor()
     {
         _movingColor = _movingColor == Figure.ColorT.White ? Figure.ColorT.Black : Figure.ColorT.White;
+    }
+
+    private void _castleKing(BoardPos move)
+    {
+        if (_selectedFigure.Pos.X - move.X < 0)
+            // short castling
+        {
+            _boardFigures[BoardPos.MaxPos, move.Y].Pos = new BoardPos(King.ShortCastlingRookX, move.Y);
+            _boardFigures[King.ShortCastlingRookX, move.Y] = _boardFigures[BoardPos.MaxPos, move.Y];
+            _boardFigures[BoardPos.MaxPos, move.Y] = null;
+        }
+        else
+            // long castling
+        {
+            _boardFigures[BoardPos.MinPos, move.Y].Pos = new BoardPos(King.LongCastlingRookX, move.Y);
+            _boardFigures[King.LongCastlingRookX, move.Y] = _boardFigures[BoardPos.MinPos, move.Y];
+            _boardFigures[BoardPos.MinPos, move.Y] = null;
+        }
     }
 
 // ------------------------------
@@ -406,5 +426,11 @@ public class Board
         new King(4, 0, Figure.ColorT.White),
         new Rook(0, 0, Figure.ColorT.White),
         new Rook(7, 0, Figure.ColorT.White)
+    };
+
+    public static readonly Figure[] DiagTest = new Figure[]
+    {
+        new Bishop(4, 4, Figure.ColorT.White),
+        new Queen(3, 3, Figure.ColorT.White),
     };
 }
