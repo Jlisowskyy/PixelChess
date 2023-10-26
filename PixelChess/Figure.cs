@@ -311,8 +311,8 @@ public class Bishop : Figure
             int ny = Pos.Y;
             for (int j = 0; j < MoveLimMap[Pos.X, Pos.Y][i]; ++j)
             {
-                nx += MoveCordsArray[i].X;
-                ny += MoveCordsArray[i].Y;
+                nx += _xMoves[i];
+                ny += _yMoves[i];
 
                 if (!IsEmpty(nx, ny))
                 {
@@ -339,20 +339,23 @@ public class Bishop : Figure
     private static readonly int[,][] MoveLimMap;
 
     // in order [ sw nw ne se ]
-    private static readonly BoardPos[] MoveCordsArray =
-    {
-          new BoardPos(-1, -1),
-          new BoardPos(-1, 1),
-          new BoardPos(1,  1),
-          new BoardPos(1 , -1)
-    };
+    private static readonly int[] _xMoves = { -1, -1, 1, 1 };
+    private static readonly int[] _yMoves = { -1, 1, 1, -1 };
 }
 
 public class Rook : Figure
 {
+// --------------------------------
+// type construction / setups
+// --------------------------------
     public Rook(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhiteRook : Board.ChessComponents.BlackRook) {}
+        base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhiteRook : Board.ChessComponents.BlackRook)
+    {
+    }
 
+// --------------------------------
+// abstract method overwrite
+// --------------------------------
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] ret = new BoardPos[RookCorrectTiles];
@@ -368,7 +371,7 @@ public class Rook : Figure
                 break;
             }
         }
-        
+
         for (int i = Pos.X + 1; i <= BoardPos.MaxPos; ++i)
         {
             if (IsEmpty(i, Pos.Y))
@@ -379,7 +382,7 @@ public class Rook : Figure
                 break;
             }
         }
-        
+
         for (int i = Pos.Y - 1; i >= BoardPos.MinPos; --i)
         {
             if (IsEmpty(Pos.X, i))
@@ -390,7 +393,7 @@ public class Rook : Figure
                 break;
             }
         }
-        
+
         for (int i = Pos.Y + 1; i <= BoardPos.MaxPos; ++i)
         {
             if (IsEmpty(Pos.X, i))
@@ -401,10 +404,14 @@ public class Rook : Figure
                 break;
             }
         }
- 
+
         return (ret, arrPos);
     }
-    
+
+// ------------------------------
+// variables and properties
+// ------------------------------
+
     internal const int RookCorrectTiles = 14;
 }
 
@@ -436,8 +443,15 @@ public class Queen : Figure
 
 public class King : Figure
 {
+// --------------------------------
+// type construction / setups
+// --------------------------------
     public King(int x, int y, ColorT color):
         base(x, y, color, color == ColorT.White? Board.ChessComponents.WhiteKing : Board.ChessComponents.BlackKing) {}
+
+// --------------------------------
+// abstract method overwrite
+// --------------------------------
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] ret = new BoardPos[KingMaxTiles];
@@ -462,27 +476,26 @@ public class King : Figure
         }
         
         if (!IsMoved)
-            arrPos = GetRochadeMoves(ret, arrPos);
+            arrPos = GetCastlingMoves(ret, arrPos);
 
         return (ret, arrPos);
     }
     
+// ------------------------------
+// private help method
+// ------------------------------
     
-    int GetRochadeMoves(BoardPos[] moves, int arrPos)
+    private int GetCastlingMoves(BoardPos[] moves, int arrPos)
     {
-        const int shortRoshadeX= 6;
-        const int longRoshadeX = 2;
         Board.ChessComponents rookType =
             Color == ColorT.White ? Board.ChessComponents.WhiteRook : Board.ChessComponents.BlackRook; 
         int i;
-        
-        // TODO: ADD PROTECTION FROM DOUBLE TOWER MOVE THEN ROSHADE XDDDD 
 
         if (!IsEmpty(BoardPos.MinPos, Pos.Y) 
             && Parent.BoardFigures[BoardPos.MinPos, Pos.Y].TextureIndex == rookType 
             && Parent.BoardFigures[BoardPos.MinPos, Pos.Y].IsMoved == false)
         {
-            for (i = Pos.X; i < BoardPos.MaxPos; ++i)
+            for (i = Pos.X + 1; i < BoardPos.MaxPos; ++i)
             {
                 if (!IsEmpty(i, Pos.Y))
                     break;
@@ -491,14 +504,14 @@ public class King : Figure
             }
 
             if (i == BoardPos.MaxPos)
-                moves[arrPos++] = new BoardPos(shortRoshadeX, Pos.Y, BoardPos.MoveType.CastlingMove);
+                moves[arrPos++] = new BoardPos(ShortCastlingX, Pos.Y, BoardPos.MoveType.CastlingMove);
         }
 
         if (!IsEmpty(BoardPos.MaxPos, Pos.Y) 
             && Parent.BoardFigures[BoardPos.MaxPos, Pos.Y].TextureIndex == rookType 
             && Parent.BoardFigures[BoardPos.MaxPos, Pos.Y].IsMoved == false)
         {
-            for (i = Pos.X; i > BoardPos.MinPos; --i)
+            for (i = Pos.X - 1; i > BoardPos.MinPos; --i)
             {
                 if (!IsEmpty(i, Pos.Y))
                     break;
@@ -507,11 +520,19 @@ public class King : Figure
             }
 
             if (i == BoardPos.MinPos)
-                moves[arrPos++] = new BoardPos(longRoshadeX, Pos.Y, BoardPos.MoveType.CastlingMove);
+                moves[arrPos++] = new BoardPos(LongCastlingX, Pos.Y, BoardPos.MoveType.CastlingMove);
         }
 
         return arrPos;
     }
     
+// ------------------------------
+// variables and properties
+// ------------------------------
+
+    private const int ShortCastlingX= 6;
+    private const int LongCastlingX = 2;
+    public const int ShortCastlingRookX = 5;
+    public const int LongCastlingRookX= 3;
     private const int KingMaxTiles = 8 + 2;
 }

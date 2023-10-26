@@ -192,6 +192,9 @@ public class Board
                 break;
             case BoardPos.MoveType.KingAttackMove:
                 break;
+            case BoardPos.MoveType.CastlingMove:
+                _castleKing(move);
+                break;
             case BoardPos.MoveType.ElPass:
                 _killFigure(MovesList.Last.Value.NewPos);
                 break;
@@ -216,6 +219,24 @@ public class Board
     {
         _boardFigures[move.X, move.Y].IsAlive = false;
         _boardFigures[move.X, move.Y] = null;
+    }
+
+    private void _castleKing(BoardPos move)
+    {
+        if (_selectedFigure.Pos.X - move.X < 0)
+            // short castling
+        {
+            _boardFigures[BoardPos.MaxPos, move.Y].Pos = new BoardPos(King.ShortCastlingRookX, move.Y);
+            _boardFigures[King.ShortCastlingRookX, move.Y] = _boardFigures[BoardPos.MaxPos, move.Y];
+            _boardFigures[BoardPos.MaxPos, move.Y] = null;
+        }
+        else
+            // long castling
+        {
+            _boardFigures[BoardPos.MinPos, move.Y].Pos = new BoardPos(King.LongCastlingRookX, move.Y);
+            _boardFigures[King.LongCastlingRookX, move.Y] = _boardFigures[BoardPos.MinPos, move.Y];
+            _boardFigures[BoardPos.MinPos, move.Y] = null;
+        }
     }
 
 // ------------------------------
