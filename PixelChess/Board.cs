@@ -77,8 +77,7 @@ public class Board
         }
         
     }
-
-
+    
 // ------------------------------
 // type interaction
 // ------------------------------
@@ -241,6 +240,7 @@ public class Board
         _moveFigure(move);
         _selectedFigure = null;
         _changePlayingColor();
+        ++_moveCounter;
         return move.MoveT;
     }
 
@@ -322,6 +322,9 @@ public class Board
     public LinkedList<Move> MovesList => _movesList;
     public Figure[,] BoardFigures => _boardFigures;
     public bool IsHold => _isHold;
+
+    public double WhiteTime => _whiteTime;
+    public double BlackTime => _blackTime;
     
     public const int XTilesBeg = 51;
     public const int YTilesBeg = 0;
@@ -371,8 +374,10 @@ public class Board
     public static readonly Texture2D[] ComponentsTextures; 
     public static readonly Texture2D[] TileHighlightersTextures;
 
-    public static double BasicWhiteTime = 600;
-    public static double BasicBlackTIme = 600;
+    public const double Second = 1000;
+    public const double Minute = 60 * Second;
+    public const double BasicWhiteTime = 10 * Minute;
+    public const double BasicBlackTIme = 10 * Minute;
     
     public static SpriteBatch SpriteBatch
     {

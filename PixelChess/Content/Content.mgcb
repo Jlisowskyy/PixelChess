@@ -193,6 +193,13 @@
 /processorParam:TextureFormat=Color
 /build:SelectedTile.png
 
+#begin UbuntuMono.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:UbuntuMono.spritefont;GameFont.spritefont
+
 #begin WhiteBishop.png
 /importer:TextureImporter
 /processor:TextureProcessor

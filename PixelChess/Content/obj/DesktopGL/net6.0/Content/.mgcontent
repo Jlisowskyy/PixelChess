@@ -19,6 +19,7 @@
     <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/PromotionMenu.png</File>
     <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/PromotionTile.png</File>
     <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/SelectedTile.png</File>
+    <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/UbuntuMono.spritefont</File>
     <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/WhiteBishop.png</File>
     <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/WhiteKing.png</File>
     <File>/home/Jlisowskyy/Repos/Games-Collection/PixelChess/Content/WhiteKnight.png</File>
@@ -42,6 +43,7 @@
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
+    <File>GameFont.spritefont</File>
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />

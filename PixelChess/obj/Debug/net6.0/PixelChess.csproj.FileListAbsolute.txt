@@ -45,3 +45,4 @@
 /home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/PromotionTile.xnb
 /home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/PromotionMenu.xnb
 /home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/ElPass.xnb
+/home/Jlisowskyy/Repos/Games-Collection/PixelChess/bin/Debug/net6.0/Content/GameFont.xnb

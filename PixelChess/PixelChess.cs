@@ -12,6 +12,7 @@ public class PixelChess : Game
         _graphics = new GraphicsDeviceManager(this);
         _board = new Board(Board.BasicBeginningLayout);
         _promMenu = new PromotionMenu();
+        _ui = new UI();
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
     }
@@ -19,10 +20,13 @@ public class PixelChess : Game
     protected override void Initialize()
     {
         base.Initialize();
+
+        const int minHeight = Board.Height;
+        const int minWidth = Board.Width + UI.TimerBoardOffset * 4 + UI.TimerXSize * 2;
         
         var display = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
-        _graphics.PreferredBackBufferHeight = Math.Max(Board.Height, display.Height / 2);
-        _graphics.PreferredBackBufferWidth = Math.Max(Board.Width, display.Width / 2);
+        _graphics.PreferredBackBufferHeight = Math.Max(minHeight, display.Height / 2);
+        _graphics.PreferredBackBufferWidth = Math.Max(minWidth, display.Width / 2);
 
         int boardHorOffset = (_graphics.PreferredBackBufferWidth - Board.Width) / 2;
         int boardVerOffset = (_graphics.PreferredBackBufferHeight - Board.Height) / 2;
@@ -30,6 +34,7 @@ public class PixelChess : Game
         _promMenu.Initialize(boardHorOffset, _spriteBatch);
         Board.SpriteBatch = _spriteBatch;
         _board.StartGame(Board.BasicWhiteTime, Board.BasicBlackTIme);
+        _ui.Initialize(boardHorOffset, _spriteBatch);
         
         _graphics.ApplyChanges();
     }
@@ -43,12 +48,16 @@ public class PixelChess : Game
             Board.TileHighlightersTextures[(int)val] = Content.Load<Texture2D>(Enum.GetName(val));
         }
 
+        Board.TileHighlightersTextures[(int)BoardPos.MoveType.PromAndAttack] =
+            Board.TileHighlightersTextures[(int)BoardPos.MoveType.AttackMove];
+
         foreach (var val in Enum.GetValues<Board.ChessComponents>())
         {
             Board.ComponentsTextures[(int)val] = Content.Load<Texture2D>(Enum.GetName(val));
         }
 
         _promMenu.Texture = Content.Load<Texture2D>(_promMenu.TextureName);
+        _ui.GameFont = Content.Load<SpriteFont>(_ui.FontName);
     }
 
     protected override void Update(GameTime gameTime)
@@ -57,7 +66,6 @@ public class PixelChess : Game
             Exit();
         
         var mState = Mouse.GetState();
-        
         
         if (mState.LeftButton == ButtonState.Pressed)
         {
@@ -75,7 +83,7 @@ public class PixelChess : Game
                 bool wasHold = _board.IsHold;
                 var res = _board.DropFigure(_board.Translate(mState.X, mState.Y));
 
-                if (res.mType == BoardPos.MoveType.PromotionMove)
+                if (res.mType == BoardPos.MoveType.PromotionMove || res.mType == BoardPos.MoveType.PromAndAttack)
                     _promMenu.RequestPromotion(_board.PromotionPawn);
                 
                 if (!wasHold && !res.WasHit)
@@ -87,15 +95,15 @@ public class PixelChess : Game
         {
             if (_isMouseHold == true)
             {
-                var pos = _board.Translate(mState.X, mState.Y);
-                
-                if (_board.DropFigure(pos).mType == BoardPos.MoveType.PromotionMove)
+                var ret = _board.DropFigure(_board.Translate(mState.X, mState.Y)).mType;
+                if (ret == BoardPos.MoveType.PromotionMove || ret == BoardPos.MoveType.PromAndAttack)
                     _promMenu.RequestPromotion(_board.PromotionPawn);
             }
 
             _isMouseHold = false;
         }
         
+        _board.ProcTimers(gameTime.ElapsedGameTime.TotalMilliseconds);
         base.Update(gameTime);
     }
 
@@ -107,6 +115,7 @@ public class PixelChess : Game
         
         _board.Draw();
         _promMenu.Draw();
+        _ui.Draw(_board.WhiteTime, _board.BlackTime);
         
         _spriteBatch.End();
         
@@ -118,5 +127,6 @@ public class PixelChess : Game
 
     private readonly PromotionMenu _promMenu;
     private readonly Board _board;
+    private readonly UI _ui;
     private bool _isMouseHold = false;
 }

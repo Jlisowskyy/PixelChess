@@ -6,10 +6,8 @@ using Microsoft.Xna.Framework.Input;
 namespace PongGame;
     
     /*  GENERAL TODO:
-     * - MAKE THIS SHIT TEMPLATED
-     * - consider faster solutions
      * - make fen translator
-     * 
+     * - add top level class to interact better with monogame
      */
 
 public abstract class Figure
@@ -139,7 +137,11 @@ public class Pawn : Figure
         for (int i = 0; i < 2; ++i)
         {
             int nx = Pos.X + XAttackCords[i];
-            if (nx >= BoardPos.MinPos && !IsEmpty(nx, ny) && IsEnemy(nx, ny))
+            
+            // TODO: checks speed changes after this removal
+            if (nx > BoardPos.MaxPos || nx < BoardPos.MinPos) continue;
+            
+            if (!IsEmpty(nx, ny) && IsEnemy(nx, ny))
             {
                 moves[arrPos++] = new BoardPos(nx, ny, _addPromTile(BoardPos.MoveType.AttackMove, ny));
             }
