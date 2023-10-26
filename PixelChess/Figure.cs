@@ -515,8 +515,6 @@ public class King : Figure
             {
                 if (!IsEmpty(i, Pos.Y))
                     break;
-
-                // TODO: check for attacks
             }
 
             if (i == BoardPos.MinPos)

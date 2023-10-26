@@ -21,12 +21,12 @@ public struct BoardPos
     [Flags]
     public enum MoveType
     {
-        NormalMove,
-        AttackMove,
-        PromotionMove,
-        KingAttackMove,
-        CastlingMove,
-        ElPass
+        NormalMove = 0,
+        AttackMove = 1,
+        PromotionMove = 2,
+        KingAttackMove = 4,
+        CastlingMove = 8,
+        ElPass = 16,
     }
 
     public readonly MoveType MoveT;
