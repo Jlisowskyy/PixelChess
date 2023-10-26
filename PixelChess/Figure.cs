@@ -259,6 +259,10 @@ public class Knight : Figure
         return (ret, arrPos);
     }
     
+// ------------------------------
+// variables and properties
+// ------------------------------
+    
     private const int MaxPossibleTiles = 8;
     private static readonly int[] XPosTable = new[] { -2, -1, 1, 2 };
     private static readonly int[] YPosTable = new[] { 1, 2, 2, 1 };
@@ -267,111 +271,81 @@ public class Knight : Figure
 
 public class Bishop : Figure
 {
+// --------------------------------
+// type construction / setups
+// --------------------------------
     public Bishop(int x, int y, ColorT color) :
         base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhiteBishop : Board.ChessComponents.BlackBishop) {}
 
+    static Bishop()
+    {
+        MoveLimMap = new int[8, 8][];
+        for (int x = 0; x < 8; ++x)
+        {
+            for (int y = 0; y < 8; ++y)
+            {
+                // in order [ sw nw ne se ]
+                MoveLimMap[x, y] = new int[4];
+
+                MoveLimMap[x, y][0] = Math.Min(x, y);
+                MoveLimMap[x, y][1] = Math.Min(x, Math.Abs(BoardPos.MaxPos - y));
+                MoveLimMap[x, y][2] = Math.Min(Math.Abs(BoardPos.MaxPos - x), Math.Abs(BoardPos.MaxPos - y));
+                MoveLimMap[x, y][3] = Math.Min(Math.Abs(BoardPos.MaxPos - x), y);
+            }
+        }
+    }
+    
+// --------------------------------
+// abstract method overwrite
+// --------------------------------
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     
     {
         BoardPos[] ret = new BoardPos[MaxPossibleTiles];
         int arrPos = 0;
-        
-        int xTemp = Pos.X + 1;
-        int yTemp = Pos.Y + 1;
 
-        while (xTemp <= BoardPos.MaxPos && yTemp <= BoardPos.MaxPos)
+        // in order [ sw nw ne se ]\
+        for (int i = 0; i < 4; ++i)
         {
-            if (IsEmpty(xTemp, yTemp))
+            int nx = Pos.X;
+            int ny = Pos.Y;
+            for (int j = 0; j < MoveLimMap[Pos.X, Pos.Y][i]; ++j)
             {
-                ret[arrPos++] = new BoardPos(xTemp, yTemp);
-            }
-            else
-            {
-                if (IsEnemy(xTemp, yTemp))
+                nx += MoveCordsArray[i].X;
+                ny += MoveCordsArray[i].Y;
+
+                if (!IsEmpty(nx, ny))
                 {
-                    ret[arrPos++] = new BoardPos(xTemp, yTemp, BoardPos.MoveType.AttackMove);
+                    if (IsEnemy(nx, ny))
+                        ret[arrPos++] = new BoardPos(nx, ny, CheckForKingAttack(nx, ny));
+                    break;
                 }
-
-                break;
+                else ret[arrPos++] = new BoardPos(nx, ny);
             }
-
-            ++xTemp;
-            ++yTemp;
-        }
-        
-        xTemp = Pos.X + 1;
-        yTemp = Pos.Y - 1;
-
-        while (xTemp <= BoardPos.MaxPos && yTemp >= BoardPos.MinPos)
-        {
-            if (IsEmpty(xTemp, yTemp))
-            {
-                ret[arrPos++] = new BoardPos(xTemp, yTemp);
-            }
-            else
-            {
-                if (IsEnemy(xTemp, yTemp))
-                {
-                    ret[arrPos++] = new BoardPos(xTemp, yTemp, BoardPos.MoveType.AttackMove);
-                }
-
-                break;
-            }
-
-            ++xTemp;
-            --yTemp;
-        }
-
-        xTemp = Pos.X - 1;
-        yTemp = Pos.Y + 1;
-
-        while (xTemp >= BoardPos.MinPos && yTemp <= BoardPos.MaxPos)
-        {
-            if (IsEmpty(xTemp, yTemp))
-            {
-                ret[arrPos++] = new BoardPos(xTemp, yTemp);
-            }
-            else
-            {
-                if (IsEnemy(xTemp, yTemp))
-                {
-                    ret[arrPos++] = new BoardPos(xTemp, yTemp, BoardPos.MoveType.AttackMove);
-                }
-
-                break;
-            }
-
-            --xTemp;
-            ++yTemp;
-        }
-
-        xTemp = Pos.X - 1;
-        yTemp = Pos.Y - 1;
-
-        while (xTemp >= BoardPos.MaxPos && yTemp >= BoardPos.MaxPos)
-        {
-            if (IsEmpty(xTemp, yTemp))
-            {
-                ret[arrPos++] = new BoardPos(xTemp, yTemp);
-            }
-            else
-            {
-                if (IsEnemy(xTemp, yTemp))
-                {
-                    ret[arrPos++] = new BoardPos(xTemp, yTemp, BoardPos.MoveType.AttackMove);
-                }
-
-                break;
-            }
-
-            --xTemp;
-            --yTemp;
         }
         
         return (ret, arrPos);
     }
     
+    
+// ------------------------------
+// variables and properties
+// ------------------------------
+
     internal const int MaxPossibleTiles = 13;
+    
+    // Contains limits for each diagonal moves on all specific fields
+    // in order [ sw nw ne se ]
+    private static readonly int[,][] MoveLimMap;
+
+    // in order [ sw nw ne se ]
+    private static readonly BoardPos[] MoveCordsArray =
+    {
+          new BoardPos(-1, -1),
+          new BoardPos(-1, 1),
+          new BoardPos(1,  1),
+          new BoardPos(1 , -1)
+    };
 }
 
 public class Rook : Figure

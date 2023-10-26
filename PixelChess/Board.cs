@@ -351,4 +351,10 @@ public class Board
         new Rook(0, 0, Figure.ColorT.White),
         new Rook(7, 0, Figure.ColorT.White)
     };
+
+    public static readonly Figure[] DiagTest = new Figure[]
+    {
+        new Bishop(4, 4, Figure.ColorT.White),
+        new Queen(3, 3, Figure.ColorT.White),
+    };
 }
