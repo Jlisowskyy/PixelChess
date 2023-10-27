@@ -37,7 +37,6 @@ public struct BoardPos
     public int Y;
 }
 
-
 public struct Move
 {
     public Move(int ox, int oy, BoardPos newPos, Board.ChessComponents figT)

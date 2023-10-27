@@ -12,11 +12,12 @@ public class Board
 // --------------------------------
 // type construction / setups
 // --------------------------------
-    public Board(Figure[] figuresList)
+    public Board(Layout layout)
     {
-        _startFiguresLayout = new Figure[figuresList.Length];
-        figuresList.CopyTo(_startFiguresLayout, 0);
+        _startFiguresLayout = new Figure[layout.startLayout.Length];
+        layout.startLayout.CopyTo(_startFiguresLayout, 0);
 
+        _blackFirstIndex = layout.FirstBlackFig;
         _yTilesCordOnScreenBeg = YTilesBoardCordBeg;
         _xTilesCordOnScreenBeg = XTilesBoardCordBeg;
     }
@@ -47,7 +48,15 @@ public class Board
         _startFiguresLayout.CopyTo(_figuresList, 0);
 
         foreach (var fig in _figuresList)
+        {
             _boardFigures[fig.Pos.X, fig.Pos.Y] = fig;
+
+            if (fig.TextureIndex == ChessComponents.BlackKing) _blackKing = fig;
+            else if (fig.TextureIndex == ChessComponents.WhiteKing) _whiteKing = fig;
+        }
+
+        if (_blackKing == null || _whiteKing == null)
+            throw new ApplicationException("Starting layout has to contain white and black king!");
 
         _movesList = new LinkedList<Move>();
         // Sentinel
@@ -55,6 +64,8 @@ public class Board
 
         _moveCounter = 0;
         _movingColor = Figure.ColorT.White;
+        
+        _blockTiles();
     }
 
     public void ProcTimers(double spentTime)
@@ -145,7 +156,6 @@ public class Board
     {
         return _selectedFigure != null;
     }
-    
 
     public Vector2 CenterFigurePosOnMouse(int x, int y) => new(x + _mouseCentX, y + _mouseCentY);
     
@@ -213,6 +223,25 @@ public class Board
 // Private methods zone
 // ------------------------------
 
+    private void _blockTiles()
+    {
+        (int beg, int end) = _movingColor == Figure.ColorT.White
+            ? (_blackFirstIndex, _figuresList.Length)
+            : (0, _blackFirstIndex);
+        
+        _blockedTiles = new TileState[BoardSize, BoardSize];
+
+        for (int i = beg; i < end; ++i)
+        {
+            var moves = _figuresList[i].GetMoves();
+
+            for (int j = 0; j < moves.movesCount; ++j)
+            {
+                _blockedTiles[moves.moves[j].X, moves.moves[j].Y] = Board.TileState.Blocked;
+            }
+        }
+    }
+
     private BoardPos.MoveType _processFigure(BoardPos move)
     {
         switch (move.MoveT)
@@ -240,6 +269,7 @@ public class Board
         _moveFigure(move);
         _selectedFigure = null;
         _changePlayingColor();
+        _blockTiles();
         ++_moveCounter;
         return move.MoveT;
     }
@@ -314,6 +344,18 @@ public class Board
         ElPass = 8,
         SelectedTile = 9,
     }
+
+    public struct Layout
+    {
+        public int FirstBlackFig;
+        public Figure[] startLayout;
+    }
+
+    public enum TileState
+    {
+        Unblocked,
+        Blocked,
+    }
     
 // ------------------------------
 // public properties
@@ -321,6 +363,7 @@ public class Board
     public Figure PromotionPawn => _promotionPawn;
     public LinkedList<Move> MovesList => _movesList;
     public Figure[,] BoardFigures => _boardFigures;
+    public TileState[,] BlockedTiles => _blockedTiles;
     public bool IsHold => _isHold;
 
     public double WhiteTime => _whiteTime;
@@ -339,17 +382,20 @@ public class Board
 // ------------------------------
 // private variables
 // ------------------------------
-    
-    private Figure[,] _boardFigures;
+
+    private Figure _blackKing;
+    private Figure _whiteKing;
     private Figure _selectedFigure;
     private Figure _promotionPawn;
-
-    private Figure.ColorT _movingColor;
-
+    
+    private Figure[,] _boardFigures;
     private Figure[] _startFiguresLayout;
     private Figure[] _figuresList;
+    
+    private Figure.ColorT _movingColor;
 
     private LinkedList<Move> _movesList;
+    private TileState[,] _blockedTiles;
     
     private bool _isHold = false;
     private int _yTilesCordOnScreenBeg;
@@ -361,6 +407,7 @@ public class Board
     private double _blackTime;
 
     private int _moveCounter;
+    private int _blackFirstIndex;
 
     private const int _mouseCentX = - FigureWidth / 2;
     private const int _mouseCentY = - FigureHeight / 2;
@@ -383,59 +430,92 @@ public class Board
     {
         set => _spriteBatch = value;
     }
-
-    public static readonly Figure[] BasicBeginningLayout = new Figure[]
+    
+    public static readonly Layout BasicBeginningLayout = new Layout
     {
-        new Pawn(0,1, Figure.ColorT.White),
-        new Pawn(1,1, Figure.ColorT.White),
-        new Pawn(2,1, Figure.ColorT.White),
-        new Pawn(3,1, Figure.ColorT.White),
-        new Pawn(4,1, Figure.ColorT.White),
-        new Pawn(5,1, Figure.ColorT.White),
-        new Pawn(6,1, Figure.ColorT.White),
-        new Pawn(7,1, Figure.ColorT.White),
-        new Rook(0, 0, Figure.ColorT.White),
-        new Knight(1, 0, Figure.ColorT.White),
-        new Bishop(2,0, Figure.ColorT.White),
-        new Queen(3, 0, Figure.ColorT.White),
-        new King(4,0, Figure.ColorT.White),
-        new Bishop(5,0, Figure.ColorT.White),
-        new Knight(6, 0, Figure.ColorT.White),
-        new Rook(7, 0, Figure.ColorT.White),
-        new Pawn(0,6, Figure.ColorT.Black),
-        new Pawn(1,6, Figure.ColorT.Black),
-        new Pawn(2,6, Figure.ColorT.Black),
-        new Pawn(3,6, Figure.ColorT.Black),
-        new Pawn(4,6, Figure.ColorT.Black),
-        new Pawn(5,6, Figure.ColorT.Black),
-        new Pawn(6,6, Figure.ColorT.Black),
-        new Pawn(7,6, Figure.ColorT.Black),
-        new Rook(0, 7, Figure.ColorT.Black),
-        new Knight(1, 7, Figure.ColorT.Black),
-        new Bishop(2,7, Figure.ColorT.Black),
-        new Queen(3, 7, Figure.ColorT.Black),
-        new King(4,7, Figure.ColorT.Black),
-        new Bishop(5,7, Figure.ColorT.Black),
-        new Knight(6, 7, Figure.ColorT.Black),
-        new Rook(7, 7, Figure.ColorT.Black),
+        startLayout = new Figure[]
+        {
+            new Pawn(0,1, Figure.ColorT.White),
+            new Pawn(1,1, Figure.ColorT.White),
+            new Pawn(2,1, Figure.ColorT.White),
+            new Pawn(3,1, Figure.ColorT.White),
+            new Pawn(4,1, Figure.ColorT.White),
+            new Pawn(5,1, Figure.ColorT.White),
+            new Pawn(6,1, Figure.ColorT.White),
+            new Pawn(7,1, Figure.ColorT.White),
+            new Rook(0, 0, Figure.ColorT.White),
+            new Knight(1, 0, Figure.ColorT.White),
+            new Bishop(2,0, Figure.ColorT.White),
+            new Queen(3, 0, Figure.ColorT.White),
+            new King(4,0, Figure.ColorT.White),
+            new Bishop(5,0, Figure.ColorT.White),
+            new Knight(6, 0, Figure.ColorT.White),
+            new Rook(7, 0, Figure.ColorT.White),
+            new Pawn(0,6, Figure.ColorT.Black),
+            new Pawn(1,6, Figure.ColorT.Black),
+            new Pawn(2,6, Figure.ColorT.Black),
+            new Pawn(3,6, Figure.ColorT.Black),
+            new Pawn(4,6, Figure.ColorT.Black),
+            new Pawn(5,6, Figure.ColorT.Black),
+            new Pawn(6,6, Figure.ColorT.Black),
+            new Pawn(7,6, Figure.ColorT.Black),
+            new Rook(0, 7, Figure.ColorT.Black),
+            new Knight(1, 7, Figure.ColorT.Black),
+            new Bishop(2,7, Figure.ColorT.Black),
+            new Queen(3, 7, Figure.ColorT.Black),
+            new King(4,7, Figure.ColorT.Black),
+            new Bishop(5,7, Figure.ColorT.Black),
+            new Knight(6, 7, Figure.ColorT.Black),
+            new Rook(7, 7, Figure.ColorT.Black),
+        },
+        FirstBlackFig = 16,
+    };
+    
+    public static readonly Layout PawnPromLayout = new Layout
+    {
+        startLayout = new Figure[]
+        {
+            new Pawn(6, 3, Figure.ColorT.White),
+            new King(0,0 , Figure.ColorT.White),
+            new Pawn(5,6, Figure.ColorT.Black),
+            new King(0, 7, Figure.ColorT.Black)
+        },
+        FirstBlackFig = 2,
+    };
+    
+    public static readonly Layout CastlingLayout = new Layout
+    {
+        startLayout = new Figure[]
+        {
+            new King(4, 0, Figure.ColorT.White),
+            new Rook(0, 0, Figure.ColorT.White),
+            new Rook(7, 0, Figure.ColorT.White),
+            new King(0,7, Figure.ColorT.Black),
+        },
+        FirstBlackFig = 3,
     };
 
-    public static readonly Figure[] PawnPromLayout = new Figure[]
+    public static readonly Layout DiagTest = new Layout
     {
-        new Pawn(6, 3, Figure.ColorT.White),
-        new Pawn(5,6, Figure.ColorT.Black)
+        startLayout = new Figure[]
+        {
+            new Bishop(4, 4, Figure.ColorT.White),
+            new Queen(3, 3, Figure.ColorT.White),
+            new King(0, 7, Figure.ColorT.White),
+            new King(7,0, Figure.ColorT.Black),
+        },
+        FirstBlackFig = 2,
     };
-
-    public static readonly Figure[] CastlingLayout = new Figure[]
+    
+    public static readonly Layout BlockTest = new Layout
     {
-        new King(4, 0, Figure.ColorT.White),
-        new Rook(0, 0, Figure.ColorT.White),
-        new Rook(7, 0, Figure.ColorT.White)
+        startLayout = new Figure[]
+        {
+            new King(3, 0, Figure.ColorT.White),
+            new Rook(1,1, Figure.ColorT.Black),
+            new King(0, 7, Figure.ColorT.Black),
+        },
+        FirstBlackFig = 1,
     };
-
-    public static readonly Figure[] DiagTest = new Figure[]
-    {
-        new Bishop(4, 4, Figure.ColorT.White),
-        new Queen(3, 3, Figure.ColorT.White),
-    };
+    
 }
