@@ -32,15 +32,9 @@ public abstract class Figure
 // helping protected fields
 // ------------------------------
 
-    protected bool IsEmpty(int x, int y)
-    {
-        return Parent.BoardFigures[x, y] == null;
-    }
+    protected bool IsEmpty(int x, int y) => Parent.BoardFigures[x, y] == null;
 
-    protected bool IsEnemy(int x, int y)
-    {
-        return Parent.BoardFigures[x, y].Color != this.Color;
-    }
+    protected bool IsEnemy(int x, int y) => Parent.BoardFigures[x, y].Color != this.Color;
     
 // ------------------------------
 // public types
@@ -317,11 +311,11 @@ public class Bishop : Figure
     
     // Contains limits for each diagonal moves on all specific fields
     // in order [ sw nw ne se ]
-    private static readonly int[,][] MoveLimMap;
+    public static readonly int[,][] MoveLimMap;
 
     // in order [ sw nw ne se ]
-    private static readonly int[] _xMoves = { -1, -1, 1, 1 };
-    private static readonly int[] _yMoves = { -1, 1, 1, -1 };
+    public static readonly int[] _xMoves = { -1, -1, 1, 1 };
+    public static readonly int[] _yMoves = { -1, 1, 1, -1 };
 }
 
 public class Rook : Figure
@@ -446,7 +440,7 @@ public class King : Figure
 
                 int tempX = Pos.X + i;
                 int tempY = Pos.Y + j;
-                if (BoardPos.isOnBoard(tempX, tempY) && Parent.BlockedTiles[tempX, tempY] == Board.TileState.Unblocked)
+                if (BoardPos.isOnBoard(tempX, tempY) && Parent.BlockedTiles[tempX, tempY] == Board.TileState.UnblockedTile)
                 {
                     if (IsEmpty(tempX, tempY))
                         ret[arrPos++] = new BoardPos(tempX, tempY);

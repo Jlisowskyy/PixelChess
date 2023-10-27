@@ -66,6 +66,7 @@ public class Board
         _movingColor = Figure.ColorT.White;
         
         _blockTiles(_blackFirstIndex, _figuresList.Length);
+        _blockFigures();
     }
 
     public void ProcTimers(double spentTime)
@@ -237,6 +238,57 @@ public class Board
 // Private methods zone
 // ------------------------------
 
+    private void _blockFigures()
+    {
+        Figure kingToCheck = _movingColor == Figure.ColorT.White ? _whiteKing : _blackKing;
+
+        // ------------------------------
+        // rook lines checks
+        // ------------------------------
+    
+        for (int x = kingToCheck.Pos.X - 1; x >= BoardPos.MinPos; --x)
+        {
+            if (!_isEmpty(x, kingToCheck.Pos.Y))
+            {
+                _blockedTiles[x, kingToCheck.Pos.Y] = TileState.BlockedFigure;
+                break;
+            }
+        }
+        
+        for (int x = kingToCheck.Pos.X + 1; x <= BoardPos.MaxPos; ++x)
+        {
+            if (!_isEmpty(x, kingToCheck.Pos.Y))
+            {
+                _blockedTiles[x, kingToCheck.Pos.Y] = TileState.BlockedFigure;
+                break;
+            }
+        }
+        
+        for (int y = kingToCheck.Pos.Y - 1; y >= BoardPos.MinPos; --y)
+        {
+            if (!_isEmpty(kingToCheck.Pos.X, y))
+            {
+                _blockedTiles[kingToCheck.Pos.X, y] = TileState.BlockedFigure;
+                break;
+            }
+        }
+        
+        for (int y = kingToCheck.Pos.Y + 1; y <= BoardPos.MaxPos; ++y)
+        {
+            if (!_isEmpty(kingToCheck.Pos.X, y))
+            {
+                _blockedTiles[kingToCheck.Pos.X, y] = TileState.BlockedFigure;
+                break;
+            }
+        }
+        
+        // ------------------------------
+        // diagonal lines checks
+        // ------------------------------
+        
+        // for (int i = 0; i < 4; ++i)
+    }
+    
     private void _blockTiles(int beg, int end)
     {
         _blockedTiles = new TileState[BoardSize, BoardSize];
@@ -247,7 +299,7 @@ public class Board
 
             for (int j = 0; j < moves.movesCount; ++j)
             {
-                _blockedTiles[moves.moves[j].X, moves.moves[j].Y] = Board.TileState.Blocked;
+                _blockedTiles[moves.moves[j].X, moves.moves[j].Y] = Board.TileState.BlockedTile;
             }
         }
     }
@@ -307,13 +359,13 @@ public class Board
         {
             _movingColor = Figure.ColorT.Black;
             _blockTiles(0, _blackFirstIndex);
-            if (_blockedTiles[_blackKing.Pos.X, _blackKing.Pos.Y] == TileState.Blocked) _checkedKing = _blackKing;
+            if (_blockedTiles[_blackKing.Pos.X, _blackKing.Pos.Y] == TileState.BlockedTile) _checkedKing = _blackKing;
         }
         else
         {
             _movingColor = Figure.ColorT.White;
             _blockTiles(_blackFirstIndex, _figuresList.Length);
-            if (_blockedTiles[_whiteKing.Pos.X, _whiteKing.Pos.Y] == TileState.Blocked) _checkedKing = _whiteKing;
+            if (_blockedTiles[_whiteKing.Pos.X, _whiteKing.Pos.Y] == TileState.BlockedTile) _checkedKing = _whiteKing;
         }
     }
 
@@ -334,6 +386,8 @@ public class Board
             _boardFigures[BoardPos.MinPos, move.Y] = null;
         }
     }
+
+    private bool _isEmpty(int x, int y) => _boardFigures[x, y] == null;
 
 // ------------------------------
 // public types
@@ -375,8 +429,9 @@ public class Board
 
     public enum TileState
     {
-        Unblocked,
-        Blocked,
+        UnblockedTile,
+        BlockedTile,
+        BlockedFigure,
     }
     
 // ------------------------------
