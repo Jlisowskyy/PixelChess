@@ -65,7 +65,7 @@ public class Board
         _moveCounter = 0;
         _movingColor = Figure.ColorT.White;
         
-        _blockTiles();
+        _blockTiles(_blackFirstIndex, _figuresList.Length);
     }
 
     public void ProcTimers(double spentTime)
@@ -99,6 +99,7 @@ public class Board
         _blackTime = blackTime;
     }
 
+    // TODO: consider delegate here when check?
     public void SelectFigure(BoardPos pos)
     {
         if (!pos.isOnBoard() || _boardFigures[pos.X, pos.Y] == null || _boardFigures[pos.X, pos.Y].Color != _movingColor)
@@ -106,6 +107,14 @@ public class Board
             _selectedFigure = null;
             return;
         }
+
+        if (_checkedKing != null && _boardFigures[pos.X, pos.Y].TextureIndex != ChessComponents.WhiteKing &&
+            _boardFigures[pos.X, pos.Y].TextureIndex != ChessComponents.BlackKing)
+        {
+            _selectedFigure = null;
+            return;
+        }
+
         
         _selectedFigure = _boardFigures[pos.X, pos.Y];
         _isHold = true;
@@ -195,6 +204,11 @@ public class Board
                 _spriteBatch.Draw(TileHighlightersTextures[(int)movs.moves[i].MoveT], Translate(movs.moves[i]), Color.White);
             }
         }
+
+        if (_checkedKing != null)
+        {
+            _spriteBatch.Draw(TileHighlightersTextures[(int)TileHighlighters.KingAttackTile], Translate(_checkedKing.Pos), Color.White);
+        }
     }
 
     private void _drawStaticFigures()
@@ -223,12 +237,8 @@ public class Board
 // Private methods zone
 // ------------------------------
 
-    private void _blockTiles()
+    private void _blockTiles(int beg, int end)
     {
-        (int beg, int end) = _movingColor == Figure.ColorT.White
-            ? (_blackFirstIndex, _figuresList.Length)
-            : (0, _blackFirstIndex);
-        
         _blockedTiles = new TileState[BoardSize, BoardSize];
 
         for (int i = beg; i < end; ++i)
@@ -268,8 +278,8 @@ public class Board
         
         _moveFigure(move);
         _selectedFigure = null;
+        _checkedKing = null; // can move only when available slot 
         _changePlayingColor();
-        _blockTiles();
         ++_moveCounter;
         return move.MoveT;
     }
@@ -293,7 +303,18 @@ public class Board
 
     private void _changePlayingColor()
     {
-        _movingColor = _movingColor == Figure.ColorT.White ? Figure.ColorT.Black : Figure.ColorT.White;
+        if (_movingColor == Figure.ColorT.White)
+        {
+            _movingColor = Figure.ColorT.Black;
+            _blockTiles(0, _blackFirstIndex);
+            if (_blockedTiles[_blackKing.Pos.X, _blackKing.Pos.Y] == TileState.Blocked) _checkedKing = _blackKing;
+        }
+        else
+        {
+            _movingColor = Figure.ColorT.White;
+            _blockTiles(_blackFirstIndex, _figuresList.Length);
+            if (_blockedTiles[_whiteKing.Pos.X, _whiteKing.Pos.Y] == TileState.Blocked) _checkedKing = _whiteKing;
+        }
     }
 
     private void _castleKing(BoardPos move)
@@ -343,6 +364,7 @@ public class Board
         CastlingMove = 4,
         ElPass = 8,
         SelectedTile = 9,
+        KingAttackTile = 10,
     }
 
     public struct Layout
@@ -385,6 +407,7 @@ public class Board
 
     private Figure _blackKing;
     private Figure _whiteKing;
+    private Figure _checkedKing;
     private Figure _selectedFigure;
     private Figure _promotionPawn;
     
@@ -398,6 +421,7 @@ public class Board
     private TileState[,] _blockedTiles;
     
     private bool _isHold = false;
+    
     private int _yTilesCordOnScreenBeg;
     private int _xTilesCordOnScreenBeg;
     private int _xOffset;
@@ -517,5 +541,4 @@ public class Board
         },
         FirstBlackFig = 1,
     };
-    
 }
