@@ -286,8 +286,8 @@ public class Bishop : Figure
             int ny = Pos.Y;
             for (int j = 0; j < MoveLimMap[Pos.X, Pos.Y][i]; ++j)
             {
-                nx += _xMoves[i];
-                ny += _yMoves[i];
+                nx += XMoves[i];
+                ny += YMoves[i];
 
                 if (!IsEmpty(nx, ny))
                 {
@@ -314,8 +314,8 @@ public class Bishop : Figure
     public static readonly int[,][] MoveLimMap;
 
     // in order [ sw nw ne se ]
-    public static readonly int[] _xMoves = { -1, -1, 1, 1 };
-    public static readonly int[] _yMoves = { -1, 1, 1, -1 };
+    public static readonly int[] XMoves = { -1, -1, 1, 1 };
+    public static readonly int[] YMoves = { -1, 1, 1, -1 };
 }
 
 public class Rook : Figure
@@ -325,8 +325,7 @@ public class Rook : Figure
 // --------------------------------
     public Rook(int x, int y, ColorT color) :
         base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhiteRook : Board.ChessComponents.BlackRook)
-    {
-    }
+    {}
 
 // --------------------------------
 // abstract method overwrite
