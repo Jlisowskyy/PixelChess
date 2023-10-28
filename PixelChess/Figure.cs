@@ -26,6 +26,7 @@ public abstract class Figure
     }
     
     public abstract (BoardPos[] moves, int movesCount) GetMoves();
+    public abstract Figure Clone();
     
     
 // ------------------------------
@@ -143,8 +144,14 @@ public class Pawn : Figure
         
         return (moves, arrPos);
     }
-    
-// ------------------------------
+
+    public override Figure Clone() => new Pawn(Pos.X, Pos.Y, Color)
+    {
+        IsAlive = this.IsAlive,
+        IsMoved = this.IsAlive
+    };
+
+    // ------------------------------
 // helping methods
 // ------------------------------
 
@@ -153,8 +160,8 @@ public class Pawn : Figure
     
     private bool _isElPassPossible(int nx, int ny)
     {
-        if (Parent.BoardFigures[nx, ny].TextureIndex == _enemyPawnId && Parent.MovesList.Last.Value.FigT == _enemyPawnId
-            && Math.Abs(Parent.MovesList.Last.Value.OldY - Parent.MovesList.Last.Value.NewPos.Y) == 2) return true;
+        if (Parent.BoardFigures[nx, ny].TextureIndex == _enemyPawnId && Parent.MovesHistory.Last.Value.FigT == _enemyPawnId
+            && Math.Abs(Parent.MovesHistory.Last.Value.OldY - Parent.MovesHistory.Last.Value.NewPos.Y) == 2) return true;
         else return false;
     }
     
@@ -208,6 +215,12 @@ public class Knight : Figure
             }
         }
     }
+    
+    public override Figure Clone() => new Knight(Pos.X, Pos.Y, Color)
+    {
+        IsAlive = this.IsAlive,
+        IsMoved = this.IsAlive
+    };
 
 // --------------------------------
 // abstract method overwrite
@@ -302,6 +315,11 @@ public class Bishop : Figure
         return (ret, arrPos);
     }
     
+    public override Figure Clone() => new Bishop(Pos.X, Pos.Y, Color)
+    {
+        IsAlive = this.IsAlive,
+        IsMoved = this.IsAlive
+    };
     
 // ------------------------------
 // variables and properties
@@ -381,6 +399,12 @@ public class Rook : Figure
 
         return (ret, arrPos);
     }
+    
+    public override Figure Clone() => new Rook(Pos.X, Pos.Y, Color)
+    {
+        IsAlive = this.IsAlive,
+        IsMoved = this.IsAlive
+    };
 
 // ------------------------------
 // variables and properties
@@ -391,8 +415,15 @@ public class Rook : Figure
 
 public class Queen : Figure
 {
+// --------------------------------
+// type construction / setups
+// --------------------------------
     public Queen(int x, int y, ColorT color) :
         base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhiteQueen : Board.ChessComponents.BlackQueen){}
+    
+// --------------------------------
+// abstract method overwrite
+// --------------------------------
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] ret = new BoardPos[QueenMaxTiles];
@@ -411,6 +442,12 @@ public class Queen : Figure
 
         return (ret, rookRet.movesCount + bishopRet.movesCount);
     }
+    
+    public override Figure Clone() => new Queen(Pos.X, Pos.Y, Color)
+    {
+        IsAlive = this.IsAlive,
+        IsMoved = this.IsAlive
+    };
     
     private const int QueenMaxTiles = Rook.RookCorrectTiles + Bishop.MaxPossibleTiles;
 }
@@ -454,6 +491,12 @@ public class King : Figure
 
         return (ret, arrPos);
     }
+    
+    public override Figure Clone() => new King(Pos.X, Pos.Y, Color)
+    {
+        IsAlive = this.IsAlive,
+        IsMoved = this.IsAlive
+    };
     
 // ------------------------------
 // private help method
