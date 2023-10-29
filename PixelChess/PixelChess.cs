@@ -12,7 +12,7 @@ public class PixelChess : Game
         _graphics = new GraphicsDeviceManager(this);
         _board = new Board(Board.BasicBeginningLayout);
         _promMenu = new PromotionMenu();
-        _ui = new UI();
+        _timer = new Timer();
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
     }
@@ -22,7 +22,7 @@ public class PixelChess : Game
         base.Initialize();
 
         const int minHeight = Board.Height;
-        const int minWidth = Board.Width + UI.TimerBoardOffset * 4 + UI.TimerXSize * 2;
+        const int minWidth = Board.Width + Timer.TimerBoardOffset * 4 + Timer.TimerXSize * 2;
         
         var display = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
         _graphics.PreferredBackBufferHeight = Math.Max(minHeight, display.Height / 2);
@@ -34,7 +34,7 @@ public class PixelChess : Game
         _promMenu.Initialize(boardHorOffset, _spriteBatch);
         Board.SpriteBatch = _spriteBatch;
         _board.StartGame(Board.BasicWhiteTime, Board.BasicBlackTIme);
-        _ui.Initialize(boardHorOffset, _spriteBatch);
+        _timer.Initialize(boardHorOffset, _spriteBatch);
         
         _graphics.ApplyChanges();
     }
@@ -57,7 +57,7 @@ public class PixelChess : Game
         }
 
         _promMenu.Texture = Content.Load<Texture2D>(_promMenu.TextureName);
-        _ui.GameFont = Content.Load<SpriteFont>(_ui.FontName);
+        _timer.GameFont = Content.Load<SpriteFont>(_timer.FontName);
     }
 
     protected override void Update(GameTime gameTime)
@@ -115,7 +115,7 @@ public class PixelChess : Game
         
         _board.Draw();
         _promMenu.Draw();
-        _ui.Draw(_board.WhiteTime, _board.BlackTime);
+        _timer.Draw(_board.WhiteTime, _board.BlackTime);
         
         _spriteBatch.End();
         
@@ -127,6 +127,6 @@ public class PixelChess : Game
 
     private readonly PromotionMenu _promMenu;
     private readonly Board _board;
-    private readonly UI _ui;
+    private readonly Timer _timer;
     private bool _isMouseHold = false;
 }

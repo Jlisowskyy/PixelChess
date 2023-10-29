@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace PongGame;
 
-public class UI
+public class Timer
 {
 // --------------------------------
 // type construction / setups

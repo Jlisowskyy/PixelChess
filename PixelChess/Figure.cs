@@ -11,7 +11,7 @@ namespace PongGame;
      */
 
 public abstract class Figure
-    // All figures expects to have array attached board attached, otherwise undefined
+    // All figures expects to have board attached, otherwise undefined
 {
 // --------------------------------
 // type construction / setups
@@ -52,11 +52,19 @@ public abstract class Figure
 // ------------------------------
 
     public Board Parent;
+    // used to access move filtering maps, moves history etc
+    
     public bool IsAlive = true;
+    // works also as flag whether the figure should be drew
+    
     public bool IsMoved = false;
+    // important only for pawns and castling
+    
     public readonly Board.ChessComponents TextureIndex;
+    // also used to identify figures color or type
+    
     public BoardPos Pos;
-
+    
     public ColorT Color
     {
         get;
@@ -71,6 +79,7 @@ public class Pawn : Figure
     public Pawn(int x, int y, ColorT color) :
         base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhitePawn : Board.ChessComponents.BlackPawn)
     {
+        // consider creating array of those values? TODO
         if (color == ColorT.White)
         {
             _mvCord = 1;
@@ -97,6 +106,7 @@ public class Pawn : Figure
         int arrPos = 0;
         
         if (IsMoved)
+            // does not check whether pawn goes out of board, assumes will promoted by board before next call
         {
             if (IsEmpty(Pos.X, Pos.Y + _mvCord))
             {
@@ -148,7 +158,7 @@ public class Pawn : Figure
     public override Figure Clone() => new Pawn(Pos.X, Pos.Y, Color)
     {
         IsAlive = this.IsAlive,
-        IsMoved = this.IsAlive
+        IsMoved = this.IsMoved
     };
 
     // ------------------------------
@@ -189,29 +199,29 @@ public class Knight : Figure
     static Knight()
         // precalculates moves for all fields
     {
-        for (int i = 0; i < Board.BoardSize; ++i) // X - pos
+        for (int x = 0; x < Board.BoardSize; ++x)
         {
-            for (int j = 0; j < Board.BoardSize; ++j) // Y - pos
+            for (int y = 0; y < Board.BoardSize; ++y) 
             {
                 BoardPos[] ret = new BoardPos[MaxPossibleTiles];
                 int arrPos = 0;
                 
                 for (int k = 0; k < 4; ++k)
                 {
-                    int tempX = i + XPosTable[k];
-                    int tempY = j + YPosTable[k];
+                    int tempX = x + XPosTable[k];
+                    int tempY = y + YPosTable[k];
 
                     if (BoardPos.isOnBoard(tempX, tempY))
                         ret[arrPos++] = new BoardPos(tempX, tempY);
 
-                    tempX = i + XPosTable[k];
-                    tempY = j - YPosTable[k];
+                    tempX = x + XPosTable[k];
+                    tempY = y - YPosTable[k];
             
                     if (BoardPos.isOnBoard(tempX, tempY))
                         ret[arrPos++] = new BoardPos(tempX, tempY);
                 }
 
-                movesTable[i, j] = ret[..arrPos];
+                movesTable[x, y] = ret[..arrPos];
             }
         }
     }
@@ -219,7 +229,7 @@ public class Knight : Figure
     public override Figure Clone() => new Knight(Pos.X, Pos.Y, Color)
     {
         IsAlive = this.IsAlive,
-        IsMoved = this.IsAlive
+        IsMoved = this.IsMoved
     };
 
 // --------------------------------
@@ -292,7 +302,7 @@ public class Bishop : Figure
         BoardPos[] ret = new BoardPos[MaxPossibleTiles];
         int arrPos = 0;
 
-        // in order [ sw nw ne se ]\
+        // loops through all directions from [ sw nw ne se ]
         for (int i = 0; i < 4; ++i)
         {
             int nx = Pos.X;
@@ -308,7 +318,8 @@ public class Bishop : Figure
                         ret[arrPos++] = new BoardPos(nx, ny, BoardPos.MoveType.AttackMove);
                     break;
                 }
-                else ret[arrPos++] = new BoardPos(nx, ny);
+
+                ret[arrPos++] = new BoardPos(nx, ny);
             }
         }
         
@@ -318,7 +329,7 @@ public class Bishop : Figure
     public override Figure Clone() => new Bishop(Pos.X, Pos.Y, Color)
     {
         IsAlive = this.IsAlive,
-        IsMoved = this.IsAlive
+        IsMoved = this.IsMoved
     };
     
 // ------------------------------
@@ -326,6 +337,14 @@ public class Bishop : Figure
 // ------------------------------
 
     internal const int MaxPossibleTiles = 13;
+    
+    public enum dir
+    {
+        Sw,
+        Nw,
+        Ne,
+        Se
+    }
     
     // Contains limits for each diagonal moves on all specific fields
     // in order [ sw nw ne se ]
@@ -403,7 +422,7 @@ public class Rook : Figure
     public override Figure Clone() => new Rook(Pos.X, Pos.Y, Color)
     {
         IsAlive = this.IsAlive,
-        IsMoved = this.IsAlive
+        IsMoved = this.IsMoved
     };
 
 // ------------------------------
@@ -446,7 +465,7 @@ public class Queen : Figure
     public override Figure Clone() => new Queen(Pos.X, Pos.Y, Color)
     {
         IsAlive = this.IsAlive,
-        IsMoved = this.IsAlive
+        IsMoved = this.IsMoved
     };
     
     private const int QueenMaxTiles = Rook.RookCorrectTiles + Bishop.MaxPossibleTiles;
@@ -495,7 +514,7 @@ public class King : Figure
     public override Figure Clone() => new King(Pos.X, Pos.Y, Color)
     {
         IsAlive = this.IsAlive,
-        IsMoved = this.IsAlive
+        IsMoved = this.IsMoved
     };
     
 // ------------------------------
@@ -514,7 +533,7 @@ public class King : Figure
         {
             for (i = Pos.X + 1; i < BoardPos.MaxPos; ++i)
             {
-                if (!IsEmpty(i, Pos.Y))
+                if (!IsEmpty(i, Pos.Y) || Parent.BlockedTiles[(int)Color][i, Pos.Y] == Board.TileState.BlockedTile)
                     break;
 
                 // TODO: check for attacks
@@ -530,7 +549,7 @@ public class King : Figure
         {
             for (i = Pos.X - 1; i > BoardPos.MinPos; --i)
             {
-                if (!IsEmpty(i, Pos.Y))
+                if (!IsEmpty(i, Pos.Y) || Parent.BlockedTiles[(int)Color][i, Pos.Y] == Board.TileState.BlockedTile)
                     break;
             }
 

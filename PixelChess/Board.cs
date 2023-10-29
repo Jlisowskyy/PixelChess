@@ -51,7 +51,7 @@ public class Board
     public void ResetBoard()
     {
         _boardFigures = new Figure[BoardSize, BoardSize];
-        _figuresList = new Figure[_startFiguresLayout.Length];
+        _figuresArray = new Figure[_startFiguresLayout.Length];
         
         _movesHistory = new LinkedList<Move>();
         _movesHistory.AddFirst(new Move(0, 0, new BoardPos(0, 0), ChessComponents.Board)); // Sentinel
@@ -94,6 +94,7 @@ public class Board
 
     // TODO: consider delegate here when check?
     public void SelectFigure(BoardPos pos)
+        // if pos is correct and points to currently moving color's figure selects it as moving figure
     {
         if (!pos.isOnBoard() || _boardFigures[pos.X, pos.Y] == null || _boardFigures[pos.X, pos.Y].Color != _movingColor
             || _blockedTiles[(int)_movingColor][pos.X, pos.Y] == TileState.BlockedFigure)
@@ -110,14 +111,16 @@ public class Board
     }
 
     public (bool WasHit, BoardPos.MoveType mType) DropFigure(BoardPos pos)
+        // method used to 'drop' figure on the board, if there is selected ony
     {
         if (_selectedFigure == null || !pos.isOnBoard()) return (false, BoardPos.MoveType.NormalMove);
         
+        // flag used to indicate whether figure should be drew or not
         _selectedFigure.IsAlive = true;
         _isHold = false;
 
+        // performs sanity check whether the move was legal
         var moves = _selectedFigure.GetMoves();
-        
         for (int i = 0; i < moves.movesCount; ++i)
             if (pos == moves.moves[i])
                 return (true, _processMove(moves.moves[i]));
@@ -126,28 +129,28 @@ public class Board
     }
     
     public void Promote(Figure promFig)
+        // method used to communicate with PromotionMenu class and BoardClass
+        // accepts desired figure to replace promoting pawn
     {
         if (promFig == null)
             return;
-        
-#if DEBUG
-        if (_promotionPawn == null)
-        {
-            Console.Error.WriteLine("[ERROR] Promotion pawn is null");
-            return;
-        }
-#endif
 
-        for(int i = 0; i < _figuresList.Length; ++i)
+        // replaces pawn also on the figures Array
+        for(int i = 0; i < _figuresArray.Length; ++i)
         {
-            if (Object.ReferenceEquals(_figuresList[i], _promotionPawn))
+            if (Object.ReferenceEquals(_figuresArray[i], _promotionPawn))
             {
-                _figuresList[i] = promFig;
+                _figuresArray[i] = promFig;
                 _boardFigures[promFig.Pos.X, promFig.Pos.Y] = promFig;
                 _promotionPawn = null;
+                
+                // adds promoted pawn to important figures metadata
                 _extractDataFromFig(promFig);
+                return;
             }
         }
+        
+        throw new ApplicationException("Unexpected, promotion figure not found");
     }
     
     public bool IsSelectedFigure() => _selectedFigure != null;
@@ -178,6 +181,7 @@ public class Board
     }
 
     private void _drawHighlightedTiles()
+        // draws applies highlighting layers on the board to inform player about allowed move and ongoing actions
     {
         if (IsSelectedFigure())
         {
@@ -198,8 +202,9 @@ public class Board
     }
 
     private void _drawStaticFigures()
+        // draws not moving figures on the board
     {
-        foreach (var actFig in _figuresList)
+        foreach (var actFig in _figuresArray)
         {
             if (actFig.IsAlive)
             {
@@ -209,6 +214,7 @@ public class Board
     }
 
     private void _drawHoveringFigure()
+        // draws figure on cursor, when figure is hold
     {
         if (_isHold)
         {
@@ -220,6 +226,7 @@ public class Board
     }
 
     private void _drawDesiredBishopColoredTiles(Figure.ColorT col)
+        // used in tests - debug only
     {
         int posMod = col == Figure.ColorT.White ? 1 : 0;
         
@@ -240,6 +247,8 @@ public class Board
 // ------------------------------
 
     private BoardPos.MoveType _processMove(BoardPos move)
+        // calls special function to handle passed type of move, performs move consequences on board,
+        // and finally hands on action to _processToNextRound(), which performs further actions
     {
         switch (move.MoveT)
         {
@@ -312,7 +321,20 @@ public class Board
     //     }
     // }
 
+    private void _checkAllLinesOnKing(Figure.ColorT col)
+        // used to block figures covering col king from being killed on all lines (diagonal and simple ones)
+    {
+        _checkHorizontalLeftLineOnKing(col);
+        _checkHorizontalRightLineOnKing(col);
+        _checkVerticalLowLineOnKing(col);
+        _checkVerticalUpLineOnKing(col);
+        
+        for(int i = 0; i < 4; ++i)
+            _checkDiagonal(col, i);
+    }
+
     private void _checkHorizontalLeftLineOnKing(Figure.ColorT col)
+        // used to block figures covering col king from being killed on horizontal left line
     {
         Figure kingToCheck = _importantFigMap[(int)col].King;
 
@@ -340,6 +362,7 @@ public class Board
     }
     
     private void _checkHorizontalRightLineOnKing(Figure.ColorT col)
+        // used to block figures covering col king from being killed on horizontal right line
     {
         Figure kingToCheck = _importantFigMap[(int)col].King;
 
@@ -366,7 +389,8 @@ public class Board
         }
     }
     
-    private void _checkVerticalDownLineOnKing(Figure.ColorT col)
+    private void _checkVerticalLowLineOnKing(Figure.ColorT col)
+        // used to block figures covering col king from being killed on vertical lower line
     {
         Figure kingToCheck = _importantFigMap[(int)col].King;
 
@@ -394,6 +418,7 @@ public class Board
     }
 
     private void _checkVerticalUpLineOnKing(Figure.ColorT col)
+        // used to block figures covering col king from being killed on vertical upper line
     {
         Figure kingToCheck = _importantFigMap[(int)col].King;
 
@@ -421,6 +446,7 @@ public class Board
     }
 
     private void _checkDiagonal(Figure.ColorT col, int dir)
+        // used to block figures covering col king from being killed on diagonals
     {
         Figure kingToCheck = _importantFigMap[(int)col].King;
         
@@ -457,6 +483,7 @@ public class Board
 
 
     private void _moveFigure(BoardPos move)
+        // adds moves to history and applies move consequences to all Board structures
     {
         _movesHistory.AddLast(new Move(_selectedFigure.Pos.X, _selectedFigure.Pos.Y, move, _selectedFigure.TextureIndex));
         
@@ -469,12 +496,15 @@ public class Board
     }
 
     private void _killFigure(BoardPos move)
+        // removes figures from board->figures map
     {
         _boardFigures[move.X, move.Y].IsAlive = false;
         _boardFigures[move.X, move.Y] = null;
     }
 
     private void _castleKing(BoardPos move)
+        // assumes passed move is correct castling and selected figures is moving king
+        // only applies consequences of desired castling 
     {
         if (_selectedFigure.Pos.X - move.X < 0)
             // short castling
@@ -492,12 +522,22 @@ public class Board
         }
     }
 
+    private void _translateFenToArray(string fenInput)
+        // translates fen input to array representation of figures
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
     private void _copyAndExtractMetadata()
+        // performs deep copy of saved starting layout to in-game figures array
+        // used mainly when initialising game or restarting to start position
+        // also analyzes the layout and extract metadata about sliding figures and kings
     {
         for(int i = 0; i < _startFiguresLayout.Length; ++i)
         {
-            _figuresList[i] = _startFiguresLayout[i].Clone();
-            Figure fig = _figuresList[i];
+            _figuresArray[i] = _startFiguresLayout[i].Clone();
+            Figure fig = _figuresArray[i];
             
             _boardFigures[fig.Pos.X, fig.Pos.Y] = fig;
             fig.Parent = this;
@@ -510,6 +550,7 @@ public class Board
     }
 
     private void _extractDataFromFig(Figure fig)
+        // used to extract some data when loading layout from starting array or fen input
     {
         switch (fig.TextureIndex)
         {
@@ -546,6 +587,7 @@ public class Board
         }
 
         void CheckBishopTiles()
+            // determines whether bishops walks on white or black tiles
         {
             if (Math.Abs(fig.Pos.X - fig.Pos.Y) % 2 == 0)
                 _importantFigMap[(int)fig.Color].BlackTilesBishops.AddLast(fig);
@@ -560,6 +602,7 @@ public class Board
 // public types
 // ------------------------------
 
+    // used mainly when drawing figures and board, but sometimes used to determine figure type
     public enum ChessComponents
     {
         Board,
@@ -577,6 +620,8 @@ public class Board
         BlackKing,
     }
 
+    // used to represent texture index of corresponding tile highlighter,
+    // TODO: DONT UNDERSTAND THIS YET XDDD
     public enum TileHighlighters
     {
         MoveTile = 0,
@@ -588,12 +633,18 @@ public class Board
         KingAttackTile = 10,
     }
 
+    // used to explicitly hold saved layouts
     public struct Layout
     {
         public int FirstBlackFig;
         public Figure[] startLayout;
     }
 
+
+    // used in moves filtering-maps where
+    // - UnblockedTiles - means that move TO and FROM that field is possible, and king is allowed to move here
+    // - BlockedTile - means that king is NOT allowed to move here
+    // - BlockedFigure - means that figure on that field is NOT allowed to move, because would uncover the king
     public enum TileState
     {
         UnblockedTile,
@@ -601,6 +652,7 @@ public class Board
         BlockedFigure,
     }
     
+    // metadata class used to hold information about specific figures of single color
     class ImportantFigures
     {
         public ImportantFigures(ChessComponents enRook, ChessComponents enBishop, ChessComponents enQueen)
@@ -625,9 +677,14 @@ public class Board
 // public properties
 // ------------------------------
     public Figure PromotionPawn => _promotionPawn;
+    // used to copy pawn parameter to extern promotion class
     public LinkedList<Move> MovesHistory => _movesHistory;
+    // contains all made moves, used in some function, which needs historical data e.g. el passant moves generators
+    // TODO: in future to save games in some database
     public Figure[,] BoardFigures => _boardFigures;
+    // used mostly in figure's GetMoves method
     public TileState[][,] BlockedTiles => _blockedTiles;
+    // used during moves generation to filter illegal moves
     public bool IsHold => _isHold;
 
     public double WhiteTime => _whiteTime;
@@ -648,20 +705,34 @@ public class Board
 // ------------------------------
 
     private Figure _selectedFigure;
+    // figures currently chosen to move by player
+    
     private Figure _promotionPawn;
+    // figures expected to be promoted by player
+    
     private Figure _kingAttackingFigure;
+    // figure currently attacking king, used also as check detecting flag
+    
     private readonly ImportantFigures[] _importantFigMap;
-
+    // metadata per figures color about players figures deck
     
     private Figure[,] _boardFigures;
+    // actual figures on board used to map positions to figures
+    
     private Figure[] _startFiguresLayout;
-    private Figure[] _figuresList;
+    // storing starting position used to restore start layout 
+
+
+    private Figure[] _figuresArray;
+    // used to look up throughout all figures for e.g. to process all enemy moves
     
     private Figure.ColorT _movingColor;
+    // actually moving color
 
     private LinkedList<Move> _movesHistory;
 
     private TileState[][,] _blockedTiles;
+    // filtering maps used to block moves
     
     private bool _isHold = false;
     
