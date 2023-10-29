@@ -59,6 +59,8 @@ public abstract class Figure
     
     public bool IsMoved = false;
     // important only for pawns and castling
+
+    public bool IsBlocked = false;
     
     public readonly Board.ChessComponents TextureIndex;
     // also used to identify figures color or type
@@ -104,6 +106,8 @@ public class Pawn : Figure
     {
         BoardPos[] moves = new BoardPos[MaxMoves];
         int arrPos = 0;
+
+        if (IsBlocked) return (null, 0);
         
         if (IsMoved)
             // does not check whether pawn goes out of board, assumes will promoted by board before next call
@@ -240,6 +244,8 @@ public class Knight : Figure
     {
         BoardPos[] ret = new BoardPos[MaxPossibleTiles];
         int arrPos = 0;
+        
+        if (IsBlocked) return (null, 0);
 
         for (int i = 0; i < movesTable[Pos.X, Pos.Y].Length; ++i)
         {
@@ -301,6 +307,8 @@ public class Bishop : Figure
     {
         BoardPos[] ret = new BoardPos[MaxPossibleTiles];
         int arrPos = 0;
+        
+        if (IsBlocked) return (null, 0);
 
         // loops through all directions from [ sw nw ne se ]
         for (int i = 0; i < 4; ++i)
@@ -371,6 +379,8 @@ public class Rook : Figure
     {
         BoardPos[] ret = new BoardPos[RookCorrectTiles];
         int arrPos = 0;
+        
+        if (IsBlocked) return (null, 0);
 
         for (int i = Pos.X - 1; i >= BoardPos.MinPos; --i)
         {
@@ -446,6 +456,8 @@ public class Queen : Figure
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         BoardPos[] ret = new BoardPos[QueenMaxTiles];
+        
+        if (IsBlocked) return (null, 0);
         
         // TODO: speedup???
         Figure rook = new Rook(Pos.X, Pos.Y, Color);
