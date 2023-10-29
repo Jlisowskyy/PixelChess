@@ -476,7 +476,7 @@ public class King : Figure
 
                 int tempX = Pos.X + i;
                 int tempY = Pos.Y + j;
-                if (BoardPos.isOnBoard(tempX, tempY) && Parent.BlockedTiles[tempX, tempY] == Board.TileState.UnblockedTile)
+                if (BoardPos.isOnBoard(tempX, tempY) && Parent.BlockedTiles[(int)Color][tempX, tempY] == Board.TileState.UnblockedTile)
                 {
                     if (IsEmpty(tempX, tempY))
                         ret[arrPos++] = new BoardPos(tempX, tempY);

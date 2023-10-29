@@ -15,6 +15,16 @@ public class Board
     public Board(Layout layout)
     {
         _startFiguresLayout = new Figure[layout.startLayout.Length];
+        _importantFigMap = new ImportantFigures[]{ 
+            new ImportantFigures(ChessComponents.BlackRook, ChessComponents.BlackBishop, ChessComponents.BlackQueen),
+            new ImportantFigures(ChessComponents.WhiteRook, ChessComponents.BlackBishop, ChessComponents.BlackQueen) 
+        };
+        _blockedTiles = new TileState[][,] {
+            new TileState[BoardSize, BoardSize],
+            new TileState[BoardSize, BoardSize]
+        };
+        
+        
         layout.startLayout.CopyTo(_startFiguresLayout, 0);
 
         _blackFirstIndex = layout.FirstBlackFig;
@@ -86,7 +96,7 @@ public class Board
     public void SelectFigure(BoardPos pos)
     {
         if (!pos.isOnBoard() || _boardFigures[pos.X, pos.Y] == null || _boardFigures[pos.X, pos.Y].Color != _movingColor
-            || _blockedTiles[pos.X, pos.Y] == TileState.BlockedFigure)
+            || _blockedTiles[(int)_movingColor][pos.X, pos.Y] == TileState.BlockedFigure)
         {
             _selectedFigure = null;
             return;
@@ -209,7 +219,7 @@ public class Board
         }
     }
 
-    private void _drawDesiredBishopColsoredTiles(Figure.ColorT col)
+    private void _drawDesiredBishopColoredTiles(Figure.ColorT col)
     {
         int posMod = col == Figure.ColorT.White ? 1 : 0;
         
@@ -281,154 +291,6 @@ public class Board
         // (_moveKing, _moveEnemyKing) = (_moveEnemyKing, _moveKing);
         // _blockFigures();
     }
-
-    // private void _blockFigures()
-    // // should be invoked after blocking tiles
-    // {
-    //     Figure kingToCheck;
-    //     ChessComponents enemyRook;
-    //     ChessComponents enemyBishop;
-    //     ChessComponents enemyQueen;
-    //
-    //     if (_movingColor == Figure.ColorT.White)
-    //     {
-    //         enemyRook = ChessComponents.BlackRook;
-    //         enemyBishop = ChessComponents.BlackBishop;
-    //         enemyQueen = ChessComponents.BlackQueen;
-    //     }
-    //     else
-    //     {
-    //         enemyRook = ChessComponents.WhiteRook;
-    //         enemyBishop = ChessComponents.WhiteBishop;
-    //         enemyQueen = ChessComponents.WhiteQueen;
-    //     }
-    //
-    //     // ------------------------------
-    //     // rook lines checks
-    //     // ------------------------------
-    //     
-    //     // TODO: PACK IT!!!
-    //
-    //     int mx = -1;
-    //     for (int x = _moveKing.Pos.X - 1; x >= BoardPos.MinPos; --x)
-    //     {
-    //         if (!_isEmpty(x, _moveKing.Pos.Y))
-    //         {
-    //             if (mx == -1)
-    //             {
-    //                 mx = x;
-    //             }
-    //             else
-    //             {
-    //                 if (_boardFigures[x, _moveKing.Pos.Y].TextureIndex == enemyRook ||
-    //                     _boardFigures[x, _moveKing.Pos.Y].TextureIndex == enemyQueen)
-    //                 {
-    //                     _blockedTiles[mx, _moveKing.Pos.Y] = TileState.BlockedFigure;
-    //                 }
-    //     
-    //                 break;
-    //             }
-    //         }
-    //     }
-    //
-    //     mx = -1;
-    //     for (int x = _moveKing.Pos.X + 1; x <= BoardPos.MaxPos; ++x)
-    //     {
-    //         if (!_isEmpty(x, _moveKing.Pos.Y))
-    //         {
-    //             if (mx == -1)
-    //             {
-    //                 mx = x;
-    //             }
-    //             else
-    //             {
-    //                 if (_boardFigures[x, _moveKing.Pos.Y].TextureIndex == enemyRook ||
-    //                     _boardFigures[x, _moveKing.Pos.Y].TextureIndex == enemyQueen)
-    //                 {
-    //                     _blockedTiles[mx, _moveKing.Pos.Y] = TileState.BlockedFigure;
-    //                 }
-    //     
-    //                 break;
-    //             }
-    //         }
-    //     }
-    //
-    //     int my = -1;
-    //     for (int y = _moveKing.Pos.Y - 1; y >= BoardPos.MinPos; --y)
-    //     {
-    //         if (!_isEmpty(_moveKing.Pos.X, y))
-    //         {
-    //             if (my == -1)
-    //             {
-    //                 my = y;
-    //             }
-    //             else
-    //             {
-    //                 if (_boardFigures[_moveKing.Pos.X, y].TextureIndex == enemyRook ||
-    //                     _boardFigures[_moveKing.Pos.X, y].TextureIndex == enemyQueen)
-    //                 {
-    //                     _blockedTiles[_moveKing.Pos.X, my] = TileState.BlockedFigure;
-    //                 }
-    //     
-    //                 break;
-    //             }
-    //         }
-    //     }
-    //
-    //     my = -1;
-    //     for (int y = _moveKing.Pos.Y + 1; y <= BoardPos.MaxPos; ++y)
-    //     {
-    //         if (!_isEmpty(_moveKing.Pos.X, y))
-    //         {
-    //             if (my == -1)
-    //             {
-    //                 my = y;
-    //             }
-    //             else
-    //             {
-    //                 if (_boardFigures[_moveKing.Pos.X, y].TextureIndex == enemyRook ||
-    //                     _boardFigures[_moveKing.Pos.X, y].TextureIndex == enemyQueen)
-    //                 {
-    //                     _blockedTiles[_moveKing.Pos.X, my] = TileState.BlockedFigure;
-    //                 }
-    //     
-    //                 break;
-    //             }
-    //         }
-    //     }
-    //
-    //     for (int i = 0; i < 4; ++i)
-    //     {
-    //         int nx = _moveKing.Pos.X;
-    //         int ny = _moveKing.Pos.Y;
-    //         mx = -1;
-    //         
-    //         for (int j = 0; j < Bishop.MoveLimMap[_moveKing.Pos.X, _moveKing.Pos.Y][i]; ++j)
-    //         {
-    //             nx += Bishop.XMoves[i];
-    //             ny += Bishop.YMoves[i];
-    //
-    //             if (!_isEmpty(nx, ny))
-    //             {
-    //                 if (mx == -1)
-    //                 {
-    //                     mx = nx;
-    //                     my = ny;
-    //                 }
-    //                 else
-    //                 {
-    //                     if (_boardFigures[nx, ny].TextureIndex == enemyBishop ||
-    //                         _boardFigures[nx, ny].TextureIndex == enemyQueen)
-    //                     {
-    //                         _blockedTiles[mx, my] = TileState.BlockedFigure;
-    //                     }
-    //     
-    //                     break;
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
     
     // private void _blockTiles(int beg, int end)
     // {
@@ -450,6 +312,148 @@ public class Board
     //     }
     // }
 
+    private void _checkHorizontalLeftLineOnKing(Figure.ColorT col)
+    {
+        Figure kingToCheck = _importantFigMap[(int)col].King;
+
+        int mx = -1;
+        for (int x = kingToCheck.Pos.X - 1; x >= BoardPos.MinPos; --x)
+        {
+            if (!_isEmpty(x, kingToCheck.Pos.Y))
+            {
+                if (mx == -1)
+                {
+                    mx = x;
+                }
+                else
+                {
+                    if (_boardFigures[x, kingToCheck.Pos.Y].TextureIndex == _importantFigMap[(int)col].EnemyRook ||
+                        _boardFigures[x, kingToCheck.Pos.Y].TextureIndex == _importantFigMap[(int)col].EnemyQueen)
+                    {
+                        _blockedTiles[(int)col][mx, kingToCheck.Pos.Y] = TileState.BlockedFigure;
+                    }
+
+                    break;
+                }
+            }
+        }
+    }
+    
+    private void _checkHorizontalRightLineOnKing(Figure.ColorT col)
+    {
+        Figure kingToCheck = _importantFigMap[(int)col].King;
+
+        int mx = -1;
+        for (int x = kingToCheck.Pos.X + 1; x <= BoardPos.MaxPos; ++x)
+        {
+            if (!_isEmpty(x, kingToCheck.Pos.Y))
+            {
+                if (mx == -1)
+                {
+                    mx = x;
+                }
+                else
+                {
+                    if (_boardFigures[x, kingToCheck.Pos.Y].TextureIndex == _importantFigMap[(int)col].EnemyRook ||
+                        _boardFigures[x, kingToCheck.Pos.Y].TextureIndex == _importantFigMap[(int)col].EnemyQueen)
+                    {
+                        _blockedTiles[(int)col][mx, kingToCheck.Pos.Y] = TileState.BlockedFigure;
+                    }
+
+                    break;
+                }
+            }
+        }
+    }
+    
+    private void _checkVerticalDownLineOnKing(Figure.ColorT col)
+    {
+        Figure kingToCheck = _importantFigMap[(int)col].King;
+
+        int my = -1;
+        for (int y = kingToCheck.Pos.Y - 1; y >= BoardPos.MinPos; --y)
+        {
+            if (!_isEmpty(kingToCheck.Pos.X, y))
+            {
+                if (my == -1)
+                {
+                    my = y;
+                }
+                else
+                {
+                    if (_boardFigures[kingToCheck.Pos.X, y].TextureIndex == _importantFigMap[(int)col].EnemyRook ||
+                        _boardFigures[kingToCheck.Pos.X, y].TextureIndex == _importantFigMap[(int)col].EnemyQueen)
+                    {
+                        _blockedTiles[(int)col][kingToCheck.Pos.X, my] = TileState.BlockedFigure;
+                    }
+        
+                    break;
+                }
+            }
+        }
+    }
+
+    private void _checkVerticalUpLineOnKing(Figure.ColorT col)
+    {
+        Figure kingToCheck = _importantFigMap[(int)col].King;
+
+        int my = -1;
+        for (int y = kingToCheck.Pos.Y + 1; y <= BoardPos.MaxPos; ++y)
+        {
+            if (!_isEmpty(kingToCheck.Pos.X, y))
+            {
+                if (my == -1)
+                {
+                    my = y;
+                }
+                else
+                {
+                    if (_boardFigures[kingToCheck.Pos.X, y].TextureIndex == _importantFigMap[(int)col].EnemyRook ||
+                        _boardFigures[kingToCheck.Pos.X, y].TextureIndex == _importantFigMap[(int)col].EnemyQueen)
+                    {
+                        _blockedTiles[(int)col][kingToCheck.Pos.X, my] = TileState.BlockedFigure;
+                    }
+
+                    break;
+                }
+            }
+        }
+    }
+
+    private void _checkDiagonal(Figure.ColorT col, int dir)
+    {
+        Figure kingToCheck = _importantFigMap[(int)col].King;
+        
+        int nx = kingToCheck.Pos.X;
+        int ny = kingToCheck.Pos.Y;
+        int mx = -1;
+        int my = 0;
+        
+        for (int j = 0; j < Bishop.MoveLimMap[kingToCheck.Pos.X, kingToCheck.Pos.Y][dir]; ++j)
+        {
+            nx += Bishop.XMoves[dir];
+            ny += Bishop.YMoves[dir];
+        
+            if (!_isEmpty(nx, ny))
+            {
+                if (mx == -1)
+                {
+                    mx = nx;
+                    my = ny;
+                }
+                else
+                {
+                    if (_boardFigures[nx, ny].TextureIndex == _importantFigMap[(int)col].EnemyBishop ||
+                        _boardFigures[nx, ny].TextureIndex == _importantFigMap[(int)col].EnemyQueen)
+                    {
+                        _blockedTiles[(int)col][mx, my] = TileState.BlockedFigure;
+                    }
+        
+                    break;
+                }
+            }
+        }
+    }
 
 
     private void _moveFigure(BoardPos move)
@@ -599,11 +603,22 @@ public class Board
     
     class ImportantFigures
     {
+        public ImportantFigures(ChessComponents enRook, ChessComponents enBishop, ChessComponents enQueen)
+        {
+            EnemyBishop = enBishop;
+            EnemyQueen = enQueen;
+            EnemyRook = enRook;
+        }
+        
         public Figure King;
-        public LinkedList<Figure> BlackTilesBishops = new LinkedList<Figure>();
-        public LinkedList<Figure> WhiteTilesBishops = new LinkedList<Figure>();
-        public LinkedList<Figure> Rooks = new LinkedList<Figure>();
-        public LinkedList<Figure> Queens = new LinkedList<Figure>();
+        public readonly LinkedList<Figure> BlackTilesBishops = new LinkedList<Figure>();
+        public readonly LinkedList<Figure> WhiteTilesBishops = new LinkedList<Figure>();
+        public readonly LinkedList<Figure> Rooks = new LinkedList<Figure>();
+        public readonly LinkedList<Figure> Queens = new LinkedList<Figure>();
+
+        public readonly ChessComponents EnemyRook;
+        public readonly ChessComponents EnemyBishop;
+        public readonly ChessComponents EnemyQueen;
     }
     
 // ------------------------------
@@ -612,7 +627,7 @@ public class Board
     public Figure PromotionPawn => _promotionPawn;
     public LinkedList<Move> MovesHistory => _movesHistory;
     public Figure[,] BoardFigures => _boardFigures;
-    public TileState[,] BlockedTiles => _blockedTiles;
+    public TileState[][,] BlockedTiles => _blockedTiles;
     public bool IsHold => _isHold;
 
     public double WhiteTime => _whiteTime;
@@ -635,7 +650,8 @@ public class Board
     private Figure _selectedFigure;
     private Figure _promotionPawn;
     private Figure _kingAttackingFigure;
-    private ImportantFigures[] _importantFigMap = { new ImportantFigures(), new ImportantFigures() };
+    private readonly ImportantFigures[] _importantFigMap;
+
     
     private Figure[,] _boardFigures;
     private Figure[] _startFiguresLayout;
@@ -644,7 +660,8 @@ public class Board
     private Figure.ColorT _movingColor;
 
     private LinkedList<Move> _movesHistory;
-    private TileState[,] _blockedTiles;
+
+    private TileState[][,] _blockedTiles;
     
     private bool _isHold = false;
     
