@@ -56,7 +56,7 @@ public class Board
         
         _colorMetadataMap = new[]{ 
             new ColorMetadata(ChessComponents.BlackRook, ChessComponents.BlackBishop, ChessComponents.BlackQueen, Figure.ColorT.Black),
-            new ColorMetadata(ChessComponents.WhiteRook, ChessComponents.BlackBishop, ChessComponents.BlackQueen, Figure.ColorT.White)
+            new ColorMetadata(ChessComponents.WhiteRook, ChessComponents.WhiteBishop, ChessComponents.WhiteQueen, Figure.ColorT.White)
         };
 
         _colorMetadataMap[(int)Figure.ColorT.White].AliesRangeOnFigArr[0] = 0;
@@ -76,8 +76,8 @@ public class Board
         try
         {
             _copyAndExtractMetadata();
-            _checkAllLinesOnKing(Figure.ColorT.White);
-            _checkAllLinesOnKing(Figure.ColorT.Black);
+            _blockAllLinesOnKing(Figure.ColorT.White);
+            _blockAllLinesOnKing(Figure.ColorT.Black);
             _blockTilesInit(_movingColor);
             
             if (_colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
@@ -306,8 +306,9 @@ public class Board
         _kingAttackingFigure = null;
         _movingColor = _movingColor == Figure.ColorT.White ? Figure.ColorT.Black : Figure.ColorT.White;
 
-        _blockFigures(Figure.ColorT.White);
-        _blockFigures(Figure.ColorT.Black);
+        _blockFigures(_movingColor);
+        _blockFigures(_colorMetadataMap[(int)_movingColor].EnemyColor);
+        _blockTiles(_movingColor);
         
         if (_colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
             _processCheckMate(_movingColor);
@@ -325,7 +326,7 @@ public class Board
                 
                 // checks detection from pawns and knights, sliding figures should be detected before on fig blocking phase
                 // due to sliding properties
-                if (_boardFigures[mv.moves[j].X, mv.moves[j].Y].TextureIndex == _colorMetadataMap[(int)col].King.TextureIndex)
+                if ((mv.moves[j].MoveT & BoardPos.MoveType.AttackMove) != 0 && _boardFigures[mv.moves[j].X, mv.moves[j].Y] == _colorMetadataMap[(int)col].King)
                     _kingAttackingFigure = _figuresArray[i];
             }
         }
@@ -336,62 +337,58 @@ public class Board
         // only used after one move made 
         var lastMove = _movesHistory.Last!.Value;
 
-        if (lastMove.OldY == _colorMetadataMap[(int)col].King.Pos.Y)
-        {
-            int xDist = _colorMetadataMap[(int)col].King.Pos.X - lastMove.OldX;
-
-            if (xDist < 0) // right
-            {
-                
-            }
-            else // left
-            {
-                
-            }
-        }
-        else if (lastMove.OldX == _colorMetadataMap[(int)col].King.Pos.X)
-        {
-            int yDist = _colorMetadataMap[(int)col].King.Pos.Y - lastMove.OldY;
-
-            if (yDist < 0) //up
-            {
-                
-            }
-            else // down
-            {
-                
-            }
-        }
+        if (_boardFigures[lastMove.NewPos.X, lastMove.NewPos.Y] == _colorMetadataMap[(int)col].King)
+            _blockAllLinesOnKing(col);
         else
         {
-            int xDist = _colorMetadataMap[(int)col].King.Pos.X - lastMove.OldX;
-            int yDist = _colorMetadataMap[(int)col].King.Pos.Y - lastMove.OldY;
-            
-            if (Math.Abs(xDist) != Math.Abs(yDist)) return;
-
-            if (xDist < 0)
+            processBlock(lastMove.OldX, lastMove.OldY);
+            processBlock(lastMove.NewPos.X, lastMove.NewPos.Y);
+        }
+        
+        void processBlock(int x, int y)
+        {
+            if (y == _colorMetadataMap[(int)col].King.Pos.Y)
             {
-                if (yDist < 0) // Ne
-                {
-                    
-                }
-                else // Se
-                {
-                    
-                }
+                int xDist = _colorMetadataMap[(int)col].King.Pos.X - x;
+
+                if (xDist < 0) // right
+                    _blockHorizontalRightLineOnKing(col);
+                
+                else // left
+                    _blockHorizontalLeftLineOnKing(col);
+            }
+            else if (x == _colorMetadataMap[(int)col].King.Pos.X)
+            {
+                int yDist = _colorMetadataMap[(int)col].King.Pos.Y - y;
+
+                if (yDist < 0) //up
+                    _blockVerticalUpLineOnKing(col);
+                else // down
+                    _blockVerticalLowLineOnKing(col);
             }
             else
             {
-                if (yDist < 0) // Nw
+                int xDist = _colorMetadataMap[(int)col].King.Pos.X - x;
+                int yDist = _colorMetadataMap[(int)col].King.Pos.Y - y;
+
+                if (Math.Abs(xDist) != Math.Abs(yDist)) return;
+
+                if (xDist < 0)
                 {
-                    
+                    if (yDist < 0) // Ne
+                        _blockDiagonal(col, (int)Bishop.dir.Ne);
+                    else // Se
+                        _blockDiagonal(col, (int)Bishop.dir.Se);
                 }
-                else // Sw
+                else
                 {
-                    
+                    if (yDist < 0) // Nw
+                        _blockDiagonal(col, (int)Bishop.dir.Nw);
+                    else // Sw
+                        _blockDiagonal(col, (int)Bishop.dir.Sw);
                 }
+
             }
-            
         }
     }
     
@@ -422,7 +419,7 @@ public class Board
         }
     }
 
-    private void _checkAllLinesOnKing(Figure.ColorT col)
+    private void _blockAllLinesOnKing(Figure.ColorT col)
         // used to block figures covering col king from being killed on all lines (diagonal and simple ones)
     {
         for (int i = _colorMetadataMap[(int)col].AliesRangeOnFigArr[0];
@@ -925,7 +922,7 @@ public class Board
 
     private void _processCheckMate(Figure.ColorT lostColor)
     {
-        throw new NotImplementedException("mates not implemented!");
+        // throw new NotImplementedException("mates not implemented!");
     }
 
     private bool _isEmpty(int x, int y) => _boardFigures[x, y] == null;
