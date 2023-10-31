@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using PongGame.Figures;
 
 namespace PongGame;
 
@@ -376,16 +377,16 @@ public class Board
                 if (xDist < 0)
                 {
                     if (yDist < 0) // Ne
-                        _blockDiagonal(col, (int)Bishop.dir.Ne);
+                        _blockDiagonal(col, (int)Bishop.Dir.Ne);
                     else // Se
-                        _blockDiagonal(col, (int)Bishop.dir.Se);
+                        _blockDiagonal(col, (int)Bishop.Dir.Se);
                 }
                 else
                 {
                     if (yDist < 0) // Nw
-                        _blockDiagonal(col, (int)Bishop.dir.Nw);
+                        _blockDiagonal(col, (int)Bishop.Dir.Nw);
                     else // Sw
-                        _blockDiagonal(col, (int)Bishop.dir.Sw);
+                        _blockDiagonal(col, (int)Bishop.Dir.Sw);
                 }
 
             }

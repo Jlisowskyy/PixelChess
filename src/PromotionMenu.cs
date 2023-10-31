@@ -1,4 +1,5 @@
 using System;
+using PongGame.Figures;
 
 namespace PongGame;
 using Microsoft.Xna.Framework;
