@@ -29,7 +29,7 @@ public class Queen : Figure
         rookRet.moves.CopyTo(ret, 0);
         bishopRet.moves.CopyTo(ret, rookRet.movesCount);
 
-        return (ret, rookRet.movesCount + bishopRet.movesCount);
+        return FilterAllowedTiles(ret, rookRet.movesCount + bishopRet.movesCount);
     }
     
     public override Figure Clone() => new Queen(Pos.X, Pos.Y, Color)

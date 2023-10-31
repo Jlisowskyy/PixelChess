@@ -63,7 +63,7 @@ public class Rook : Figure
             }
         }
 
-        return (ret, arrPos);
+        return FilterAllowedTiles(ret, arrPos);
     }
     
     public override Figure Clone() => new Rook(Pos.X, Pos.Y, Color)

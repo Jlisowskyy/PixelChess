@@ -7,6 +7,11 @@ In close future game will be probably connected to, written by me, chess engine.
 
 ### Main features to come:
 
+    - position editing tool
+    - fen based layout input
+    - integration with own chess ai bot
+    - possibly remote games
+
 ## Installation and usage:
 
 ## License

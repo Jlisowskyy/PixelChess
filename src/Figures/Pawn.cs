@@ -63,10 +63,8 @@ public class Pawn : Figure
         {
             for (int dist = 1; dist < 3; ++dist)
             {
-                if (IsEmpty(Pos.X, Pos.Y + _mvCord))
-                {
+                if (IsEmpty(Pos.X, Pos.Y + dist * _mvCord))
                     moves[arrPos++] = new BoardPos(Pos.X, Pos.Y + dist * _mvCord);
-                }
                 else break;
             }
         }
@@ -85,7 +83,7 @@ public class Pawn : Figure
             }
         }
         
-        return (moves, arrPos);
+        return FilterAllowedTiles(moves, arrPos);
     }
 
     public override Figure Clone() => new Pawn(Pos.X, Pos.Y, Color)
@@ -93,8 +91,8 @@ public class Pawn : Figure
         IsAlive = this.IsAlive,
         IsMoved = this.IsMoved
     };
-
-    // ------------------------------
+    
+// ------------------------------
 // helping methods
 // ------------------------------
 

@@ -760,6 +760,7 @@ public class Board
                         {
                             _lastAllowedTilesArr[i].X = nx;
                             _lastAllowedTilesArr[i].Y = ny;
+                            _blockedTiles[(int)col][nx, ny] |= TileState.AllowedTile;
                             nx += Bishop.XMoves[dir];
                             ny += Bishop.YMoves[dir];
                         }
@@ -969,8 +970,7 @@ public class Board
         public int FirstBlackFig;
         public Figure[] StartLayout;
     }
-
-
+    
     // used in moves filtering-maps where
     // - UnblockedTiles - means that move TO and FROM that field is possible, and king is allowed to move here
     // - BlockedTile - means that king is NOT allowed to move here
@@ -1029,6 +1029,7 @@ public class Board
     // used during moves generation to filter illegal moves
     public bool IsHold => _isHold;
 
+    public bool IsCheckted => _kingAttackingFigure != null;
     public double WhiteTime => _whiteTime;
     public double BlackTime => _blackTime;
     

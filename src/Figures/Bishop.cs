@@ -60,7 +60,7 @@ public class Bishop : Figure
             }
         }
         
-        return (ret, arrPos);
+        return FilterAllowedTiles(ret, arrPos);
     }
     
     public override Figure Clone() => new Bishop(Pos.X, Pos.Y, Color)

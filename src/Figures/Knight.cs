@@ -68,7 +68,7 @@ public class Knight : Figure
             else ret[arrPos++] = movesTable[Pos.X, Pos.Y][i];
         }
         
-        return (ret, arrPos);
+        return FilterAllowedTiles(ret,arrPos);
     }
     
 // ------------------------------

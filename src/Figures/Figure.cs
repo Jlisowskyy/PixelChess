@@ -37,6 +37,25 @@ public abstract class Figure
     protected bool IsEmpty(int x, int y) => Parent.BoardFigures[x, y] == null;
 
     protected bool IsEnemy(int x, int y) => Parent.BoardFigures[x, y].Color != this.Color;
+
+    protected (BoardPos[] arr, int arrLimit) FilterAllowedTiles(BoardPos[] arr, int arrLimit)
+    {
+        if (!Parent.IsCheckted) return (arr, arrLimit);
+
+        BoardPos[] arrRet = new BoardPos[arrLimit];
+        int arrRetPos = 0;
+        
+        for (int i = 0; i < arrLimit; ++i)
+        {
+            if ((Parent.BlockedTiles[(int)Color][arr[i].X, arr[i].Y] & Board.TileState.AllowedTile) != 0)
+            {
+                arrRet[arrRetPos].X = arr[i].X;
+                arrRet[arrRetPos++].Y = arr[i].Y;
+            }
+        }
+
+        return (arrRet, arrRetPos);
+    }
     
 // ------------------------------
 // public types
