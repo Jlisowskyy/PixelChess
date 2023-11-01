@@ -32,35 +32,9 @@ public class Bishop : Figure
 // abstract method overwrite
 // --------------------------------
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
-    
+
     {
-        BoardPos[] ret = new BoardPos[MaxPossibleTiles];
-        int arrPos = 0;
-        
-        if (IsBlocked) return (null, 0);
-
-        // loops through all directions from [ sw nw ne se ]
-        for (int i = 0; i < 4; ++i)
-        {
-            int nx = Pos.X;
-            int ny = Pos.Y;
-            for (int j = 0; j < MoveLimMap[Pos.X, Pos.Y][i]; ++j)
-            {
-                nx += XMoves[i];
-                ny += YMoves[i];
-
-                if (!IsEmpty(nx, ny))
-                {
-                    if (IsEnemy(nx, ny))
-                        ret[arrPos++] = new BoardPos(nx, ny, BoardPos.MoveType.AttackMove);
-                    break;
-                }
-
-                ret[arrPos++] = new BoardPos(nx, ny);
-            }
-        }
-        
-        return FilterAllowedTiles(ret, arrPos);
+        return IsBlocked ? _getMovesWhenBlocked() : _getNormalSituationMoves();
     }
     
     public override Figure Clone() => new Bishop(Pos.X, Pos.Y, Color)
@@ -68,12 +42,85 @@ public class Bishop : Figure
         IsAlive = this.IsAlive,
         IsMoved = this.IsMoved
     };
+
+    private (BoardPos[] moves, int movesCount) _getMovesWhenBlocked()
+    {
+        int xDist = Parent.ColorMetadataMap[(int)Color].King.Pos.X - Pos.X;
+        int yDist = Parent.ColorMetadataMap[(int)Color].King.Pos.Y - Pos.Y;
+
+        if (Math.Abs(xDist) != Math.Abs(yDist)) return (null, 0);
+        
+        BoardPos[] ret = new BoardPos[MaxPossibleTilesWhenBlocked];
+        int arrPos = 0;
+
+        if (xDist < 0)
+            ProcessDirections(yDist < 0 ? new[] { Dir.Ne, Dir.Sw } : new[] { Dir.Nw, Dir.Se }); 
+        else
+            ProcessDirections(yDist < 0 ? new[] { Dir.Nw, Dir.Se } : new[] { Dir.Ne, Dir.Sw });
+
+        return (ret, arrPos);
+
+        
+        
+        // Expression simplifier helper
+        
+        void ProcessDirections(Dir[] dirs)
+        {
+            arrPos = DirChosenMoves(this, ret, arrPos, dirs[0]);
+            arrPos = DirChosenMoves(this, ret, arrPos, dirs[1]);
+        }
+    }
+
+    private (BoardPos[] moves, int movesCount) _getNormalSituationMoves()
+    {
+        BoardPos[] ret = new BoardPos[MaxPossibleTiles];
+        int arrPos = 0;
+
+        // loops through all directions from [ sw nw ne se ]
+        for (int i = 0; i < 4; ++i)
+            arrPos = DirChosenMoves(this, ret, arrPos, (Dir)i);
+        
+        return FilterAllowedTiles(ret, arrPos);
+    } 
+    
+
+// ------------------------------------------------------------------------
+// public static function to calculate bishop moves on desired figure
+// ------------------------------------------------------------------------
+
+    /*                      IMPORTANT
+     *  All functions below returns updated arrPos as a result
+     */ 
+
+    public static int DirChosenMoves(Figure fig, BoardPos[] mArr, int arrPos, Dir dir)
+    {
+        int nx = fig.Pos.X;
+        int ny = fig.Pos.Y;
+        for (int j = 0; j < MoveLimMap[fig.Pos.X, fig.Pos.Y][(int)dir]; ++j)
+        {
+            nx += XMoves[(int)dir];
+            ny += YMoves[(int)dir];
+
+            if (!IsEmpty(fig, nx, ny))
+            {
+                if (IsEnemy(fig, nx, ny))
+                    mArr[arrPos++] = new BoardPos(nx, ny, BoardPos.MoveType.AttackMove);
+                break;
+            }
+
+            mArr[arrPos++] = new BoardPos(nx, ny);
+        }
+
+        return arrPos;
+    }
+
     
 // ------------------------------
 // variables and properties
 // ------------------------------
 
     internal const int MaxPossibleTiles = 13;
+    private const int MaxPossibleTilesWhenBlocked = 6;
     
     public enum Dir
     {

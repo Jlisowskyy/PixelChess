@@ -10,7 +10,7 @@ public class PixelChess : Game
     public PixelChess()
     {
         _graphics = new GraphicsDeviceManager(this);
-        _board = new Board(Board.BasicBeginningLayout);
+        _board = new Board(Board.BasicBeginningWoutPawnsLayout);
         _promMenu = new PromotionMenu();
         _timer = new Timer();
         Content.RootDirectory = "Content";

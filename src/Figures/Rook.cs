@@ -14,56 +14,7 @@ public class Rook : Figure
 // --------------------------------
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
-        BoardPos[] ret = new BoardPos[RookCorrectTiles];
-        int arrPos = 0;
-        
-        if (IsBlocked) return (null, 0);
-
-        for (int i = Pos.X - 1; i >= BoardPos.MinPos; --i)
-        {
-            if (IsEmpty(i, Pos.Y))
-                ret[arrPos++] = new BoardPos(i, Pos.Y);
-            else
-            {
-                if (IsEnemy(i, Pos.Y)) ret[arrPos++] = new BoardPos(i, Pos.Y, BoardPos.MoveType.AttackMove);
-                break;
-            }
-        }
-
-        for (int i = Pos.X + 1; i <= BoardPos.MaxPos; ++i)
-        {
-            if (IsEmpty(i, Pos.Y))
-                ret[arrPos++] = new BoardPos(i, Pos.Y);
-            else
-            {
-                if (IsEnemy(i, Pos.Y)) ret[arrPos++] = new BoardPos(i, Pos.Y, BoardPos.MoveType.AttackMove);
-                break;
-            }
-        }
-
-        for (int i = Pos.Y - 1; i >= BoardPos.MinPos; --i)
-        {
-            if (IsEmpty(Pos.X, i))
-                ret[arrPos++] = new BoardPos(Pos.X, i);
-            else
-            {
-                if (IsEnemy(Pos.X, i)) ret[arrPos++] = new BoardPos(Pos.X, i, BoardPos.MoveType.AttackMove);
-                break;
-            }
-        }
-
-        for (int i = Pos.Y + 1; i <= BoardPos.MaxPos; ++i)
-        {
-            if (IsEmpty(Pos.X, i))
-                ret[arrPos++] = new BoardPos(Pos.X, i);
-            else
-            {
-                if (IsEnemy(Pos.X, i)) ret[arrPos++] = new BoardPos(Pos.X, i, BoardPos.MoveType.AttackMove);
-                break;
-            }
-        }
-
-        return FilterAllowedTiles(ret, arrPos);
+        return IsBlocked ? _getMovesWhenBlocked() : _getNormalSituationMoves();
     }
     
     public override Figure Clone() => new Rook(Pos.X, Pos.Y, Color)
@@ -71,10 +22,125 @@ public class Rook : Figure
         IsAlive = this.IsAlive,
         IsMoved = this.IsMoved
     };
+    
+    private (BoardPos[] moves, int movesCount) _getMovesWhenBlocked()
+    {
+        // Horizontal line
+        if (Pos.Y == Parent.ColorMetadataMap[(int)Color].King.Pos.Y)
+        {
+            BoardPos[] ret = new BoardPos[BlockedMaxTiles];
+            int arrPos = 0;
 
+            arrPos = HorLeftMoves(this, ret, arrPos);
+            arrPos = HorRightMoves(this, ret, arrPos);
+
+            return (ret, arrPos);
+        }
+        
+        // Vertical line
+        if (Pos.X == Parent.ColorMetadataMap[(int)Color].King.Pos.X)
+        {
+            BoardPos[] ret = new BoardPos[BlockedMaxTiles];
+            int arrPos = 0;
+
+            arrPos = VertUpMoves(this, ret, arrPos);
+            arrPos = VertDownMoves(this, ret, arrPos);
+            
+            return (ret, arrPos);
+        }
+
+        return (null, 0);
+    }
+
+    private (BoardPos[] moves, int movesCount) _getNormalSituationMoves()
+    {
+        BoardPos[] ret = new BoardPos[MaxCorrectTiles];
+        int arrPos = 0;
+
+        arrPos = HorLeftMoves(this, ret, arrPos);
+        arrPos = HorRightMoves(this, ret, arrPos);
+        arrPos = VertDownMoves(this, ret, arrPos);
+        arrPos = VertUpMoves(this, ret, arrPos);
+
+        return FilterAllowedTiles(ret, arrPos);
+    }
+    
+// ----------------------------------------------------------------------
+// public static function to calculate rook moves on desired figure
+// ----------------------------------------------------------------------
+
+    /*                      IMPORTANT
+     *  All functions below returns updated arrPos as a result
+     */
+
+    public static int VertUpMoves(Figure fig, BoardPos[] mArr, int arrPos)
+    {
+        for (int i = fig.Pos.Y + 1; i <= BoardPos.MaxPos; ++i)
+        {
+            if (IsEmpty(fig, fig.Pos.X, i))
+                mArr[arrPos++] = new BoardPos(fig.Pos.X, i);
+            else
+            {
+                if (IsEnemy(fig, fig.Pos.X, i)) mArr[arrPos++] = new BoardPos(fig.Pos.X, i, BoardPos.MoveType.AttackMove);
+                break;
+            }
+        }
+
+        return arrPos;
+    }
+
+    public static int VertDownMoves(Figure fig, BoardPos[] mArr, int arrPos)
+    {
+        for (int i = fig.Pos.Y - 1; i >= BoardPos.MinPos; --i)
+        {
+            if (IsEmpty(fig, fig.Pos.X, i))
+                mArr[arrPos++] = new BoardPos(fig.Pos.X, i);
+            else
+            {
+                if (IsEnemy(fig, fig.Pos.X, i)) mArr[arrPos++] = new BoardPos(fig.Pos.X, i, BoardPos.MoveType.AttackMove);
+                break;
+            }
+        }
+
+        return arrPos;
+    }
+
+    public static int HorRightMoves(Figure fig, BoardPos[] mArr, int arrPos)
+    {
+        for (int i = fig.Pos.X + 1; i <= BoardPos.MaxPos; ++i)
+        {
+            if (IsEmpty(fig,i, fig.Pos.Y))
+                mArr[arrPos++] = new BoardPos(i, fig.Pos.Y);
+            else
+            {
+                if (IsEnemy(fig, i, fig.Pos.Y)) mArr[arrPos++] = new BoardPos(i, fig.Pos.Y, BoardPos.MoveType.AttackMove);
+                break;
+            }
+        }
+
+        return arrPos;
+    }
+
+    public static int HorLeftMoves(Figure fig, BoardPos[] mArr, int arrPos)
+    {
+        for (int i = fig.Pos.X - 1; i >= BoardPos.MinPos; --i)
+        {
+            if (IsEmpty(fig, i, fig.Pos.Y))
+                mArr[arrPos++] = new BoardPos(i, fig.Pos.Y);
+            else
+            {
+                if (IsEnemy(fig, i, fig.Pos.Y)) mArr[arrPos++] = new BoardPos(i, fig.Pos.Y, BoardPos.MoveType.AttackMove);
+                break;
+            }
+        }
+
+        return arrPos;
+    }
+    
 // ------------------------------
 // variables and properties
 // ------------------------------
 
-    internal const int RookCorrectTiles = 14;
+    internal const int MaxCorrectTiles = 14;
+    private const int BlockedMaxTiles = 6;
 }

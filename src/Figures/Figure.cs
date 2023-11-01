@@ -37,6 +37,10 @@ public abstract class Figure
     protected bool IsEmpty(int x, int y) => Parent.BoardFigures[x, y] == null;
 
     protected bool IsEnemy(int x, int y) => Parent.BoardFigures[x, y].Color != this.Color;
+    
+    protected static bool IsEmpty(Figure fig, int x, int y) => fig.Parent.BoardFigures[x, y] == null;
+
+    protected static bool IsEnemy(Figure fig, int x, int y) => fig.Parent.BoardFigures[x, y].Color != fig.Color;
 
     protected (BoardPos[] arr, int arrLimit) FilterAllowedTiles(BoardPos[] arr, int arrLimit)
     {

@@ -296,16 +296,22 @@ public class Board
     private void _processToNextRound()
     {
         // performs cleaning after previous round
-        if (_lastAllowedTilesCount != 0){
-            for (int i = 0; i < _lastAllowedTilesCount; ++i)
-                _blockedTiles[(int)_movingColor][_lastAllowedTilesArr[i].X, _lastAllowedTilesArr[i].Y] ^=
-                    TileState.AllowedTile;
-
-            _lastAllowedTilesCount = 0;
-        }
+        
+        // TODO: temporary all blocking strategy
+        
+        // if (_lastAllowedTilesCount != 0){
+        //     for (int i = 0; i < _lastAllowedTilesCount; ++i)
+        //         _blockedTiles[(int)_movingColor][_lastAllowedTilesArr[i].X, _lastAllowedTilesArr[i].Y] ^=
+        //             TileState.AllowedTile;
+        //
+        //     _lastAllowedTilesCount = 0;
+        // }
             
         _kingAttackingFigure = null;
         _movingColor = _movingColor == Figure.ColorT.White ? Figure.ColorT.Black : Figure.ColorT.White;
+        
+        _blockedTiles[0] = new TileState[BoardSize,BoardSize];
+        _blockedTiles[1] = new TileState[BoardSize,BoardSize];
 
         _blockFigures(_movingColor);
         _blockFigures(_colorMetadataMap[(int)_movingColor].EnemyColor);
@@ -458,7 +464,8 @@ public class Board
                         // if first figure is attacking king process allowed tiles and return
                     {
                         if (_kingAttackingFigure != null)
-                            throw new ApplicationException("Double check detected - invalid move");
+                            continue;
+                            // throw new ApplicationException("Double check detected - invalid move");
                         
                         _kingAttackingFigure = _boardFigures[x, kingToCheck.Pos.Y];
                         _lastAllowedTilesCount = kingToCheck.Pos.X - x - 1;
@@ -530,7 +537,8 @@ public class Board
                         // if first figure is attacking king process allowed tiles and return
                     {
                         if (_kingAttackingFigure != null)
-                            throw new ApplicationException("Double check detected - invalid move");
+                            continue;
+                            // throw new ApplicationException("Double check detected - invalid move");
                         
                         _kingAttackingFigure = _boardFigures[x, kingToCheck.Pos.Y];
                         _lastAllowedTilesCount = x - kingToCheck.Pos.X - 1;
@@ -600,7 +608,8 @@ public class Board
                         // if first figure is attacking king process allowed tiles and return
                     {
                         if (_kingAttackingFigure != null)
-                            throw new ApplicationException("Double check detected - invalid move");
+                            continue;
+                            // throw new ApplicationException("Double check detected - invalid move");
                         
                         _kingAttackingFigure = _boardFigures[kingToCheck.Pos.X, y];
                         _lastAllowedTilesCount = kingToCheck.Pos.Y - y - 1;
@@ -670,7 +679,8 @@ public class Board
                         // if first figure is attacking king process allowed tiles and return
                     {
                         if (_kingAttackingFigure != null)
-                            throw new ApplicationException("Double check detected - invalid move");
+                            continue;
+                            // throw new ApplicationException("Double check detected - invalid move");
                         
                         _kingAttackingFigure = _boardFigures[kingToCheck.Pos.X, y];
                         _lastAllowedTilesCount = y - kingToCheck.Pos.Y - 1;
@@ -747,7 +757,9 @@ public class Board
                         // if first figure is attacking king process allowed tiles and return
                     {
                         if (_kingAttackingFigure != null)
-                            throw new ApplicationException("Double check detected - invalid move");
+                            continue;
+                            // throw new ApplicationException("Double check detected - invalid move");
+                        
                         
                         _kingAttackingFigure = _boardFigures[nx, ny];
                         _lastAllowedTilesCount = Math.Abs(kingToCheck.Pos.Y - ny) - 1;
@@ -984,7 +996,7 @@ public class Board
     }
     
     // metadata class used to hold information about specific figures of single color
-    struct ColorMetadata
+    public struct ColorMetadata
     {
         public ColorMetadata(ChessComponents enRook, ChessComponents enBishop, ChessComponents enQueen, Figure.ColorT enCol)
         {
@@ -1032,6 +1044,7 @@ public class Board
     public bool IsCheckted => _kingAttackingFigure != null;
     public double WhiteTime => _whiteTime;
     public double BlackTime => _blackTime;
+    public ColorMetadata[] ColorMetadataMap => _colorMetadataMap;
     
     public const int XTilesBeg = 51;
     public const int YTilesBeg = 0;
@@ -1154,6 +1167,30 @@ public class Board
             new Rook(7, 7, Figure.ColorT.Black),
         },
         FirstBlackFig = 16,
+    };
+    
+    public static readonly Layout BasicBeginningWoutPawnsLayout = new Layout
+    {
+        StartLayout = new Figure[]
+        {
+            new Rook(0, 0, Figure.ColorT.White),
+            new Knight(1, 0, Figure.ColorT.White),
+            new Bishop(2,0, Figure.ColorT.White),
+            new Queen(3, 0, Figure.ColorT.White),
+            new King(4,0, Figure.ColorT.White),
+            new Bishop(5,0, Figure.ColorT.White),
+            new Knight(6, 0, Figure.ColorT.White),
+            new Rook(7, 0, Figure.ColorT.White),
+            new Rook(0, 7, Figure.ColorT.Black),
+            new Knight(1, 7, Figure.ColorT.Black),
+            new Bishop(2,7, Figure.ColorT.Black),
+            new Queen(3, 7, Figure.ColorT.Black),
+            new King(4,7, Figure.ColorT.Black),
+            new Bishop(5,7, Figure.ColorT.Black),
+            new Knight(6, 7, Figure.ColorT.Black),
+            new Rook(7, 7, Figure.ColorT.Black),
+        },
+        FirstBlackFig = 8,
     };
     
     public static readonly Layout PawnPromLayout = new Layout
