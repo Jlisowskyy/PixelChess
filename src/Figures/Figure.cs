@@ -44,7 +44,7 @@ public abstract class Figure
 
     protected (BoardPos[] arr, int arrLimit) FilterAllowedTiles(BoardPos[] arr, int arrLimit)
     {
-        if (!Parent.IsCheckted) return (arr, arrLimit);
+        if (!Parent.IsChecked) return (arr, arrLimit);
 
         BoardPos[] arrRet = new BoardPos[arrLimit];
         int arrRetPos = 0;

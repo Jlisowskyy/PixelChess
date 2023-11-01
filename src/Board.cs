@@ -8,6 +8,18 @@ using PongGame.Figures;
 
 namespace PongGame;
 
+/*          GENERAL TODOS
+ *   - restart button
+ *   - 50 moves rule
+ *   - Fen translation
+ *   - make tests for moves
+ *   - implement check mate
+ *   - add sounds
+ *   - open source models
+ *   - update readme and docs
+ * 
+ */
+
 public class Board
 {
 // --------------------------------
@@ -17,10 +29,8 @@ public class Board
         // expects layout array to be grouped to colors groups fitted together, where firs group is white,
         // there also should be exactly one king per color and more than one figure different than king
     {
-        _startFiguresLayout = new Figure[layout.StartLayout.Length];
-        layout.StartLayout.CopyTo(_startFiguresLayout, 0);
-
-        _blackFirstIndex = layout.FirstBlackFig;
+        _startFiguresLayout = layout;
+        
         _yTilesCordOnScreenBeg = YTilesBoardCordBeg;
         _xTilesCordOnScreenBeg = XTilesBoardCordBeg;
     }
@@ -44,7 +54,7 @@ public class Board
     public void ResetBoard()
     {
         _boardFigures = new Figure[BoardSize, BoardSize];
-        _figuresArray = new Figure[_startFiguresLayout.Length];
+        _figuresArray = new Figure[_startFiguresLayout.FigArr.Length];
         
         _movesHistory = new LinkedList<Move>();
         _movesHistory.AddFirst(new Move(0, 0, new BoardPos(0, 0), ChessComponents.Board)); // Sentinel
@@ -61,19 +71,19 @@ public class Board
         };
 
         _colorMetadataMap[(int)Figure.ColorT.White].AliesRangeOnFigArr[0] = 0;
-        _colorMetadataMap[(int)Figure.ColorT.White].AliesRangeOnFigArr[1] = _blackFirstIndex;
-        _colorMetadataMap[(int)Figure.ColorT.White].EnemyRangeOnFigArr[0] = _blackFirstIndex;
+        _colorMetadataMap[(int)Figure.ColorT.White].AliesRangeOnFigArr[1] = _startFiguresLayout.FirstBlackFig;
+        _colorMetadataMap[(int)Figure.ColorT.White].EnemyRangeOnFigArr[0] = _startFiguresLayout.FirstBlackFig;
         _colorMetadataMap[(int)Figure.ColorT.White].EnemyRangeOnFigArr[1] = _figuresArray.Length;
 
-        _colorMetadataMap[(int)Figure.ColorT.Black].AliesRangeOnFigArr[0] = _blackFirstIndex;
+        _colorMetadataMap[(int)Figure.ColorT.Black].AliesRangeOnFigArr[0] = _startFiguresLayout.FirstBlackFig;
         _colorMetadataMap[(int)Figure.ColorT.Black].AliesRangeOnFigArr[1] = _figuresArray.Length;
         _colorMetadataMap[(int)Figure.ColorT.Black].EnemyRangeOnFigArr[0] = 0;
-        _colorMetadataMap[(int)Figure.ColorT.Black].EnemyRangeOnFigArr[1] = _blackFirstIndex;
+        _colorMetadataMap[(int)Figure.ColorT.Black].EnemyRangeOnFigArr[1] = _startFiguresLayout.FirstBlackFig;
         
         _moveCounter = 0;
-        _movingColor = Figure.ColorT.White;
+        _movingColor = _startFiguresLayout.StartingColor;
 
-        // TODO: dodaj przyciski restart start
+        // TODO: add restart button
         try
         {
             _copyAndExtractMetadata();
@@ -86,7 +96,8 @@ public class Board
         }
         catch (Exception exc)
         {
-            
+            // TODO:
+            throw new NotImplementedException();
         }
     }
 
@@ -180,12 +191,12 @@ public class Board
         
         throw new ApplicationException("Unexpected, promotion figure not found");
     }
-    
-    public bool IsSelectedFigure() => _selectedFigure != null;
-    
-    public Vector2 CenterFigurePosOnMouse(int x, int y) => new(x + MouseCentX, y + MouseCentY);
-    
-    public Vector2 Translate(BoardPos pos)
+
+    private bool IsSelectedFigure() => _selectedFigure != null;
+
+    private Vector2 CenterFigurePosOnMouse(int x, int y) => new(x + MouseCentX, y + MouseCentY);
+
+    private Vector2 Translate(BoardPos pos)
         => new Vector2(_xTilesCordOnScreenBeg + pos.X * FigureWidth, _yTilesCordOnScreenBeg - pos.Y * FigureHeight);
 
     public BoardPos Translate(int x, int y)
@@ -213,12 +224,12 @@ public class Board
     {
         if (IsSelectedFigure())
         {
-            var movs = _selectedFigure.GetMoves();
+            var moves = _selectedFigure.GetMoves();
             
             _spriteBatch.Draw(TileHighlightersTextures[(int)TileHighlighters.SelectedTile], Translate(_selectedFigure.Pos), Color.White);
             
-            for (int i = 0; i < movs.movesCount; ++i)
-                _spriteBatch.Draw(TileHighlightersTextures[(int)movs.moves[i].MoveT], Translate(movs.moves[i]), Color.White);
+            for (int i = 0; i < moves.movesCount; ++i)
+                _spriteBatch.Draw(TileHighlightersTextures[(int)moves.moves[i].MoveT], Translate(moves.moves[i]), Color.White);
         }
 
         if (_kingAttackingFigure != null)
@@ -245,17 +256,6 @@ public class Board
             _spriteBatch.Draw(ComponentsTextures[(int)_selectedFigure.TextureIndex],
                 CenterFigurePosOnMouse(mState.X, mState.Y), Color.White);
         }
-    }
-
-    private void _drawDesiredBishopColoredTiles(Figure.ColorT col)
-        // used in tests - debug only
-    {
-        int posMod = col == Figure.ColorT.White ? 1 : 0;
-        
-        for (int x = BoardPos.MinPos; x <= BoardPos.MaxPos; ++x)
-            for (int y = BoardPos.MinPos; y <= BoardPos.MaxPos; ++y)
-                if (Math.Abs(x - y) % 2 == posMod)
-                    _spriteBatch.Draw(TileHighlightersTextures[(int)TileHighlighters.SelectedTile], Translate(new BoardPos(x, y)), Color.White);
     }
     
 // ------------------------------
@@ -284,7 +284,7 @@ public class Board
                 _castleKing(move);
                 break;
             case BoardPos.MoveType.ElPass:
-                _killFigure(MovesHistory.Last.Value.NewPos);
+                _killFigure(MovesHistory.Last!.Value.NewPos);
                 break;
         }
         
@@ -348,11 +348,11 @@ public class Board
             _blockAllLinesOnKing(col);
         else
         {
-            processBlock(lastMove.OldX, lastMove.OldY);
-            processBlock(lastMove.NewPos.X, lastMove.NewPos.Y);
+            ProcessBlock(lastMove.OldX, lastMove.OldY);
+            ProcessBlock(lastMove.NewPos.X, lastMove.NewPos.Y);
         }
         
-        void processBlock(int x, int y)
+        void ProcessBlock(int x, int y)
         {
             if (y == _colorMetadataMap[(int)col].King.Pos.Y)
             {
@@ -857,8 +857,13 @@ public class Board
         }
     }
 
-    private void _translateFenToArray(string fenInput)
-        // translates fen input to array representation of figures
+    public string TranslateFen(Figure[,] chessBoard)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public Layout TranslateFen(string fenInput)
     {
         // TODO
         throw new NotImplementedException();
@@ -869,9 +874,9 @@ public class Board
         // used mainly when initialising game or restarting to start position
         // also analyzes the layout and extract metadata about sliding figures and kings
     {
-        for(int i = 0; i < _startFiguresLayout.Length; ++i)
+        for(int i = 0; i < _startFiguresLayout.FigArr.Length; ++i)
         {
-            _figuresArray[i] = _startFiguresLayout[i].Clone();
+            _figuresArray[i] = _startFiguresLayout.FigArr[i].Clone();
             Figure fig = _figuresArray[i];
             
             _boardFigures[fig.Pos.X, fig.Pos.Y] = fig;
@@ -940,6 +945,21 @@ public class Board
     }
 
     private bool _isEmpty(int x, int y) => _boardFigures[x, y] == null;
+    
+// -----------------------------------
+// debugging and testing methods
+// -----------------------------------
+
+    private void _drawDesiredBishopColoredTiles(Figure.ColorT col)
+        // used in tests - debug only
+    {
+        int posMod = col == Figure.ColorT.White ? 1 : 0;
+        
+        for (int x = BoardPos.MinPos; x <= BoardPos.MaxPos; ++x)
+        for (int y = BoardPos.MinPos; y <= BoardPos.MaxPos; ++y)
+            if (Math.Abs(x - y) % 2 == posMod)
+                _spriteBatch.Draw(TileHighlightersTextures[(int)TileHighlighters.SelectedTile], Translate(new BoardPos(x, y)), Color.White);
+    }
 
 // ------------------------------
 // public types
@@ -964,7 +984,7 @@ public class Board
     }
 
     // used to represent texture index of corresponding tile highlighter,
-    // TODO: DONT UNDERSTAND THIS YET XDDD
+    // TODO: DONT UNDERSTAND THIS YET XDDD ATTACK | PROM ???
     public enum TileHighlighters
     {
         MoveTile = 0,
@@ -980,7 +1000,8 @@ public class Board
     public struct Layout
     {
         public int FirstBlackFig;
-        public Figure[] StartLayout;
+        public Figure.ColorT StartingColor;
+        public Figure[] FigArr;
     }
     
     // used in moves filtering-maps where
@@ -1041,7 +1062,7 @@ public class Board
     // used during moves generation to filter illegal moves
     public bool IsHold => _isHold;
 
-    public bool IsCheckted => _kingAttackingFigure != null;
+    public bool IsChecked => _kingAttackingFigure != null;
     public double WhiteTime => _whiteTime;
     public double BlackTime => _blackTime;
     public ColorMetadata[] ColorMetadataMap => _colorMetadataMap;
@@ -1073,15 +1094,14 @@ public class Board
     // metadata per figures color about players figures deck
 
     private BoardPos[] _lastAllowedTilesArr;
-    private int _lastAllowedTilesCount = 0;
+    private int _lastAllowedTilesCount;
     // used to remove old allowed tiles
     
     private Figure[,] _boardFigures;
     // actual figures on board used to map positions to figures
     
-    private Figure[] _startFiguresLayout;
+    private Layout _startFiguresLayout;
     // storing starting position used to restore start layout 
-
 
     private Figure[] _figuresArray;
     // used to look up throughout all figures for e.g. to process all enemy moves
@@ -1105,7 +1125,6 @@ public class Board
     private double _blackTime;
 
     private int _moveCounter;
-    private readonly int _blackFirstIndex;
 
     private const int MouseCentX = - FigureWidth / 2;
     private const int MouseCentY = - FigureHeight / 2;
@@ -1131,7 +1150,7 @@ public class Board
     
     public static readonly Layout BasicBeginningLayout = new Layout
     {
-        StartLayout = new Figure[]
+        FigArr = new Figure[]
         {
             new Pawn(0,1, Figure.ColorT.White),
             new Pawn(1,1, Figure.ColorT.White),
@@ -1167,11 +1186,12 @@ public class Board
             new Rook(7, 7, Figure.ColorT.Black),
         },
         FirstBlackFig = 16,
+        StartingColor = Figure.ColorT.White
     };
     
     public static readonly Layout BasicBeginningWoutPawnsLayout = new Layout
     {
-        StartLayout = new Figure[]
+        FigArr = new Figure[]
         {
             new Rook(0, 0, Figure.ColorT.White),
             new Knight(1, 0, Figure.ColorT.White),
@@ -1191,11 +1211,13 @@ public class Board
             new Rook(7, 7, Figure.ColorT.Black),
         },
         FirstBlackFig = 8,
+        StartingColor = Figure.ColorT.White
+
     };
     
     public static readonly Layout PawnPromLayout = new Layout
     {
-        StartLayout = new Figure[]
+        FigArr = new Figure[]
         {
             new Pawn(6, 3, Figure.ColorT.White),
             new King(0,0 , Figure.ColorT.White),
@@ -1203,11 +1225,13 @@ public class Board
             new King(0, 7, Figure.ColorT.Black)
         },
         FirstBlackFig = 2,
+        StartingColor = Figure.ColorT.White
+
     };
     
     public static readonly Layout CastlingLayout = new Layout
     {
-        StartLayout = new Figure[]
+        FigArr = new Figure[]
         {
             new King(4, 0, Figure.ColorT.White),
             new Rook(0, 0, Figure.ColorT.White),
@@ -1215,11 +1239,13 @@ public class Board
             new King(0,7, Figure.ColorT.Black),
         },
         FirstBlackFig = 3,
+        StartingColor = Figure.ColorT.White
+
     };
 
     public static readonly Layout DiagTest = new Layout
     {
-        StartLayout = new Figure[]
+        FigArr = new Figure[]
         {
             new Bishop(4, 4, Figure.ColorT.White),
             new Queen(3, 3, Figure.ColorT.White),
@@ -1227,16 +1253,19 @@ public class Board
             new King(7,0, Figure.ColorT.Black),
         },
         FirstBlackFig = 2,
+        StartingColor = Figure.ColorT.White
+
     };
     
     public static readonly Layout BlockTest = new Layout
     {
-        StartLayout = new Figure[]
+        FigArr = new Figure[]
         {
             new King(3, 0, Figure.ColorT.White),
             new Rook(1,1, Figure.ColorT.Black),
             new King(0, 7, Figure.ColorT.Black),
         },
         FirstBlackFig = 1,
+        StartingColor = Figure.ColorT.White
     };
 }
