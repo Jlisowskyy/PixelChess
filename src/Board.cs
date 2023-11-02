@@ -30,9 +30,13 @@ public class Board
         // there also should be exactly one king per color and more than one figure different than king
     {
         _startFiguresLayout = layout;
-        
-        _yTilesCordOnScreenBeg = YTilesBoardCordBeg;
-        _xTilesCordOnScreenBeg = XTilesBoardCordBeg;
+        ResetBoard();
+    }
+
+    public Board(string fenNotationInput)
+    {
+        _startFiguresLayout = TranslateFen(fenNotationInput);
+        ResetBoard();
     }
 
     static Board()
@@ -41,13 +45,23 @@ public class Board
         TileHighlightersTextures = new Texture2D[(int)Enum.GetValues(typeof(TileHighlighters)).Cast<TileHighlighters>().Max() + 1];
     }
 
-    public void Initialize(int xOffset, int yOffset)
+    public void InitializeUiApp(int xOffset, int yOffset)
     {
         _xOffset = xOffset;
         _yOffset = yOffset;
         _xTilesCordOnScreenBeg = XTilesBoardCordBeg + xOffset;
         _yTilesCordOnScreenBeg = YTilesBoardCordBeg + yOffset;
+    }
 
+    public void ChangeGameLayout(Layout layout)
+    {
+        _startFiguresLayout = layout;
+        ResetBoard();
+    }
+
+    public void ChangeGameLayout(string fenNotationInput)
+    {
+        _startFiguresLayout = TranslateFen(fenNotationInput);
         ResetBoard();
     }
 
@@ -859,14 +873,110 @@ public class Board
 
     public string TranslateFen(Figure[,] chessBoard)
     {
-        // TODO
+
+
         throw new NotImplementedException();
     }
 
     public Layout TranslateFen(string fenInput)
     {
-        // TODO
-        throw new NotImplementedException();
+        const int boardTiles = BoardSize * BoardSize;
+        int tile = 0;
+        int inLineTile = 0;
+        int strPos = 0;
+        
+        Figure[] blackFigs = new Figure[boardTiles];
+        int blackPos = 0;
+        Figure[] whiteFigs = new Figure[boardTiles];
+        int whitePos = 0;
+        
+        
+        // Board translation
+        for (; fenInput[strPos] != ' ' && strPos < fenInput.Length; ++strPos)
+        {
+            if (IsNumeric(fenInput[strPos]))
+            {
+                var toSkip = ToNumeric(fenInput[strPos]);
+                
+                for (int j = 0; j < toSkip; ++j)
+                {
+                    ++tile;
+                    ++inLineTile;
+                }
+            }
+            else
+            {
+                int x = GetXPos(tile);
+                int y = GetYPos(tile);
+                
+                switch (fenInput[strPos])
+                {
+                    case 'r':
+                        PlaceFigure(new Rook(x, y, Figure.ColorT.Black));
+                        break;
+                    case 'n':
+                        PlaceFigure(new Knight(x, y, Figure.ColorT.Black));
+                        break;
+                    case 'b':
+                        PlaceFigure(new Bishop(x, y, Figure.ColorT.Black));
+                        break;
+                    case 'q':
+                        PlaceFigure(new Queen(x, y, Figure.ColorT.Black));
+                        break;
+                    case 'k':
+                        PlaceFigure(new King(x, y, Figure.ColorT.Black));
+                        break;
+                    case 'p':
+                        PlaceFigure(new Pawn(x, y, Figure.ColorT.Black));
+                        break;
+                    case 'R':
+                        PlaceFigure(new Rook(x, y, Figure.ColorT.White));
+                        break;
+                    case 'N':
+                        PlaceFigure(new Knight(x, y, Figure.ColorT.White));
+                        break;
+                    case 'B':
+                        PlaceFigure(new Bishop(x, y, Figure.ColorT.White));
+                        break;
+                    case 'Q':
+                        PlaceFigure(new Queen(x, y, Figure.ColorT.White));
+                        break;
+                    case 'K':
+                        PlaceFigure(new King(x, y, Figure.ColorT.White));
+                        break;
+                    case 'P':
+                        PlaceFigure(new Pawn(x, y, Figure.ColorT.White));
+                        break;
+                    case '/':
+                        if (inLineTile >= BoardSize)
+                            throw new ApplicationException("Invalid fen input");
+
+                        inLineTile = 0;
+                        break;
+                }
+                
+                tile++;
+            }
+        }
+
+        if (inLineTile != BoardSize || tile != boardTiles || strPos == fenInput.Length)
+            throw new ApplicationException("Invalid fen input");
+        
+
+        return new Layout();
+
+        bool IsNumeric(char x) => x <= '9' && x >= 0;
+        int ToNumeric(char x) => x - '0';
+
+        int GetXPos(int x) => x % BoardSize;
+        int GetYPos(int x) => BoardPos.MaxPos - x / BoardSize;
+
+        void PlaceFigure(Figure fig)
+        {
+            if (fig.Color == Figure.ColorT.White)
+                whiteFigs[whitePos++] = fig;
+            else blackFigs[blackPos++] = fig;
+        }
     }
 
     private void _copyAndExtractMetadata()
@@ -1115,9 +1225,9 @@ public class Board
     // filtering maps used to block moves
     
     private bool _isHold;
-    
-    private int _yTilesCordOnScreenBeg;
-    private int _xTilesCordOnScreenBeg;
+
+    private int _yTilesCordOnScreenBeg = YTilesBoardCordBeg;
+    private int _xTilesCordOnScreenBeg = XTilesBoardCordBeg;
     private int _xOffset;
     private int _yOffset;
     

@@ -30,7 +30,7 @@ public class PixelChess : Game
 
         int boardHorOffset = (_graphics.PreferredBackBufferWidth - Board.Width) / 2;
         int boardVerOffset = (_graphics.PreferredBackBufferHeight - Board.Height) / 2;
-        _board.Initialize(boardHorOffset, boardVerOffset);
+        _board.InitializeUiApp(boardHorOffset, boardVerOffset);
         _promMenu.Initialize(boardHorOffset, _spriteBatch);
         Board.SpriteBatch = _spriteBatch;
         _board.StartGame(Board.BasicWhiteTime, Board.BasicBlackTIme);
