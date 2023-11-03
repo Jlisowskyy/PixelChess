@@ -35,7 +35,7 @@ public class Board
 
     public Board(string fenNotationInput)
     {
-        _startFiguresLayout = TranslateFen(fenNotationInput);
+        _startFiguresLayout = FenTranslator.Translate(fenNotationInput);
         ResetBoard();
     }
 
@@ -61,7 +61,7 @@ public class Board
 
     public void ChangeGameLayout(string fenNotationInput)
     {
-        _startFiguresLayout = TranslateFen(fenNotationInput);
+        _startFiguresLayout = FenTranslator.Translate(fenNotationInput);
         ResetBoard();
     }
 
@@ -870,115 +870,7 @@ public class Board
             _boardFigures[BoardPos.MinPos, move.Y] = null;
         }
     }
-
-    public string TranslateFen(Figure[,] chessBoard)
-    {
-
-
-        throw new NotImplementedException();
-    }
-
-    public Layout TranslateFen(string fenInput)
-    {
-        const int boardTiles = BoardSize * BoardSize;
-        int tile = 0;
-        int inLineTile = 0;
-        int strPos = 0;
-        
-        Figure[] blackFigs = new Figure[boardTiles];
-        int blackPos = 0;
-        Figure[] whiteFigs = new Figure[boardTiles];
-        int whitePos = 0;
-        
-        
-        // Board translation
-        for (; fenInput[strPos] != ' ' && strPos < fenInput.Length; ++strPos)
-        {
-            if (IsNumeric(fenInput[strPos]))
-            {
-                var toSkip = ToNumeric(fenInput[strPos]);
-                
-                for (int j = 0; j < toSkip; ++j)
-                {
-                    ++tile;
-                    ++inLineTile;
-                }
-            }
-            else
-            {
-                int x = GetXPos(tile);
-                int y = GetYPos(tile);
-                
-                switch (fenInput[strPos])
-                {
-                    case 'r':
-                        PlaceFigure(new Rook(x, y, Figure.ColorT.Black));
-                        break;
-                    case 'n':
-                        PlaceFigure(new Knight(x, y, Figure.ColorT.Black));
-                        break;
-                    case 'b':
-                        PlaceFigure(new Bishop(x, y, Figure.ColorT.Black));
-                        break;
-                    case 'q':
-                        PlaceFigure(new Queen(x, y, Figure.ColorT.Black));
-                        break;
-                    case 'k':
-                        PlaceFigure(new King(x, y, Figure.ColorT.Black));
-                        break;
-                    case 'p':
-                        PlaceFigure(new Pawn(x, y, Figure.ColorT.Black));
-                        break;
-                    case 'R':
-                        PlaceFigure(new Rook(x, y, Figure.ColorT.White));
-                        break;
-                    case 'N':
-                        PlaceFigure(new Knight(x, y, Figure.ColorT.White));
-                        break;
-                    case 'B':
-                        PlaceFigure(new Bishop(x, y, Figure.ColorT.White));
-                        break;
-                    case 'Q':
-                        PlaceFigure(new Queen(x, y, Figure.ColorT.White));
-                        break;
-                    case 'K':
-                        PlaceFigure(new King(x, y, Figure.ColorT.White));
-                        break;
-                    case 'P':
-                        PlaceFigure(new Pawn(x, y, Figure.ColorT.White));
-                        break;
-                    case '/':
-                        if (inLineTile >= BoardSize)
-                            throw new ApplicationException("Invalid fen input");
-
-                        inLineTile = 0;
-                        break;
-                }
-                
-                tile++;
-            }
-        }
-
-        if (inLineTile != BoardSize || tile != boardTiles || strPos == fenInput.Length)
-            throw new ApplicationException("Invalid fen input");
-        
-
-        return new Layout();
-
-        bool IsNumeric(char x) => x <= '9' && x >= 0;
-        int ToNumeric(char x) => x - '0';
-
-        int GetXPos(int x) => x % BoardSize;
-        int GetYPos(int x) => BoardPos.MaxPos - x / BoardSize;
-
-        void PlaceFigure(Figure fig)
-        {
-            if (fig.Color == Figure.ColorT.White)
-                whiteFigs[whitePos++] = fig;
-            else blackFigs[blackPos++] = fig;
-        }
-    }
-
+    
     private void _copyAndExtractMetadata()
         // performs deep copy of saved starting layout to in-game figures array
         // used mainly when initialising game or restarting to start position
@@ -1112,6 +1004,7 @@ public class Board
         public int FirstBlackFig;
         public Figure.ColorT StartingColor;
         public Figure[] FigArr;
+        public BoardPos ElPassantPos; // TODO: DO SOMETHING WITH IT: Translates but do not apply
     }
     
     // used in moves filtering-maps where
