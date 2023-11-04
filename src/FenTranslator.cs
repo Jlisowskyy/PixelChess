@@ -27,6 +27,9 @@ public static class FenTranslator
         if (_inLineTile != Board.BoardSize || _tile != BoardTiles)
             throw new ApplicationException("Not every tile on board was declared");
 
+        ret.FigArr = MergeArrays();
+        ret.FirstBlackFig = _whitePos;
+        
         CheckForSep(fenInput);
         
         ret.StartingColor = ProcessMovingColor(fenInput);
@@ -35,10 +38,10 @@ public static class FenTranslator
         ProcessCastling(fenInput);
         CheckForSep(fenInput);
 
-        ProcessElPassant(fenInput);
+        ret.ElPassantPos = ProcessElPassant(fenInput);
         CheckForSep(fenInput);
-        
-        // TODO: 50 moves rule
+
+        (ret.HalfMoves, ret.FullMoves) = ProcessMovesCounters(fenInput);
         
         return ret;
     }
@@ -46,6 +49,38 @@ public static class FenTranslator
 // ------------------------------
 // private helping methods
 // ------------------------------
+
+    private static Figure[] MergeArrays()
+    {
+        Figure[] arr = new Figure[_whitePos + _blackPos];
+        _whiteFigs[.._whitePos].CopyTo(arr, 0);
+        _blackFigs[.._blackPos].CopyTo(arr, _whitePos);
+
+        return arr;
+    }
+
+    private static (int, int) ProcessMovesCounters(string fenInput)
+    {
+        string rest = fenInput[_strPos..];
+        var components = rest.Split(' ');
+
+        if (components.Length > 2)
+            throw new ApplicationException("Too many components in moves counters");
+
+        int[] movesCounters = new int[2];
+
+        for (int i = 0; i < 2; ++i)
+        {
+            if (i == components.Length) break;
+            if (components[i] == "-") continue;
+
+            if (int.TryParse(components[i], out int mvs))
+                movesCounters[i] = mvs;
+            else throw new ApplicationException("Unexpected token passed to moves counters");
+        }
+
+        return (movesCounters[0], movesCounters[1]);
+    }
 
     private static BoardPos ProcessElPassant(string fenInput)
     {
@@ -89,10 +124,10 @@ public static class FenTranslator
                     FindCastlingRook(0, 0, Figure.ColorT.White);
                     break;
                 case 'Q':
-                    FindCastlingRook(0, 7, Figure.ColorT.White);
+                    FindCastlingRook(7, 0, Figure.ColorT.White);
                     break;
                 case 'k':
-                    FindCastlingRook(7, 0, Figure.ColorT.Black);
+                    FindCastlingRook(0, 7, Figure.ColorT.Black);
                     break;
                 case 'q':
                     FindCastlingRook(7, 7, Figure.ColorT.Black);
@@ -125,7 +160,10 @@ public static class FenTranslator
         for (int i = 0; i < bound; ++i)
         {
             if (arr[i].TextureIndex == ind && arr[i].Pos.X == x && arr[i].Pos.Y == y)
+            {
                 arr[i].IsMoved = false;
+                return;
+            }
         }
 
         throw new ApplicationException("Fen inputs says castling is available bur there is no such rook");
@@ -162,7 +200,7 @@ public static class FenTranslator
             int y = GetYPos(_tile);
 
             char input = char.ToUpper(fenInput[_strPos]);
-            Figure.ColorT col = input == fenInput[_strPos] ? Figure.ColorT.Black : Figure.ColorT.White;
+            Figure.ColorT col = input == fenInput[_strPos] ? Figure.ColorT.White : Figure.ColorT.Black;
             
             switch (input)
             {
@@ -185,14 +223,16 @@ public static class FenTranslator
                     PlaceFigure(new Pawn(x, y, col));
                     break;
                 case '/':
-                    if (_inLineTile >= Board.BoardSize)
-                        throw new ApplicationException("Invalid fen input");
+                    if (_inLineTile > Board.BoardSize)
+                        throw new ApplicationException("To much figures on line");
+                    else if (_inLineTile < Board.BoardSize)
+                        throw new ApplicationException("Not enough figures on line");
 
                     _inLineTile = 0;
                     break;
+                default:
+                    throw new ApplicationException("Unrecognized figure sign");
             }
-            
-            _tile++;
         }
     }
 
@@ -213,10 +253,13 @@ public static class FenTranslator
         if (fig.Color == Figure.ColorT.White)
             _whiteFigs[_whitePos++] = fig;
         else _blackFigs[_blackPos++] = fig;
+
+        ++_inLineTile;
+        ++_tile;
     }
 
     private static bool OutOfBoardRange(int x) => x < BoardPos.MinPos || x > BoardPos.MaxPos;
-    private static bool  IsNumeric(char x) => x <= '9' && x >= 0;
+    private static bool  IsNumeric(char x) => x <= '9' && x >= '0';
     private static int ToNumeric(char x) => x - '0';
 
     private static int GetXPos(int x) => x % Board.BoardSize;

@@ -35,7 +35,17 @@ public class Board
 
     public Board(string fenNotationInput)
     {
-        _startFiguresLayout = FenTranslator.Translate(fenNotationInput);
+        try
+        {
+            _startFiguresLayout = FenTranslator.Translate(fenNotationInput);
+        }
+        catch (ApplicationException exc)
+        {
+            Console.Error.WriteLine($"Error occured during fen translation: {exc.Message}");
+            Console.Error.WriteLine("Loading default layout...");
+
+            _startFiguresLayout = BasicBeginningLayout;
+        }
         ResetBoard();
     }
 
@@ -108,10 +118,13 @@ public class Board
             if (_colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
                 _processCheckMate(_movingColor);
         }
-        catch (Exception exc)
+        catch (ApplicationException exc)
         {
-            // TODO:
-            throw new NotImplementedException();
+            Console.Error.WriteLine($"Incorrect layout passed: {exc.Message}");
+            Console.Error.WriteLine("Loading default layout...");
+
+            _startFiguresLayout = BasicBeginningLayout;
+            ResetBoard();
         }
     }
 
@@ -423,9 +436,10 @@ public class Board
             for (int j = 0; j < moves.movesCount; ++j)
             {
                 _blockedTiles[(int)col][moves.moves[j].X, moves.moves[j].Y] |= TileState.BlockedTile;
-    
+                if (_boardFigures[moves.moves[j].X, moves.moves[j].Y] == null)continue;
+                
                 var type = _boardFigures[moves.moves[j].X, moves.moves[j].Y].TextureIndex;
-                // checks detection from pawns and knights, sliding figures should be detected before on fig blocking phase
+                // checks detection from pawns and knights, sliding figures should be detected before blocking phase
                 if (type == _colorMetadataMap[(int)col].King.TextureIndex &&
                     type != _colorMetadataMap[(int)col].EnemyQueen && 
                     type != _colorMetadataMap[(int)col].EnemyRook &&
@@ -1005,6 +1019,8 @@ public class Board
         public Figure.ColorT StartingColor;
         public Figure[] FigArr;
         public BoardPos ElPassantPos; // TODO: DO SOMETHING WITH IT: Translates but do not apply
+        public int HalfMoves;
+        public int FullMoves;
     }
     
     // used in moves filtering-maps where
