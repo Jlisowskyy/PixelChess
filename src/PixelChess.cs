@@ -10,8 +10,8 @@ public class PixelChess : Game
     public PixelChess()
     {
         _graphics = new GraphicsDeviceManager(this);
-        // _board = new Board(Board.BasicBeginningLayout);
-        _board = new Board("r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1 b - - 1");
+        _board = new Board(Board.BasicBeginningLayout);
+        // _board = new Board("r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1 b - - 1");
         
         _promMenu = new PromotionMenu();
         _timer = new Timer();

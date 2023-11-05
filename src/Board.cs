@@ -17,6 +17,9 @@ namespace PongGame;
  *   - add sounds
  *   - open source models
  *   - update readme and docs
+ *
+ *   - blocking tiles function should process all possible moves
+ *   - checking errors
  * 
  */
 
