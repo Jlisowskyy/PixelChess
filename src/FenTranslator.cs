@@ -7,12 +7,83 @@ namespace PongGame;
 
 public static class FenTranslator
 {
-        public static string Translate(Figure[,] chessBoard)
-    {
+        public static string Translate(Board chessBoard)
+        {
+            char[] fenResult = new char[MaxFenLength];
+            int tabIndex = 0;
+            int dist = 0;
+
+            for (int y = BoardPos.MaxPos; y >= BoardPos.MinPos; --y)
+            {
+                dist = 0;
+                
+                for (int x = BoardPos.MinPos; x <= BoardPos.MaxPos; ++x)
+                {
+                    if (chessBoard.BoardFigures[x, y] == null)
+                    {
+                        dist++;
+                        continue;
+                    }
+
+                    if (dist != 0)
+                    {
+                        fenResult[tabIndex++] = (char)('0' + dist);
+                        dist = 0;
+                    }
+                    
+                    switch (chessBoard.BoardFigures[x, y].TextureIndex)
+                    {
+                        case Board.ChessComponents.BlackBishop:
+                            fenResult[tabIndex] = 'b';
+                            break;
+                        case Board.ChessComponents.BlackKing:
+                            fenResult[tabIndex] = 'k';
+                            break;
+                        case Board.ChessComponents.BlackRook:
+                            fenResult[tabIndex] = 'r';
+                            break;
+                        case Board.ChessComponents.BlackKnight:
+                            fenResult[tabIndex] = 'n';
+                            break;
+                        case Board.ChessComponents.BlackQueen:
+                            fenResult[tabIndex] = 'q';
+                            break;
+                        case Board.ChessComponents.BlackPawn:
+                            fenResult[tabIndex] = 'p';
+                            break;
+                        case Board.ChessComponents.WhiteBishop:
+                            fenResult[tabIndex] = 'B';
+                            break;
+                        case Board.ChessComponents.WhiteKing:
+                            fenResult[tabIndex] = 'K';
+                            break;
+                        case Board.ChessComponents.WhiteKnight:
+                            fenResult[tabIndex] = 'N';
+                            break;
+                        case Board.ChessComponents.WhitePawn:
+                            fenResult[tabIndex] = 'P';
+                            break;
+                        case Board.ChessComponents.WhiteQueen:
+                            fenResult[tabIndex] = 'Q';
+                            break;
+                        case Board.ChessComponents.WhiteRook:
+                            fenResult[tabIndex] = 'R';
+                            break;
+                    }
+
+                    tabIndex++;
+                }
+                
+                if (dist != 0) fenResult[tabIndex++] = (char)('0' + dist);
 
 
-        throw new NotImplementedException();
-    }
+                if (y != BoardPos.MinPos) fenResult[tabIndex++] = '/';
+            }
+
+            fenResult[tabIndex++] = ' ';
+
+            return (new string(fenResult))[..tabIndex];
+        }
 
     public static Board.Layout Translate(string fenInput)
     {
@@ -279,9 +350,14 @@ public static class FenTranslator
     private static int _whitePos;
 
 // ------------------------------
-// private static consts
+// private consts
 // ------------------------------
 
     const int BoardTiles = Board.BoardSize * Board.BoardSize;
     
+// ------------------------------
+// private consts
+// ------------------------------
+
+    public const int MaxFenLength = 90;
 }

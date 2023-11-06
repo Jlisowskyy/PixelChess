@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace PongGame;
 
-public class ResetButton
+public class FenButton
 {
 // --------------------------------
 // type construction / setups
@@ -19,15 +19,10 @@ public class ResetButton
         _yOffset = yOffset;
     }
 
-    public bool ProcessMouseClick(int x, int y)
+    public void ProcessMouseClick(int x, int y)
     {
         if (x >= _xOffset && x <= _xOffset + xSize && y >= _yOffset && y <= _yOffset + ySize)
-        {
-            _board.ResetBoard();
-            return true;
-        }
-
-        return false;
+            Console.WriteLine(FenTranslator.Translate(_board));
     }
 
     public void Draw()
@@ -51,10 +46,8 @@ public class ResetButton
 
     public const int xSize = 120;
     public const int ySize = 35;
-    public int YOffset => _yOffset;
-    public int XOffset => _xOffset;
 
-    public readonly String TextureName = "reset";
+    public readonly String TextureName = "getFen";
 
     public Texture2D Texture
     {

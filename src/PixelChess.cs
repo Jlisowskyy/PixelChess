@@ -12,6 +12,7 @@ public class PixelChess : Game
         _graphics = new GraphicsDeviceManager(this);
         _board = new Board(Board.BasicBeginningLayout);
         _rButton = new ResetButton();
+        _fenButton = new FenButton();
         // _board = new Board("r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1 b - - 1");
         
         _promMenu = new PromotionMenu();
@@ -38,6 +39,7 @@ public class PixelChess : Game
         Board.SpriteBatch = _spriteBatch;
         _timer.Initialize(boardHorOffset, _spriteBatch);
         _rButton.Initialize(_timer.TimerWhiteX, 2 * (Timer.FontHeight + Timer.TimerNameBoardOffset), _spriteBatch, _board);
+        _fenButton.Initialize(_timer.TimerWhiteX, _rButton.YOffset + ResetButton.ySize + Timer.TimerNameBoardOffset, _spriteBatch, _board);
         
         _graphics.ApplyChanges();
     }
@@ -62,6 +64,7 @@ public class PixelChess : Game
         _promMenu.Texture = Content.Load<Texture2D>(_promMenu.TextureName);
         _timer.GameFont = Content.Load<SpriteFont>(_timer.FontName);
         _rButton.Texture = Content.Load<Texture2D>(_rButton.TextureName);
+        _fenButton.Texture = Content.Load<Texture2D>(_fenButton.TextureName);
     }
 
     protected override void Update(GameTime gameTime)
@@ -73,24 +76,26 @@ public class PixelChess : Game
         
         if (mState.LeftButton == ButtonState.Pressed)
         {
-            if (_rButton.ProcessMouseClick(mState.X, mState.Y))
-            {
-                _promMenu.ResetRequest();
-                base.Update(gameTime);
-                return;
-            }
-            
-            if (_promMenu.IsOn)
-            {
-                var fig = _promMenu.ProcessMouseClick(mState.X, mState.Y);
-                _board.Promote(fig);
-            
-                base.Update(gameTime);
-                return;
-            }
-            
             if (_isMouseHold == false)
             {
+                _fenButton.ProcessMouseClick(mState.X, mState.Y);
+            
+                if (_rButton.ProcessMouseClick(mState.X, mState.Y))
+                {
+                    _promMenu.ResetRequest();
+                    base.Update(gameTime);
+                    return;
+                }
+            
+                if (_promMenu.IsOn)
+                {
+                    var fig = _promMenu.ProcessMouseClick(mState.X, mState.Y);
+                    _board.Promote(fig);
+            
+                    base.Update(gameTime);
+                    return;
+                }
+                
                 bool wasHold = _board.IsHold;
                 var res = _board.DropFigure(_board.Translate(mState.X, mState.Y));
 
@@ -128,6 +133,7 @@ public class PixelChess : Game
         _promMenu.Draw();
         _timer.Draw(_board.WhiteTime, _board.BlackTime);
         _rButton.Draw();
+        _fenButton.Draw();
         
         _spriteBatch.End();
         
@@ -141,5 +147,6 @@ public class PixelChess : Game
     private readonly Board _board;
     private readonly Timer _timer;
     private readonly ResetButton _rButton;
+    private readonly FenButton _fenButton;
     private bool _isMouseHold = false;
 }

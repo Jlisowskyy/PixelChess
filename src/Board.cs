@@ -130,6 +130,8 @@ public class Board
             ResetBoard();
         }
 
+        _moveCounter = _startFiguresLayout.FullMoves;
+        _halfMoves = _startFiguresLayout.HalfMoves;
         _whiteTime = _startingWhiteTime;
         _blackTime = _startingBlackTime;
     }
@@ -323,9 +325,38 @@ public class Board
         
         _moveFigure(move); 
         _processToNextRound();
+        _processDrawConditions();
         return move.MoveT;
     }
 
+    private void _processDrawConditions()
+    {
+        // sentinel guarded
+        var move = _movesHistory.Last!.Value;
+
+        if ((move.NewPos.MoveT & BoardPos.MoveType.AttackMove) != 0
+            || _boardFigures[move.NewPos.X, move.NewPos.Y] is Pawn)
+            _halfMoves = 0;
+        else _halfMoves++;
+        
+        if (_halfMoves == 50)
+            _announceDraw();
+    }
+
+    private void _announceDraw()
+    {
+        
+    }
+
+    private void _announceWin()
+    {
+        
+    }
+
+    private void _announcePat()
+    {
+        
+    }
     private void _processToNextRound()
     {
         // performs cleaning after previous round
@@ -859,8 +890,11 @@ public class Board
         _boardFigures[_selectedFigure.Pos.X, _selectedFigure.Pos.Y] = null;
         _boardFigures[move.X, move.Y] = _selectedFigure;
         _selectedFigure.Pos = move;
+
+        if (_selectedFigure.Color == Figure.ColorT.Black)
+            ++_moveCounter;
+        
         _selectedFigure.IsMoved = true;
-        ++_moveCounter;
         _selectedFigure = null;
     }
 
@@ -1155,6 +1189,7 @@ public class Board
     private double _blackTime;
 
     private int _moveCounter;
+    private int _halfMoves;
 
     private const int MouseCentX = - FigureWidth / 2;
     private const int MouseCentY = - FigureHeight / 2;

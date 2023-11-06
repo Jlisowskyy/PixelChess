@@ -133,6 +133,18 @@
 /processorParam:TextureFormat=Color
 /build:ElPass.png
 
+#begin getFen.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:getFen.png
+
 #begin KingAttackTile.png
 /importer:TextureImporter
 /processor:TextureProcessor
