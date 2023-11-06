@@ -30,48 +30,8 @@ public static class FenTranslator
                         fenResult[tabIndex++] = (char)('0' + dist);
                         dist = 0;
                     }
-                    
-                    switch (chessBoard.BoardFigures[x, y].TextureIndex)
-                    {
-                        case Board.ChessComponents.BlackBishop:
-                            fenResult[tabIndex] = 'b';
-                            break;
-                        case Board.ChessComponents.BlackKing:
-                            fenResult[tabIndex] = 'k';
-                            break;
-                        case Board.ChessComponents.BlackRook:
-                            fenResult[tabIndex] = 'r';
-                            break;
-                        case Board.ChessComponents.BlackKnight:
-                            fenResult[tabIndex] = 'n';
-                            break;
-                        case Board.ChessComponents.BlackQueen:
-                            fenResult[tabIndex] = 'q';
-                            break;
-                        case Board.ChessComponents.BlackPawn:
-                            fenResult[tabIndex] = 'p';
-                            break;
-                        case Board.ChessComponents.WhiteBishop:
-                            fenResult[tabIndex] = 'B';
-                            break;
-                        case Board.ChessComponents.WhiteKing:
-                            fenResult[tabIndex] = 'K';
-                            break;
-                        case Board.ChessComponents.WhiteKnight:
-                            fenResult[tabIndex] = 'N';
-                            break;
-                        case Board.ChessComponents.WhitePawn:
-                            fenResult[tabIndex] = 'P';
-                            break;
-                        case Board.ChessComponents.WhiteQueen:
-                            fenResult[tabIndex] = 'Q';
-                            break;
-                        case Board.ChessComponents.WhiteRook:
-                            fenResult[tabIndex] = 'R';
-                            break;
-                    }
 
-                    tabIndex++;
+                    fenResult[tabIndex++] = _getCharFigRepresentation(chessBoard.BoardFigures[x, y].TextureIndex);
                 }
                 
                 if (dist != 0) fenResult[tabIndex++] = (char)('0' + dist);
@@ -81,7 +41,9 @@ public static class FenTranslator
             }
 
             fenResult[tabIndex++] = ' ';
-
+            fenResult[tabIndex++] = chessBoard.MovingColor == Figure.ColorT.White ? 'w' : 'b';
+            fenResult[tabIndex++] = ' ';
+            
             return (new string(fenResult))[..tabIndex];
         }
 
@@ -120,6 +82,35 @@ public static class FenTranslator
 // ------------------------------
 // private helping methods
 // ------------------------------
+
+    // --------------------------------------------
+    // Game representation to fen translation
+    // --------------------------------------------
+
+    private static char _getCharFigRepresentation(Board.ChessComponents ind)
+    {
+        return ind switch
+        {
+            Board.ChessComponents.BlackBishop => 'b',
+            Board.ChessComponents.BlackKing => 'k',
+            Board.ChessComponents.BlackRook => 'r',
+            Board.ChessComponents.BlackKnight => 'n',
+            Board.ChessComponents.BlackQueen => 'q',
+            Board.ChessComponents.BlackPawn => 'p',
+            Board.ChessComponents.WhiteBishop => 'B',
+            Board.ChessComponents.WhiteKing => 'K',
+            Board.ChessComponents.WhiteKnight => 'N',
+            Board.ChessComponents.WhitePawn => 'P',
+            Board.ChessComponents.WhiteQueen => 'Q',
+            Board.ChessComponents.WhiteRook => 'R',
+            _ => throw new ApplicationException("Unexpected figure passed to _getCharFigRepresentation")
+        };
+    }
+
+    // --------------------------------------------
+    // Fen to game representation translation
+    // --------------------------------------------
+
 
     private static Figure[] MergeArrays()
     {

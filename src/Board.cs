@@ -1121,6 +1121,8 @@ public class Board
     // used during moves generation to filter illegal moves
     public bool IsHold => _isHold;
 
+    public Figure.ColorT MovingColor => _movingColor;
+
     public bool IsChecked => _kingAttackingFigure != null;
     public double WhiteTime => _whiteTime;
     public double BlackTime => _blackTime;
