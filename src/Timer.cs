@@ -79,6 +79,8 @@ public class Timer
     public const int TimerBoardOffset = FontHeight + TimerNameBoardOffset;
     public readonly string FontName = "GameFont";
 
+    public int TimerWhiteX => _timerWhiteX;
+
     public SpriteFont GameFont
     {
         set => _gameFont = value;

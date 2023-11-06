@@ -129,6 +129,9 @@ public class Board
             _startFiguresLayout = BasicBeginningLayout;
             ResetBoard();
         }
+
+        _whiteTime = _startingWhiteTime;
+        _blackTime = _startingBlackTime;
     }
 
     public void ProcTimers(double spentTime)
@@ -156,10 +159,10 @@ public class Board
 // type interaction
 // ------------------------------
 
-    public void StartGame(double whiteTime, double blackTime)
+    public void SetTimers(double whiteTime, double blackTime)
     {
-        _whiteTime = whiteTime;
-        _blackTime = blackTime;
+        _startingWhiteTime = _whiteTime = whiteTime;
+        _startingBlackTime = _blackTime = blackTime;
     }
 
     // TODO: consider delegate here when check?
@@ -1142,7 +1145,12 @@ public class Board
     private int _xTilesCordOnScreenBeg = XTilesBoardCordBeg;
     private int _xOffset;
     private int _yOffset;
+
+    // Using un restoring of beginning times of players
+    private double _startingWhiteTime = BasicWhiteTime;
+    private double _startingBlackTime = BasicBlackTIme;
     
+    // actual players time
     private double _whiteTime;
     private double _blackTime;
 

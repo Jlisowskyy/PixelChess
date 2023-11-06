@@ -10,7 +10,7 @@ public class PromotionMenu
 // type construction / setups
 // --------------------------------
 
-public void Initialize(int xOffset, SpriteBatch batch)
+    public void Initialize(int xOffset, SpriteBatch batch)
     {
         _spriteBatch = batch;
         _xOffset = xOffset;
@@ -31,6 +31,12 @@ public void Initialize(int xOffset, SpriteBatch batch)
     {
         _isOn = true;
         _promotionPawn = promPawn;
+    }
+
+    public void ResetRequest()
+    {
+        _isOn = false;
+        _promotionPawn = null;
     }
 
     public Figure ProcessMouseClick(int x, int y)
