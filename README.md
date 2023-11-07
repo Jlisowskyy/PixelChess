@@ -2,6 +2,7 @@
 
 Simple chess project done as first program made in C# to gain some experience in the language.
 Goal is to just make interactive graphical game application using MonoGame framework without any complex ui.
+Project is more focuesed on backend aspects of chess.
 
 In close future game will be probably connected to, written by me, chess engine. Actually only human player enemy is possible.
 
@@ -13,6 +14,14 @@ In close future game will be probably connected to, written by me, chess engine.
     - possibly remote games
 
 ## Installation and usage:
+
+    Prerequsites:
+
+    Download:
+    ```sh
+        git clone https://github.com/Jlisowskyy/PixelChess.git ; cd PixelChess
+    ```
+    
 
 ## License
 
