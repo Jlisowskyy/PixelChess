@@ -7,6 +7,8 @@ public class Pawn : Figure
 // --------------------------------
 // type construction / setups
 // --------------------------------
+
+// TODO: WTF IS THAT
     public Pawn(int x, int y, ColorT color) :
         base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhitePawn : Board.ChessComponents.BlackPawn)
     {

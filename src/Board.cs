@@ -1127,6 +1127,9 @@ public class Board
     public double WhiteTime => _whiteTime;
     public double BlackTime => _blackTime;
     public ColorMetadata[] ColorMetadataMap => _colorMetadataMap;
+
+    public int HalfMoves => _halfMoves;
+    public int FullMoves => _moveCounter;
     
     public const int XTilesBeg = 51;
     public const int YTilesBeg = 0;
@@ -1190,6 +1193,7 @@ public class Board
     private double _whiteTime;
     private double _blackTime;
 
+    // Full moves
     private int _moveCounter;
     private int _halfMoves;
 

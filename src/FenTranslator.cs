@@ -35,14 +35,27 @@ public static class FenTranslator
                 }
                 
                 if (dist != 0) fenResult[tabIndex++] = (char)('0' + dist);
-
-
                 if (y != BoardPos.MinPos) fenResult[tabIndex++] = '/';
             }
 
             fenResult[tabIndex++] = ' ';
             fenResult[tabIndex++] = chessBoard.MovingColor == Figure.ColorT.White ? 'w' : 'b';
             fenResult[tabIndex++] = ' ';
+
+            tabIndex = _appendCastlingPossibilities(chessBoard, fenResult, tabIndex);
+            fenResult[tabIndex++] = ' ';
+            tabIndex = _checkElPassant(chessBoard, fenResult, tabIndex);
+            fenResult[tabIndex++] = ' ';
+
+            var halfMovesArr = chessBoard.HalfMoves.ToString().ToCharArray();
+            halfMovesArr.CopyTo(fenResult, tabIndex);
+            tabIndex += halfMovesArr.Length;
+            
+            fenResult[tabIndex++] = ' ';
+            
+            var fullMovesArr = chessBoard.FullMoves.ToString().ToCharArray();
+            fullMovesArr.CopyTo(fenResult, tabIndex);
+            tabIndex += fullMovesArr.Length;
             
             return (new string(fenResult))[..tabIndex];
         }
@@ -86,6 +99,55 @@ public static class FenTranslator
     // --------------------------------------------
     // Game representation to fen translation
     // --------------------------------------------
+
+    private static readonly Board.ChessComponents[] ElPassantInd = 
+        new[] { Board.ChessComponents.WhitePawn, Board.ChessComponents.BlackPawn };
+    private static int _checkElPassant(Board chessBoard, char[] output, int indp)
+    {
+        int offset = 0;
+
+        var lastMove = chessBoard.MovesHistory.Last!.Value;
+        var fig = chessBoard.BoardFigures[lastMove.NewPos.X, lastMove.NewPos.Y];
+
+        if (fig.TextureIndex == ElPassantInd[(int)fig.Color] && Math.Abs(lastMove.OldY - lastMove.NewPos.Y) == 2)
+        {
+            output[indp + offset++] = (char)('a' + lastMove.NewPos.X);
+            output[indp + offset++] = (char)('1' + lastMove.NewPos.Y - 1);
+        }
+
+        if (offset == 0)
+            output[indp + offset++] = '-';
+
+        return indp + offset;
+    }
+    
+    private static int _appendCastlingPossibilities(Board chessBoard, char[] output, int indp)
+    {
+        int offset = 0;
+        
+        for (int col = 0; col < 2; ++col)
+        {
+            var king = chessBoard.BoardFigures[kingPos[col].X, kingPos[col].Y];
+            if (king != null && king.TextureIndex == kingInd[col] && king.IsMoved == false)
+            {
+                for (int castleType = 0; castleType < 2; ++castleType)
+                {
+                    var rook = chessBoard.BoardFigures[rookPos[col][castleType].X, rookPos[col][castleType].Y];
+
+                    if (rook != null && rook.TextureIndex == rookInd[col] && rook.IsMoved == false)
+                    {
+                        output[indp + offset++] =
+                            col == 0 ? char.ToUpper(castleChar[castleType]) : castleChar[castleType];
+                    }
+                }
+            }
+        }
+
+        if (offset == 0)
+            output[offset++] = '-';
+        
+        return indp + offset;
+    }
 
     private static char _getCharFigRepresentation(Board.ChessComponents ind)
     {
@@ -346,8 +408,32 @@ public static class FenTranslator
 
     const int BoardTiles = Board.BoardSize * Board.BoardSize;
     
+    
+    // Used to simplify checking possible castling 
+    private static readonly BoardPos[] kingPos = new[] { new BoardPos(4,0 ), new BoardPos(4, 7) };
+
+    private static readonly BoardPos[][] rookPos = new[]
+    {
+        new[] { new BoardPos(7, 0), new BoardPos(0, 0) },
+        new[] { new BoardPos(7, 7), new BoardPos(0, 7) }
+    };
+
+    private static readonly char[] castleChar = new[] { 'k', 'q' };
+
+    private static readonly Board.ChessComponents[] rookInd = new[]
+    {
+        Board.ChessComponents.WhiteRook,
+        Board.ChessComponents.BlackRook
+    };
+
+    private static readonly Board.ChessComponents[] kingInd = new[]
+    {
+        Board.ChessComponents.WhiteKing,
+        Board.ChessComponents.BlackKing
+    };
+    
 // ------------------------------
-// private consts
+// public consts
 // ------------------------------
 
     public const int MaxFenLength = 90;
