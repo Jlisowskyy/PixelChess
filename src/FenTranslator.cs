@@ -7,8 +7,7 @@ namespace PongGame;
 
 public static class FenTranslator
 {
-        public static string Translate(Board chessBoard)
-        {
+        public static string GetPosString(Board chessBoard){
             char[] fenResult = new char[MaxFenLength];
             int tabIndex = 0;
             int dist = 0;
@@ -37,6 +36,16 @@ public static class FenTranslator
                 if (dist != 0) fenResult[tabIndex++] = (char)('0' + dist);
                 if (y != BoardPos.MinPos) fenResult[tabIndex++] = '/';
             }
+            
+            return (new string(fenResult))[..tabIndex];
+        }
+        public static string Translate(Board chessBoard)
+        {
+            char[] fenResult = new char[MaxFenLength];
+            int tabIndex = 0;
+
+            var posString = GetPosString(chessBoard);
+            posStrin
 
             fenResult[tabIndex++] = ' ';
             fenResult[tabIndex++] = chessBoard.MovingColor == Figure.ColorT.White ? 'w' : 'b';
