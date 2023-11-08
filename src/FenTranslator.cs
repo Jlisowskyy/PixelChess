@@ -44,8 +44,9 @@ public static class FenTranslator
             char[] fenResult = new char[MaxFenLength];
             int tabIndex = 0;
 
-            var posString = GetPosString(chessBoard);
-            posStrin
+            var posString = GetPosString(chessBoard).ToCharArray();
+            posString.CopyTo(fenResult, 0);
+            tabIndex += posString.Length;
 
             fenResult[tabIndex++] = ' ';
             fenResult[tabIndex++] = chessBoard.MovingColor == Figure.ColorT.White ? 'w' : 'b';

@@ -25,18 +25,22 @@ public class PixelChess : Game
     {
         base.Initialize();
 
+        // calculating minimal possible sizes of window to fit all elements
         const int minHeight = Board.Height;
         const int minWidth = Board.Width + Timer.TimerBoardOffset * 4 + Timer.TimerXSize * 2;
         
+        // adapting size to half of the screen with respect to the minimal size
         var display = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
         _graphics.PreferredBackBufferHeight = Math.Max(minHeight, display.Height / 2);
         _graphics.PreferredBackBufferWidth = Math.Max(minWidth, display.Width / 2);
 
+        // centring board position and creating connection with spriteBatch class
         int boardHorOffset = (_graphics.PreferredBackBufferWidth - Board.Width) / 2;
         int boardVerOffset = (_graphics.PreferredBackBufferHeight - Board.Height) / 2;
-        _board.InitializeUiApp(boardHorOffset, boardVerOffset);
+        _board.InitializeUiApp(boardHorOffset, boardVerOffset, _spriteBatch);
+        
+        // centring other components with respects to others
         _promMenu.Initialize(boardHorOffset, _spriteBatch);
-        Board.SpriteBatch = _spriteBatch;
         _timer.Initialize(boardHorOffset, _spriteBatch);
         _rButton.Initialize(_timer.TimerWhiteX, 2 * (Timer.FontHeight + Timer.TimerNameBoardOffset), _spriteBatch, _board);
         _fenButton.Initialize(_timer.TimerWhiteX, _rButton.YOffset + ResetButton.ySize + Timer.TimerNameBoardOffset, _spriteBatch, _board);
@@ -52,15 +56,20 @@ public class PixelChess : Game
         {
             Board.TileHighlightersTextures[(int)val] = Content.Load<Texture2D>(Enum.GetName(val));
         }
-
-        Board.TileHighlightersTextures[(int)BoardPos.MoveType.PromAndAttack] =
-            Board.TileHighlightersTextures[(int)BoardPos.MoveType.AttackMove];
-
+        
         foreach (var val in Enum.GetValues<Board.ChessComponents>())
         {
             Board.ComponentsTextures[(int)val] = Content.Load<Texture2D>(Enum.GetName(val));
         }
+        
+        foreach (var val in Enum.GetValues<Board.EndGameTexts>())
+        {
+            Board.GameEnds[(int)val] = Content.Load<Texture2D>(Enum.GetName(val));
+        }
 
+        Board.TileHighlightersTextures[(int)BoardPos.MoveType.PromAndAttack] =
+            Board.TileHighlightersTextures[(int)BoardPos.MoveType.AttackMove];
+        
         _promMenu.Texture = Content.Load<Texture2D>(_promMenu.TextureName);
         _timer.GameFont = Content.Load<SpriteFont>(_timer.FontName);
         _rButton.Texture = Content.Load<Texture2D>(_rButton.TextureName);

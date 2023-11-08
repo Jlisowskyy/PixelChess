@@ -9,9 +9,11 @@ using PongGame.Figures;
 namespace PongGame;
 
 /*          GENERAL TODOS
- *   - restart button
- *   - 50 moves rule
- *   - Fen translation
+ *   - repair drawing offsets XD
+ *   - change structure of game elements
+ *   - add interactive menus
+ *   - change texture holding
+ * 
  *   - make tests for moves
  *   - implement check mate
  *   - add sounds
@@ -56,14 +58,16 @@ public class Board
     {
         ComponentsTextures = new Texture2D[Enum.GetNames(typeof(ChessComponents)).Length];
         TileHighlightersTextures = new Texture2D[(int)Enum.GetValues(typeof(TileHighlighters)).Cast<TileHighlighters>().Max() + 1];
+        GameEnds = new Texture2D[Enum.GetNames(typeof(EndGameTexts)).Length];
     }
 
-    public void InitializeUiApp(int xOffset, int yOffset)
+    public void InitializeUiApp(int xOffset, int yOffset, SpriteBatch batch)
     {
         _xOffset = xOffset;
         _yOffset = yOffset;
         _xTilesCordOnScreenBeg = XTilesBoardCordBeg + xOffset;
         _yTilesCordOnScreenBeg = YTilesBoardCordBeg + yOffset;
+        _spriteBatch = batch;
     }
 
     public void ChangeGameLayout(Layout layout)
@@ -107,10 +111,13 @@ public class Board
         _colorMetadataMap[(int)Figure.ColorT.Black].EnemyRangeOnFigArr[0] = 0;
         _colorMetadataMap[(int)Figure.ColorT.Black].EnemyRangeOnFigArr[1] = _startFiguresLayout.FirstBlackFig;
         
+        // Needs to be reseted, cuz its only counts in game moves
         _moveCounter = 0;
-        _movingColor = _startFiguresLayout.StartingColor;
 
-        // TODO: add restart button
+        // should be reseted before initial check mate tests
+        _isGameEnded = false;
+        _movingColor = _startFiguresLayout.StartingColor;
+        
         try
         {
             _copyAndExtractMetadata();
@@ -130,7 +137,7 @@ public class Board
             ResetBoard();
         }
 
-        _moveCounter = _startFiguresLayout.FullMoves;
+        _fullMoves = _startFiguresLayout.FullMoves;
         _halfMoves = _startFiguresLayout.HalfMoves;
         _whiteTime = _startingWhiteTime;
         _blackTime = _startingBlackTime;
@@ -138,7 +145,7 @@ public class Board
 
     public void ProcTimers(double spentTime)
     {
-        if (_moveCounter == 0) return;
+        if (_moveCounter == 0 || _isGameEnded) return;
 
         if (_movingColor == Figure.ColorT.White)
         {
@@ -171,7 +178,7 @@ public class Board
     public void SelectFigure(BoardPos pos)
         // if pos is correct and points to currently moving color's figure selects it as moving figure
     {
-        if (!pos.isOnBoard() || _boardFigures[pos.X, pos.Y] == null || _boardFigures[pos.X, pos.Y].Color != _movingColor)
+        if (!pos.isOnBoard() || _boardFigures[pos.X, pos.Y] == null || _boardFigures[pos.X, pos.Y].Color != _movingColor || _isGameEnded)
         {
             _selectedFigure = null;
             return;
@@ -187,7 +194,7 @@ public class Board
     public (bool WasHit, BoardPos.MoveType mType) DropFigure(BoardPos pos)
         // method used to 'drop' figure on the board, if there is selected ony
     {
-        if (_selectedFigure == null || !pos.isOnBoard()) return (false, BoardPos.MoveType.NormalMove);
+        if (_selectedFigure == null || !pos.isOnBoard() || _isGameEnded) return (false, BoardPos.MoveType.NormalMove);
         
         // flag used to indicate whether figure should be drew or not
         _selectedFigure.IsAlive = true;
@@ -212,7 +219,7 @@ public class Board
         // replaces pawn also on the figures Array
         for(int i = 0; i < _figuresArray.Length; ++i)
         {
-            if (Object.ReferenceEquals(_figuresArray[i], _promotionPawn))
+            if (ReferenceEquals(_figuresArray[i], _promotionPawn))
             {
                 _figuresArray[i] = promFig;
                 _boardFigures[promFig.Pos.X, promFig.Pos.Y] = promFig;
@@ -247,12 +254,10 @@ public class Board
         _drawHighlightedTiles();
         _drawStaticFigures();
         _drawHoveringFigure();
+        _drawEndGameSign();
     }
     
-    private void _drawBoard()
-    {
-        _spriteBatch.Draw(ComponentsTextures[(int)ChessComponents.Board], new Vector2(_xOffset, _yOffset), Color.White);
-    }
+    private void _drawBoard() => _spriteBatch.Draw(ComponentsTextures[(int)ChessComponents.Board], new Vector2(_xOffset, _yOffset), Color.White);
 
     private void _drawHighlightedTiles()
         // draws applies highlighting layers on the board to inform player about allowed move and ongoing actions
@@ -291,6 +296,16 @@ public class Board
             _spriteBatch.Draw(ComponentsTextures[(int)_selectedFigure.TextureIndex],
                 CenterFigurePosOnMouse(mState.X, mState.Y), Color.White);
         }
+    }
+
+    private void _drawEndGameSign()
+    {
+        if (!_isGameEnded) return;
+        int horOffset = (Width - GameEnds[_endGameTextureInd].Width) / 2;
+        int verOffset = (Height - GameEnds[_endGameTextureInd].Height) / 2;
+
+        
+        _spriteBatch.Draw(GameEnds[_endGameTextureInd], new Vector2(_xOffset + horOffset, _yOffset + verOffset), Color.White);
     }
     
 // ------------------------------
@@ -345,17 +360,20 @@ public class Board
 
     private void _announceDraw()
     {
-        
+        _isGameEnded = true;
+        _endGameTextureInd = (int) EndGameTexts.draw;
     }
 
     private void _announceWin()
     {
-        
+        _isGameEnded = true;
+        _endGameTextureInd = (int) (_movingColor == Figure.ColorT.White ? EndGameTexts.bWin : EndGameTexts.wWin);
     }
 
     private void _announcePat()
     {
-        
+        _isGameEnded = true;
+        _endGameTextureInd = (int) EndGameTexts.pat;
     }
     private void _processToNextRound()
     {
@@ -381,6 +399,7 @@ public class Board
         _blockFigures(_colorMetadataMap[(int)_movingColor].EnemyColor);
         _blockTiles(_movingColor);
         
+        // only moving color can lose a game
         if (_colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
             _processCheckMate(_movingColor);
     }
@@ -892,7 +911,9 @@ public class Board
         _selectedFigure.Pos = move;
 
         if (_selectedFigure.Color == Figure.ColorT.Black)
-            ++_moveCounter;
+            ++_fullMoves;
+
+        ++_moveCounter;
         
         _selectedFigure.IsMoved = true;
         _selectedFigure = null;
@@ -1052,6 +1073,14 @@ public class Board
         KingAttackTile = 10,
     }
 
+    public enum EndGameTexts
+    {
+        wWin,
+        bWin,
+        draw,
+        pat,
+    }
+
     // used to explicitly hold saved layouts
     public struct Layout
     {
@@ -1129,7 +1158,7 @@ public class Board
     public ColorMetadata[] ColorMetadataMap => _colorMetadataMap;
 
     public int HalfMoves => _halfMoves;
-    public int FullMoves => _moveCounter;
+    public int FullMoves => _fullMoves;
     
     public const int XTilesBeg = 51;
     public const int YTilesBeg = 0;
@@ -1157,7 +1186,7 @@ public class Board
     private ColorMetadata[] _colorMetadataMap;
     // metadata per figures color about players figures deck
 
-    private BoardPos[] _lastAllowedTilesArr;
+    private BoardPos[] _lastAllowedTilesArr; // TODO: temporary
     private int _lastAllowedTilesCount;
     // used to remove old allowed tiles
     
@@ -1179,11 +1208,19 @@ public class Board
     // filtering maps used to block moves
     
     private bool _isHold;
-
+    
+    // Game ending variables
+    private bool _isGameEnded;
+    private int _endGameTextureInd;
+    
+    // Board positioning
     private int _yTilesCordOnScreenBeg = YTilesBoardCordBeg;
     private int _xTilesCordOnScreenBeg = XTilesBoardCordBeg;
     private int _xOffset;
     private int _yOffset;
+    
+    private const int MouseCentX = - FigureWidth / 2;
+    private const int MouseCentY = - FigureHeight / 2;
 
     // Using un restoring of beginning times of players
     private double _startingWhiteTime = BasicWhiteTime;
@@ -1193,31 +1230,29 @@ public class Board
     private double _whiteTime;
     private double _blackTime;
 
-    // Full moves
+    // in game made moves
     private int _moveCounter;
+    // full moves defined by rules
+    private int _fullMoves;
+    // half moves to apply 50 moves rule
     private int _halfMoves;
-
-    private const int MouseCentX = - FigureWidth / 2;
-    private const int MouseCentY = - FigureHeight / 2;
+    
+    // to allow drawing from inside of the class
+    private SpriteBatch _spriteBatch;
     
 // ------------------------------
 // static fields
 // ------------------------------
 
-    private static SpriteBatch _spriteBatch;
-    
     public static readonly Texture2D[] ComponentsTextures; 
     public static readonly Texture2D[] TileHighlightersTextures;
+    public static readonly Texture2D[] GameEnds;
 
     public const double Second = 1000;
     public const double Minute = 60 * Second;
     public const double BasicWhiteTime = 10 * Minute;
     public const double BasicBlackTIme = 10 * Minute;
-    
-    public static SpriteBatch SpriteBatch
-    {
-        set => _spriteBatch = value;
-    }
+
     
     public static readonly Layout BasicBeginningLayout = new Layout
     {
