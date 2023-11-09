@@ -89,7 +89,8 @@ public class Board
         
         _movesHistory = new LinkedList<Move>();
         _movesHistory.AddFirst(new Move(0, 0, new BoardPos(0, 0), ChessComponents.Board)); // Sentinel
-
+        _layoutDict = new Dictionary<string, int>();
+        
         _blockedTiles = new[]
         {
             new TileState[BoardSize, BoardSize],
@@ -125,8 +126,13 @@ public class Board
             _blockAllLinesOnKing(Figure.ColorT.Black);
             _blockTilesInit(_movingColor);
             
-            if (_colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
+            // TODO: test for not moving color check????
+            
+            if (_kingAttackingFigure != null && _colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
                 _processCheckMate(_movingColor);
+            else if (_colorMetadataMap[(int)_movingColor].FiguresCount == 1 
+                     &&_colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
+                _announcePat();
         }
         catch (ApplicationException exc)
         {
@@ -134,6 +140,7 @@ public class Board
             Console.Error.WriteLine("Loading default layout...");
 
             _startFiguresLayout = BasicBeginningLayout;
+            // Must contain valid layout
             ResetBoard();
         }
 
@@ -141,6 +148,8 @@ public class Board
         _halfMoves = _startFiguresLayout.HalfMoves;
         _whiteTime = _startingWhiteTime;
         _blackTime = _startingBlackTime;
+
+        _checkForPositionRepetitions(FenTranslator.GetPosString(this));
     }
 
     public void ProcTimers(double spentTime)
@@ -340,12 +349,17 @@ public class Board
         
         _moveFigure(move); 
         _processToNextRound();
-        _processDrawConditions();
         return move.MoveT;
     }
 
     private void _processDrawConditions()
+        // Processes all necessary calculations to check draw conditions, including moves counting
+        // and layout presence in past
     {
+        if (_colorMetadataMap[(int)_movingColor].FiguresCount == 1 
+            &&_colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
+            _announcePat();
+        
         // sentinel guarded
         var move = _movesHistory.Last!.Value;
 
@@ -356,28 +370,35 @@ public class Board
         
         if (_halfMoves == 50)
             _announceDraw();
+        
+        if (_checkForPositionRepetitions(FenTranslator.GetPosString(this)))
+            _announceDraw();
     }
 
     private void _announceDraw()
+        // turns onn game ended flag and starts up correct animation
     {
         _isGameEnded = true;
         _endGameTextureInd = (int) EndGameTexts.draw;
     }
 
     private void _announceWin()
+        // turns onn game ended flag and starts up correct animation
     {
         _isGameEnded = true;
         _endGameTextureInd = (int) (_movingColor == Figure.ColorT.White ? EndGameTexts.bWin : EndGameTexts.wWin);
     }
 
     private void _announcePat()
+        // turns onn game ended flag and starts up correct animations
     {
         _isGameEnded = true;
         _endGameTextureInd = (int) EndGameTexts.pat;
     }
     private void _processToNextRound()
     {
-        // performs cleaning after previous round
+        // performs cleaning after previous round, like blocking figures, blocking tiles for king
+        // and performing checks for game endings
         
         // TODO: temporary all blocking strategy
         
@@ -400,11 +421,14 @@ public class Board
         _blockTiles(_movingColor);
         
         // only moving color can lose a game
-        if (_colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
+        if (_kingAttackingFigure != null && _colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
             _processCheckMate(_movingColor);
+        else
+            _processDrawConditions();
     }
 
     private void _blockTiles(Figure.ColorT col)
+        // blocks tiles for king to prevent illegal moves, actually just checks all possibilities
     {
         for (int i = _colorMetadataMap[(int)col].EnemyRangeOnFigArr[0]; i < _colorMetadataMap[(int)col].EnemyRangeOnFigArr[1]; ++i)
         {
@@ -423,6 +447,7 @@ public class Board
     }
 
     private void _blockFigures(Figure.ColorT col)
+        // blocks figures covering king from being killed, accordingly to last made move
     {
         // only used after one move made 
         var lastMove = _movesHistory.Last!.Value;
@@ -922,6 +947,7 @@ public class Board
     private void _killFigure(BoardPos move)
         // removes figures from board->figures map
     {
+        _colorMetadataMap[(int)_boardFigures[move.X, move.Y].Color].FiguresCount--;   
         _boardFigures[move.X, move.Y].IsAlive = false;
         _boardFigures[move.X, move.Y] = null;
     }
@@ -967,6 +993,9 @@ public class Board
 
         if (_figuresArray.Length < 3)
             throw new ApplicationException("Not playable layout - expects to contain more figures than 2 kings");
+        
+        for (int i = 0; i < 2; ++i)
+            _colorMetadataMap[i].FiguresCount = _colorMetadataMap[i].AliesRangeOnFigArr[1] - _colorMetadataMap[i].AliesRangeOnFigArr[0];
     }
 
     private void _extractDataFromFig(Figure fig)
@@ -1016,9 +1045,26 @@ public class Board
         }
     }
 
-    private void _processCheckMate(Figure.ColorT lostColor)
+    bool _checkForPositionRepetitions(string pos)
     {
-        // throw new NotImplementedException("mates not implemented!");
+        const int MaxRepetitions = 3;
+        
+        if (_layoutDict.ContainsKey(pos))
+            if ((_layoutDict[pos] += 1) == MaxRepetitions) return true;
+        else _layoutDict.Add(pos, 1);
+
+        return false;
+    }
+
+    private void _processCheckMate(Figure.ColorT lostColor)
+        // checks if there are any legit moves and if not anonunces win
+    {
+        for (int i = _colorMetadataMap[(int)lostColor].AliesRangeOnFigArr[0];
+             i < _colorMetadataMap[(int)lostColor].AliesRangeOnFigArr[1];  ++i
+             )
+            if (_figuresArray[i].GetMoves().movesCount != 0) return;
+        
+        _announceWin();
     }
 
     private bool _isEmpty(int x, int y) => _boardFigures[x, y] == null;
@@ -1113,12 +1159,9 @@ public class Board
             EnemyQueen = enQueen;
             EnemyRook = enRook;
             EnemyColor = enCol;
-            King = null;
-            EnemyRangeOnFigArr = new int[2];
-            AliesRangeOnFigArr = new int[2];
         }
         
-        public Figure King;
+        public Figure King = null;
         public readonly LinkedList<Figure> BlackTilesBishops = new LinkedList<Figure>();
         public readonly LinkedList<Figure> WhiteTilesBishops = new LinkedList<Figure>();
         public readonly LinkedList<Figure> Rooks = new LinkedList<Figure>();
@@ -1130,10 +1173,10 @@ public class Board
 
         public readonly Figure.ColorT EnemyColor;
 
-        public readonly int[] EnemyRangeOnFigArr;
-        // expects to be array with size 2
-        public readonly int[] AliesRangeOnFigArr;
-        // expects to be array with size 2
+        public readonly int[] EnemyRangeOnFigArr = new int[2];
+        public readonly int[] AliesRangeOnFigArr = new int[2];
+
+        public int FiguresCount = 0;
     }
     
 // ------------------------------
@@ -1212,6 +1255,9 @@ public class Board
     // Game ending variables
     private bool _isGameEnded;
     private int _endGameTextureInd;
+    
+    // Dictionary holding position present in the past to detect position repetitions
+    private Dictionary<string, int> _layoutDict;
     
     // Board positioning
     private int _yTilesCordOnScreenBeg = YTilesBoardCordBeg;
