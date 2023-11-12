@@ -103,8 +103,8 @@ public class Pawn : Figure
     
     private bool _isElPassPossible(int nx, int ny)
     {
-        if (Parent.BoardFigures[nx, ny].TextureIndex == _enemyPawnId && Parent.MovesHistory.Last.Value.FigT == _enemyPawnId
-            && Math.Abs(Parent.MovesHistory.Last.Value.OldY - Parent.MovesHistory.Last.Value.NewPos.Y) == 2) return true;
+        if (Parent.BoardFigures[nx, ny].TextureIndex == _enemyPawnId && Parent.MovesHistory.Last!.Value.Fig.TextureIndex == _enemyPawnId
+            && Math.Abs(Parent.MovesHistory.Last.Value.OldY - Parent.MovesHistory.Last.Value.MadeMove.Y) == 2) return true;
         else return false;
     }
     

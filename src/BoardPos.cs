@@ -39,16 +39,20 @@ public struct BoardPos
 
 public struct Move
 {
-    public Move(int ox, int oy, BoardPos newPos, Board.ChessComponents figT)
+    public Move(int ox, int oy, BoardPos madeMove, Figure fig, bool wasUnmoved = false, Figure killedFig = null)
     {
         OldX = ox;
         OldY = oy;
-        NewPos = newPos;
-        FigT = figT;
+        WasUnmoved = wasUnmoved;
+        MadeMove = madeMove;
+        Fig = fig;
+        KilledFig = killedFig;
     }
 
     public readonly int OldX;
     public readonly int OldY;
-    public readonly BoardPos NewPos;
-    public readonly Board.ChessComponents FigT;
+    public readonly bool WasUnmoved;
+    public readonly BoardPos MadeMove;
+    public readonly Figure Fig;
+    public readonly Figure KilledFig;
 }

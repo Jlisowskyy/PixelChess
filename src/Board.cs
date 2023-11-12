@@ -1,3 +1,5 @@
+#define DEBUG_
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +26,8 @@ namespace PongGame;
  *   - checking errors
  * 
  */
+
+// TODO: 
 
 public class Board
 {
@@ -88,7 +92,7 @@ public class Board
         _figuresArray = new Figure[_startFiguresLayout.FigArr.Length];
         
         _movesHistory = new LinkedList<Move>();
-        _movesHistory.AddFirst(new Move(0, 0, new BoardPos(0, 0), ChessComponents.Board)); // Sentinel
+        _movesHistory.AddFirst(new Move(0, 0, new BoardPos(0, 0), null)); // Sentinel
         _layoutDict = new Dictionary<string, int>();
         
         _blockedTiles = new[]
@@ -222,25 +226,19 @@ public class Board
         // method used to communicate with PromotionMenu class and BoardClass
         // accepts desired figure to replace promoting pawn
     {
+#if DEBUG_
+        if (_promotionPawn == null)
+            throw new ApplicationException("None promoting figure found, but Promote method was called");
+#endif
+        
         if (promFig == null)
             return;
 
-        // replaces pawn also on the figures Array
-        for(int i = 0; i < _figuresArray.Length; ++i)
-        {
-            if (ReferenceEquals(_figuresArray[i], _promotionPawn))
-            {
-                _figuresArray[i] = promFig;
-                _boardFigures[promFig.Pos.X, promFig.Pos.Y] = promFig;
-                _promotionPawn = null;
-                
-                // adds promoted pawn to important figures metadata
-                _extractDataFromFig(promFig);
-                return;
-            }
-        }
+        _replaceFigure(promFig, _promotionPawn);
+        _promotionPawn = null;
         
-        throw new ApplicationException("Unexpected, promotion figure not found");
+        // adds promoted pawn to important figures metadata
+        _extractDataFromFig(promFig);
     }
 
     private bool IsSelectedFigure() => _selectedFigure != null;
@@ -325,31 +323,121 @@ public class Board
         // calls special function to handle passed type of move, performs move consequences on board,
         // and finally hands on action to _processToNextRound(), which performs further actions
     {
+        Figure killedFig = null;
+        
         switch (move.MoveT)
         {
             case BoardPos.MoveType.NormalMove:
                 break;
             case BoardPos.MoveType.AttackMove:
-                _killFigure(move);
+                killedFig = _killFigure(move);
                 break;
             case BoardPos.MoveType.PromotionMove:
                 _promotionPawn = _selectedFigure;
                 break;
             case BoardPos.MoveType.PromAndAttack:
                 _promotionPawn = _selectedFigure;
-                _killFigure(move);
+                killedFig = _killFigure(move);
                 break;
             case BoardPos.MoveType.CastlingMove:
                 _castleKing(move);
                 break;
             case BoardPos.MoveType.ElPass:
-                _killFigure(MovesHistory.Last!.Value.NewPos);
+                killedFig = _killFigure(MovesHistory.Last!.Value.MadeMove);
                 break;
         }
         
+        // TODO: when promotion was done _selectedFigure is not valid then
+        _movesHistory.AddLast(new Move(_selectedFigure.Pos.X, _selectedFigure.Pos.Y, move, _selectedFigure, _selectedFigure.IsMoved, killedFig));
         _moveFigure(move); 
         _processToNextRound();
         return move.MoveT;
+    }
+
+    private void _replaceFigure(Figure replacementFig, Figure figToReplace)
+    {
+        // replaces desired figure also on the figures Array
+        for(int i = 0; i < _figuresArray.Length; ++i)
+        {
+            if (ReferenceEquals(_figuresArray[i], figToReplace))
+            {
+                _figuresArray[i] = replacementFig;
+                _boardFigures[replacementFig.Pos.X, replacementFig.Pos.Y] = replacementFig;
+                return;
+            }
+        }
+        
+#if DEBUG_
+        throw new ApplicationException("Unexpected, figure to change not found");
+#endif
+    }
+
+    private void _undoPositionChange(Move move)
+        // just changes position of passed move figure from new pos to old pos, performs no sanity checks
+    {
+        move.Fig.IsMoved = move.WasUnmoved;
+        _boardFigures[move.MadeMove.X, move.MadeMove.Y] = null;
+        _boardFigures[move.OldX, move.OldY] = move.Fig;
+        move.Fig.Pos.X = move.OldX;
+        move.Fig.Pos.Y = move.OldY;
+    }
+    
+    private void _undoPromotion(Move move)
+        // creates new fig replaces old one on board and inside array. Then uses newly created f
+    {
+        // TODO: HERE IS BUG MOVE.FIG NOT VALID THERE 
+        Figure newFig = new Pawn(move.OldX, move.OldY, move.Fig.Color) { Parent = this };
+        _replaceFigure(newFig, _boardFigures[move.MadeMove.X, move.MadeMove.Y]);
+        _boardFigures[move.MadeMove.X, move.MadeMove.Y] = null;
+        _boardFigures[move.OldX, move.OldY] = newFig;
+    }
+
+    private void _undoKill(Move move)
+        // assumes killed fig tile is empty just activates killed figure drawing and places it on the map
+    {
+        move.KilledFig.IsAlive = true;
+        _boardFigures[move.MadeMove.X, move.MadeMove.Y] = move.KilledFig;
+    }
+
+    private void _undoCastling(Move move)
+    {
+
+    }
+
+    private void _undoElPassant(Move move)
+    {
+        
+    }
+
+    private void _undoMove()
+    {
+        var lastMove = _movesHistory.Last!.Value;
+        if (lastMove.Fig == null) return;
+
+        switch (lastMove.MadeMove.MoveT)
+        {
+            case BoardPos.MoveType.NormalMove:
+                break;
+            case BoardPos.MoveType.AttackMove:
+                _undoPositionChange(lastMove);
+                _undoKill(lastMove);
+                break;
+            case BoardPos.MoveType.PromotionMove:
+                _undoPromotion(lastMove);
+                break;
+            case BoardPos.MoveType.PromAndAttack:
+                _undoPromotion(lastMove);
+                _undoKill(lastMove);
+                break;
+            case BoardPos.MoveType.CastlingMove:
+                _undoCastling(lastMove);
+                break;
+            case BoardPos.MoveType.ElPass:
+                _undoElPassant(lastMove);
+                break;
+        }
+        
+        _movesHistory.RemoveLast();
     }
 
     private void _processDrawConditions()
@@ -363,8 +451,8 @@ public class Board
         // sentinel guarded
         var move = _movesHistory.Last!.Value;
 
-        if ((move.NewPos.MoveT & BoardPos.MoveType.AttackMove) != 0
-            || _boardFigures[move.NewPos.X, move.NewPos.Y] is Pawn)
+        if ((move.MadeMove.MoveT & BoardPos.MoveType.AttackMove) != 0
+            || _boardFigures[move.MadeMove.X, move.MadeMove.Y] is Pawn)
             _halfMoves = 0;
         else _halfMoves++;
         
@@ -452,12 +540,12 @@ public class Board
         // only used after one move made 
         var lastMove = _movesHistory.Last!.Value;
 
-        if (_boardFigures[lastMove.NewPos.X, lastMove.NewPos.Y] == _colorMetadataMap[(int)col].King)
+        if (_boardFigures[lastMove.MadeMove.X, lastMove.MadeMove.Y] == _colorMetadataMap[(int)col].King)
             _blockAllLinesOnKing(col);
         else
         {
             ProcessBlock(lastMove.OldX, lastMove.OldY);
-            ProcessBlock(lastMove.NewPos.X, lastMove.NewPos.Y);
+            ProcessBlock(lastMove.MadeMove.X, lastMove.MadeMove.Y);
         }
         
         void ProcessBlock(int x, int y)
@@ -929,8 +1017,6 @@ public class Board
     private void _moveFigure(BoardPos move)
         // adds moves to history and applies move consequences to all Board structures
     {
-        _movesHistory.AddLast(new Move(_selectedFigure.Pos.X, _selectedFigure.Pos.Y, move, _selectedFigure.TextureIndex));
-        
         _boardFigures[_selectedFigure.Pos.X, _selectedFigure.Pos.Y] = null;
         _boardFigures[move.X, move.Y] = _selectedFigure;
         _selectedFigure.Pos = move;
@@ -944,12 +1030,16 @@ public class Board
         _selectedFigure = null;
     }
 
-    private void _killFigure(BoardPos move)
-        // removes figures from board->figures map
+    private Figure _killFigure(BoardPos move)
+        // removes figures from figures map and returns killed figure
     {
+        Figure retFig = _boardFigures[move.X, move.Y];
+        
         _colorMetadataMap[(int)_boardFigures[move.X, move.Y].Color].FiguresCount--;   
         _boardFigures[move.X, move.Y].IsAlive = false;
         _boardFigures[move.X, move.Y] = null;
+
+        return retFig;
     }
 
     private void _castleKing(BoardPos move)
@@ -1059,9 +1149,8 @@ public class Board
     private void _processCheckMate(Figure.ColorT lostColor)
         // checks if there are any legit moves and if not anonunces win
     {
-        for (int i = _colorMetadataMap[(int)lostColor].AliesRangeOnFigArr[0];
-             i < _colorMetadataMap[(int)lostColor].AliesRangeOnFigArr[1];  ++i
-             )
+        var range = _colorMetadataMap[(int)_movingColor].AliesRangeOnFigArr;
+        for (int i = range[0]; i < range[1]; ++i)
             if (_figuresArray[i].GetMoves().movesCount != 0) return;
         
         _announceWin();
@@ -1084,6 +1173,32 @@ public class Board
                 _spriteBatch.Draw(TileHighlightersTextures[(int)TileHighlighters.SelectedTile], Translate(new BoardPos(x, y)), Color.White);
     }
 
+    private ulong[] _testMoveGeneration(int depth)
+    {
+        ulong[] ret = new ulong[depth];
+
+        var range = _colorMetadataMap[(int)_movingColor].AliesRangeOnFigArr;
+        for (int i = range[0]; i < range[1]; ++i)
+            if (_figuresArray[i].IsAlive)
+            {
+                var mv = _figuresArray[i].GetMoves();
+                ret[0] += (ulong)mv.movesCount;
+                
+                // no need to process all moves when deeper depth is not expected
+                if (depth == 1) continue;
+                
+                for (int j = 0; j < mv.movesCount; ++j)
+                {
+                    _processMove(mv.moves[j]);
+                    var recResult = _testMoveGeneration(depth - 1);
+                    Array.Copy(recResult, 0, ret, 1, recResult.Length);
+                    // TODO: undo move
+                    throw new NotImplementedException("implement undo move");
+                }
+            }
+
+        return ret;
+    }
 // ------------------------------
 // public types
 // ------------------------------

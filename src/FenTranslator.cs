@@ -117,12 +117,12 @@ public static class FenTranslator
         int offset = 0;
 
         var lastMove = chessBoard.MovesHistory.Last!.Value;
-        var fig = chessBoard.BoardFigures[lastMove.NewPos.X, lastMove.NewPos.Y];
+        var fig = chessBoard.BoardFigures[lastMove.MadeMove.X, lastMove.MadeMove.Y];
 
-        if (fig.TextureIndex == ElPassantInd[(int)fig.Color] && Math.Abs(lastMove.OldY - lastMove.NewPos.Y) == 2)
+        if (fig.TextureIndex == ElPassantInd[(int)fig.Color] && Math.Abs(lastMove.OldY - lastMove.MadeMove.Y) == 2)
         {
-            output[indp + offset++] = (char)('a' + lastMove.NewPos.X);
-            output[indp + offset++] = (char)('1' + lastMove.NewPos.Y - 1);
+            output[indp + offset++] = (char)('a' + lastMove.MadeMove.X);
+            output[indp + offset++] = (char)('1' + lastMove.MadeMove.Y - 1);
         }
 
         if (offset == 0)
