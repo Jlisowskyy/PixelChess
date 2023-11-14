@@ -93,8 +93,8 @@ public class King : Figure
 // variables and properties
 // ------------------------------
 
-    private const int ShortCastlingX= 6;
-    private const int LongCastlingX = 2;
+    public const int ShortCastlingX= 6;
+    public const int LongCastlingX = 2;
     public const int ShortCastlingRookX = 5;
     public const int LongCastlingRookX= 3;
     private const int KingMaxTiles = 8 + 2;

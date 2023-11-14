@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using PongGame.Figures;
+using static PongGame.BoardPos;
 
 namespace PongGame;
 
@@ -204,10 +205,10 @@ public class Board
         _selectedFigure.IsAlive = false;
     }
 
-    public (bool WasHit, BoardPos.MoveType mType) DropFigure(BoardPos pos)
+    public (bool WasHit, MoveType mType) DropFigure(BoardPos pos)
         // method used to 'drop' figure on the board, if there is selected ony
     {
-        if (_selectedFigure == null || !pos.isOnBoard() || _isGameEnded) return (false, BoardPos.MoveType.NormalMove);
+        if (_selectedFigure == null || !pos.isOnBoard() || _isGameEnded) return (false, MoveType.NormalMove);
         
         // flag used to indicate whether figure should be drew or not
         _selectedFigure.IsAlive = true;
@@ -219,7 +220,7 @@ public class Board
             if (pos == moves.moves[i])
                 return (true, _processMove(moves.moves[i]));
 
-        return (false, BoardPos.MoveType.NormalMove);
+        return (false, MoveType.NormalMove);
     }
     
     public void Promote(Figure promFig)
@@ -319,7 +320,7 @@ public class Board
 // Private methods zone
 // ------------------------------
 
-    private BoardPos.MoveType _processMove(BoardPos move)
+    private MoveType _processMove(BoardPos move)
         // calls special function to handle passed type of move, performs move consequences on board,
         // and finally hands on action to _processToNextRound(), which performs further actions
     {
@@ -327,22 +328,22 @@ public class Board
         
         switch (move.MoveT)
         {
-            case BoardPos.MoveType.NormalMove:
+            case MoveType.NormalMove:
                 break;
-            case BoardPos.MoveType.AttackMove:
+            case MoveType.AttackMove:
                 killedFig = _killFigure(move);
                 break;
-            case BoardPos.MoveType.PromotionMove:
+            case MoveType.PromotionMove:
                 _promotionPawn = _selectedFigure;
                 break;
-            case BoardPos.MoveType.PromAndAttack:
+            case MoveType.PromAndAttack:
                 _promotionPawn = _selectedFigure;
                 killedFig = _killFigure(move);
                 break;
-            case BoardPos.MoveType.CastlingMove:
+            case MoveType.CastlingMove:
                 _castleKing(move);
                 break;
-            case BoardPos.MoveType.ElPass:
+            case MoveType.ElPass:
                 killedFig = _killFigure(MovesHistory.Last!.Value.MadeMove);
                 break;
         }
@@ -383,13 +384,10 @@ public class Board
     }
     
     private void _undoPromotion(Move move)
-        // creates new fig replaces old one on board and inside array. Then uses newly created f
+        // expects figure to be already move to old place
     {
-        // TODO: HERE IS BUG MOVE.FIG NOT VALID THERE 
-        Figure newFig = new Pawn(move.OldX, move.OldY, move.Fig.Color) { Parent = this };
-        _replaceFigure(newFig, _boardFigures[move.MadeMove.X, move.MadeMove.Y]);
-        _boardFigures[move.MadeMove.X, move.MadeMove.Y] = null;
-        _boardFigures[move.OldX, move.OldY] = newFig;
+        Figure oldPawn = new Pawn(move.OldX, move.OldY, _boardFigures[move.OldX, move.OldY].Color) { Parent = this };
+        _replaceFigure(oldPawn, _boardFigures[move.OldX, move.OldY]);
     }
 
     private void _undoKill(Move move)
@@ -401,41 +399,52 @@ public class Board
 
     private void _undoCastling(Move move)
     {
-
+        (int oldRookX, int newRookX) pos = move.OldX switch
+        {
+            King.LongCastlingX => (MinPos, King.LongCastlingRookX),
+            King.ShortCastlingX => (MaxPos, King.ShortCastlingRookX)
+        };
+        
+        _boardFigures[pos.newRookX, move.OldY].Pos = new BoardPos(pos.oldRookX, move.OldY);
+        _boardFigures[pos.oldRookX, move.OldY] = _boardFigures[pos.newRookX, move.OldY];
+        _boardFigures[pos.newRookX, move.OldY] = null;
     }
 
     private void _undoElPassant(Move move)
     {
-        
+        _boardFigures[move.MadeMove.X, move.OldY] = move.KilledFig;
+        move.KilledFig.IsAlive = true;
     }
 
     private void _undoMove()
     {
         var lastMove = _movesHistory.Last!.Value;
         if (lastMove.Fig == null) return;
-
+        _undoPositionChange(lastMove);
+        
         switch (lastMove.MadeMove.MoveT)
         {
-            case BoardPos.MoveType.NormalMove:
+            case MoveType.NormalMove:
                 break;
-            case BoardPos.MoveType.AttackMove:
-                _undoPositionChange(lastMove);
+            case MoveType.AttackMove:
                 _undoKill(lastMove);
                 break;
-            case BoardPos.MoveType.PromotionMove:
+            case MoveType.PromotionMove:
                 _undoPromotion(lastMove);
                 break;
-            case BoardPos.MoveType.PromAndAttack:
+            case MoveType.PromAndAttack:
                 _undoPromotion(lastMove);
                 _undoKill(lastMove);
                 break;
-            case BoardPos.MoveType.CastlingMove:
+            case MoveType.CastlingMove:
                 _undoCastling(lastMove);
                 break;
-            case BoardPos.MoveType.ElPass:
+            case MoveType.ElPass:
                 _undoElPassant(lastMove);
                 break;
-        }
+    #if DEBUG_
+            default:
+                throw new ApplicationException("[DEBUG ERROR]");
         
         _movesHistory.RemoveLast();
     }
@@ -451,7 +460,7 @@ public class Board
         // sentinel guarded
         var move = _movesHistory.Last!.Value;
 
-        if ((move.MadeMove.MoveT & BoardPos.MoveType.AttackMove) != 0
+        if ((move.MadeMove.MoveT & MoveType.AttackMove) != 0
             || _boardFigures[move.MadeMove.X, move.MadeMove.Y] is Pawn)
             _halfMoves = 0;
         else _halfMoves++;
@@ -528,7 +537,7 @@ public class Board
                 
                 // checks detection from pawns and knights, sliding figures should be detected before on fig blocking phase
                 // due to sliding properties
-                if ((mv.moves[j].MoveT & BoardPos.MoveType.AttackMove) != 0 && _boardFigures[mv.moves[j].X, mv.moves[j].Y] == _colorMetadataMap[(int)col].King)
+                if ((mv.moves[j].MoveT & MoveType.AttackMove) != 0 && _boardFigures[mv.moves[j].X, mv.moves[j].Y] == _colorMetadataMap[(int)col].King)
                     _kingAttackingFigure = _figuresArray[i];
             }
         }
@@ -648,7 +657,7 @@ public class Board
         Figure kingToCheck = _colorMetadataMap[(int)col].King;
 
         int mx = -1;
-        for (int x = kingToCheck.Pos.X - 1; x >= BoardPos.MinPos; --x)
+        for (int x = kingToCheck.Pos.X - 1; x >= MinPos; --x)
         {
             if (!_isEmpty(x, kingToCheck.Pos.Y))
                 // figure detected
@@ -721,7 +730,7 @@ public class Board
         Figure kingToCheck = _colorMetadataMap[(int)col].King;
 
         int mx = -1;
-        for (int x = kingToCheck.Pos.X + 1; x <= BoardPos.MaxPos; ++x)
+        for (int x = kingToCheck.Pos.X + 1; x <= MaxPos; ++x)
         {
             if (!_isEmpty(x, kingToCheck.Pos.Y))
                 // figure detected
@@ -792,7 +801,7 @@ public class Board
         Figure kingToCheck = _colorMetadataMap[(int)col].King;
 
         int my = -1;
-        for (int y = kingToCheck.Pos.Y - 1; y >= BoardPos.MinPos; --y)
+        for (int y = kingToCheck.Pos.Y - 1; y >= MinPos; --y)
         {
             if (!_isEmpty(kingToCheck.Pos.X, y))
                 // figure detected
@@ -863,7 +872,7 @@ public class Board
         Figure kingToCheck = _colorMetadataMap[(int)col].King;
 
         int my = -1;
-        for (int y = kingToCheck.Pos.Y + 1; y <= BoardPos.MaxPos; ++y)
+        for (int y = kingToCheck.Pos.Y + 1; y <= MaxPos; ++y)
         {
             if (!_isEmpty(kingToCheck.Pos.X, y))
                 // figure detected
@@ -1042,24 +1051,36 @@ public class Board
         return retFig;
     }
 
-    private void _castleKing(BoardPos move)
+    private void _castleKing(BoardPos newKingPos)
         // assumes passed move is correct castling and selected figures is moving king
         // only applies consequences of desired castling 
     {
-        if (_selectedFigure.Pos.X - move.X < 0)
-            // short castling
+        (int oldRookX, int newRookX) pos = newKingPos.X switch
         {
-            _boardFigures[BoardPos.MaxPos, move.Y].Pos = new BoardPos(King.ShortCastlingRookX, move.Y);
-            _boardFigures[King.ShortCastlingRookX, move.Y] = _boardFigures[BoardPos.MaxPos, move.Y];
-            _boardFigures[BoardPos.MaxPos, move.Y] = null;
-        }
-        else
-            // long castling
-        {
-            _boardFigures[BoardPos.MinPos, move.Y].Pos = new BoardPos(King.LongCastlingRookX, move.Y);
-            _boardFigures[King.LongCastlingRookX, move.Y] = _boardFigures[BoardPos.MinPos, move.Y];
-            _boardFigures[BoardPos.MinPos, move.Y] = null;
-        }
+            King.LongCastlingX => (MinPos, King.LongCastlingRookX),
+            King.ShortCastlingX => (MaxPos, King.ShortCastlingRookX)
+        };
+        
+        _boardFigures[pos.oldRookX, newKingPos.Y].Pos = new(pos.newRookX, newKingPos.Y);
+        _boardFigures[pos.newRookX, newKingPos.Y] = _boardFigures[pos.oldRookX, newKingPos.Y];
+        _boardFigures[pos.oldRookX, newKingPos.Y] = null;
+
+        
+        // TODO: remove if works
+        // if (_selectedFigure.Pos.X - move.X < 0)
+        //     // short castling
+        // {
+        //     _boardFigures[MaxPos, move.Y].Pos = new BoardPos(King.ShortCastlingRookX, move.Y);
+        //     _boardFigures[King.ShortCastlingRookX, move.Y] = _boardFigures[MaxPos, move.Y];
+        //     _boardFigures[MaxPos, move.Y] = null;
+        // }
+        // else
+        //     // long castling
+        // {
+        //     _boardFigures[MinPos, move.Y].Pos = new BoardPos(King.LongCastlingRookX, move.Y);
+        //     _boardFigures[King.LongCastlingRookX, move.Y] = _boardFigures[MinPos, move.Y];
+        //     _boardFigures[MinPos, move.Y] = null;
+        // }
     }
     
     private void _copyAndExtractMetadata()
@@ -1167,8 +1188,8 @@ public class Board
     {
         int posMod = col == Figure.ColorT.White ? 1 : 0;
         
-        for (int x = BoardPos.MinPos; x <= BoardPos.MaxPos; ++x)
-        for (int y = BoardPos.MinPos; y <= BoardPos.MaxPos; ++y)
+        for (int x = MinPos; x <= MaxPos; ++x)
+        for (int y = MinPos; y <= MaxPos; ++y)
             if (Math.Abs(x - y) % 2 == posMod)
                 _spriteBatch.Draw(TileHighlightersTextures[(int)TileHighlighters.SelectedTile], Translate(new BoardPos(x, y)), Color.White);
     }
