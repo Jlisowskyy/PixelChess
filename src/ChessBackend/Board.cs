@@ -182,6 +182,7 @@ public class Board
 // type interaction
 // ------------------------------
 
+    public void UndoMove() => _undoMove();
     public void SetTimers(double whiteTime, double blackTime)
     {
         _startingWhiteTime = _whiteTime = whiteTime;
@@ -421,7 +422,7 @@ public class Board
         var lastMove = _movesHistory.Last!.Value;
         if (lastMove.Fig == null) return;
         _undoPositionChange(lastMove);
-        
+
         switch (lastMove.MadeMove.MoveT)
         {
             case MoveType.NormalMove:
@@ -442,10 +443,12 @@ public class Board
             case MoveType.ElPass:
                 _undoElPassant(lastMove);
                 break;
-    #if DEBUG_
+#if DEBUG_
             default:
                 throw new ApplicationException("[DEBUG ERROR]");
-        
+#endif
+        }
+
         _movesHistory.RemoveLast();
     }
 
@@ -1064,23 +1067,6 @@ public class Board
         _boardFigures[pos.oldRookX, newKingPos.Y].Pos = new(pos.newRookX, newKingPos.Y);
         _boardFigures[pos.newRookX, newKingPos.Y] = _boardFigures[pos.oldRookX, newKingPos.Y];
         _boardFigures[pos.oldRookX, newKingPos.Y] = null;
-
-        
-        // TODO: remove if works
-        // if (_selectedFigure.Pos.X - move.X < 0)
-        //     // short castling
-        // {
-        //     _boardFigures[MaxPos, move.Y].Pos = new BoardPos(King.ShortCastlingRookX, move.Y);
-        //     _boardFigures[King.ShortCastlingRookX, move.Y] = _boardFigures[MaxPos, move.Y];
-        //     _boardFigures[MaxPos, move.Y] = null;
-        // }
-        // else
-        //     // long castling
-        // {
-        //     _boardFigures[MinPos, move.Y].Pos = new BoardPos(King.LongCastlingRookX, move.Y);
-        //     _boardFigures[King.LongCastlingRookX, move.Y] = _boardFigures[MinPos, move.Y];
-        //     _boardFigures[MinPos, move.Y] = null;
-        // }
     }
     
     private void _copyAndExtractMetadata()

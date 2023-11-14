@@ -260,6 +260,18 @@
 /processorParam:TextureFormat=Compressed
 /build:UbuntuMono.spritefont;GameFont.spritefont
 
+#begin undo.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:undo.png
+
 #begin WhiteBishop.png
 /importer:TextureImporter
 /processor:TextureProcessor

@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using PongGame.Ui;
 
 namespace PongGame;
 
@@ -11,8 +12,9 @@ public class PixelChess : Game
     {
         _graphics = new GraphicsDeviceManager(this);
         _board = new Board(Board.BasicBeginningLayout);
-        _rButton = new ResetButton();
-        _fenButton = new FenButton();
+        _rButton = new ResetButton(_board);
+        _fenButton = new FenButton(_board);
+        _uButton = new UndoButton(_board);
         // _board = new Board("r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1 b - - 1");
         
         _promMenu = new PromotionMenu();
@@ -42,9 +44,9 @@ public class PixelChess : Game
         // centring other components with respects to others
         _promMenu.Initialize(boardHorOffset, _spriteBatch);
         _timer.Initialize(boardHorOffset, _spriteBatch);
-        _rButton.Initialize(_timer.TimerWhiteX, 2 * (Timer.FontHeight + Timer.TimerNameBoardOffset), _spriteBatch, _board);
-        _fenButton.Initialize(_timer.TimerWhiteX, _rButton.YOffset + ResetButton.ySize + Timer.TimerNameBoardOffset, _spriteBatch, _board);
-        
+        _rButton.Initialize(_timer.TimerWhiteX, 2 * (Timer.FontHeight + Timer.TimerNameBoardOffset), _spriteBatch);
+        _fenButton.Initialize(_rButton.XOffset, _rButton.YOffset + _rButton.YSize + Timer.TimerNameBoardOffset, _spriteBatch);
+        _uButton.Initialize(_fenButton.XOffset, _fenButton.YOffset + _fenButton.YSize + Timer.TimerNameBoardOffset, _spriteBatch);
         _graphics.ApplyChanges();
     }
 
@@ -74,6 +76,7 @@ public class PixelChess : Game
         _timer.GameFont = Content.Load<SpriteFont>(_timer.FontName);
         _rButton.Texture = Content.Load<Texture2D>(_rButton.TextureName);
         _fenButton.Texture = Content.Load<Texture2D>(_fenButton.TextureName);
+        _uButton.Texture = Content.Load<Texture2D>(_uButton.TextureName);
     }
 
     protected override void Update(GameTime gameTime)
@@ -143,6 +146,7 @@ public class PixelChess : Game
         _timer.Draw(_board.WhiteTime, _board.BlackTime);
         _rButton.Draw();
         _fenButton.Draw();
+        _uButton.Draw();
         
         _spriteBatch.End();
         
@@ -157,5 +161,6 @@ public class PixelChess : Game
     private readonly Timer _timer;
     private readonly ResetButton _rButton;
     private readonly FenButton _fenButton;
+    private readonly UndoButton _uButton;
     private bool _isMouseHold = false;
 }
