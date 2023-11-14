@@ -91,6 +91,7 @@ public class PixelChess : Game
             if (_isMouseHold == false)
             {
                 _fenButton.ProcessMouseClick(mState.X, mState.Y);
+                _uButton.ProcessMouseClick(mState.X, mState.Y);
             
                 if (_rButton.ProcessMouseClick(mState.X, mState.Y))
                 {

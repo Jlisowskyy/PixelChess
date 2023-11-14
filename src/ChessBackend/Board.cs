@@ -349,7 +349,6 @@ public class Board
                 break;
         }
         
-        // TODO: when promotion was done _selectedFigure is not valid then
         _movesHistory.AddLast(new Move(_selectedFigure.Pos.X, _selectedFigure.Pos.Y, move, _selectedFigure, _selectedFigure.IsMoved, killedFig));
         _moveFigure(move); 
         _processToNextRound();
