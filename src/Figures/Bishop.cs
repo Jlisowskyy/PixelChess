@@ -1,4 +1,5 @@
 using System;
+using PongGame.ChessBackend;
 
 namespace PongGame.Figures;
 

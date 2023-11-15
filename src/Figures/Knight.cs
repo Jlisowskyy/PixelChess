@@ -1,3 +1,5 @@
+using PongGame.ChessBackend;
+
 namespace PongGame.Figures;
 
 public class Knight : Figure

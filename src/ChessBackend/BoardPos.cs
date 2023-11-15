@@ -1,9 +1,24 @@
 using System;
 
-namespace PongGame;
+namespace PongGame.ChessBackend;
 
 public struct BoardPos
 {
+    public bool Equals(BoardPos other)
+    {
+        return MoveT == other.MoveT && X == other.X && Y == other.Y;
+    }
+
+    public override bool Equals(object obj)
+    {
+        return obj is BoardPos other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine((int)MoveT, X, Y);
+    }
+
     public BoardPos(int x, int y, MoveType mov = MoveType.NormalMove)
     {
         this.X = x;

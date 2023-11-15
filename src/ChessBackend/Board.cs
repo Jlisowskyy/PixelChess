@@ -6,8 +6,9 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using PongGame.ChessBackend;
 using PongGame.Figures;
-using static PongGame.BoardPos;
+using static PongGame.ChessBackend.BoardPos;
 
 namespace PongGame;
 

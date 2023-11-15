@@ -2,6 +2,7 @@ using PongGame.Figures;
 using System;
 using System.Collections.Generic;
 using PongGame;
+using PongGame.ChessBackend;
 
 namespace PongGame;
 
