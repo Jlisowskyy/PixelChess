@@ -58,4 +58,4 @@ However, future plans include the incorporation of the following features:
 
 ## License
 
-See `LICENSE.txt` for more information.
+Distributed under the MIT License. See `LICENSE.txt` for more information.
