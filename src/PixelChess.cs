@@ -9,19 +9,28 @@ namespace PongGame;
 
 public class PixelChess : Game
 { 
+    
+// ------------------------------------
+// type creation / initialization
+// ------------------------------------
+
     public PixelChess()
     {
+        // Monogame components
         _graphics = new GraphicsDeviceManager(this);
+        Content.RootDirectory = "Content";
+        IsMouseVisible = true;
+        
+        // Actual elements
         _board = new Board(Board.BasicBeginningLayout);
-        _rButton = new ResetButton(_board);
-        _fenButton = new FenButton(_board);
-        _uButton = new UndoButton(_board);
         // _board = new Board("r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1 b - - 1");
         
         _promMenu = new PromotionMenu();
         _timer = new Timer();
-        Content.RootDirectory = "Content";
-        IsMouseVisible = true;
+        _leftButtons = new ButtonList(
+            new Button[,] { { new ResetButton(_board, _promMenu), new FenButton(_board), new UndoButton(_board) } },
+            0, Timer.TimerNameBoardOffset, 350, 120
+        );
     }
 
     protected override void Initialize()
@@ -45,11 +54,13 @@ public class PixelChess : Game
         // centring other components with respects to others
         _promMenu.Initialize(boardHorOffset, _spriteBatch);
         _timer.Initialize(boardHorOffset, _spriteBatch);
-        _rButton.Initialize(_timer.TimerWhiteX, 2 * (Timer.FontHeight + Timer.TimerNameBoardOffset), _spriteBatch);
-        _fenButton.Initialize(_rButton.XOffset, _rButton.YOffset + _rButton.YSize + Timer.TimerNameBoardOffset, _spriteBatch);
-        _uButton.Initialize(_fenButton.XOffset, _fenButton.YOffset + _fenButton.YSize + Timer.TimerNameBoardOffset, _spriteBatch);
+        _leftButtons.Initialize(_timer.TimerWhiteX, 2 * (Timer.FontHeight + Timer.TimerNameBoardOffset), _spriteBatch);
         _graphics.ApplyChanges();
     }
+    
+// ------------------------------
+// Content loading
+// ------------------------------
 
     protected override void LoadContent()
     {
@@ -75,10 +86,13 @@ public class PixelChess : Game
         
         _promMenu.Texture = Content.Load<Texture2D>(_promMenu.TextureName);
         _timer.GameFont = Content.Load<SpriteFont>(_timer.FontName);
-        _rButton.Texture = Content.Load<Texture2D>(_rButton.TextureName);
-        _fenButton.Texture = Content.Load<Texture2D>(_fenButton.TextureName);
-        _uButton.Texture = Content.Load<Texture2D>(_uButton.TextureName);
+
+        _leftButtons.Load(Content);
     }
+    
+// ------------------------------
+// Game state updating
+// ------------------------------
 
     protected override void Update(GameTime gameTime)
     {
@@ -91,22 +105,20 @@ public class PixelChess : Game
         {
             if (_isMouseHold == false)
             {
-                _fenButton.ProcessMouseClick(mState.X, mState.Y);
-                _uButton.ProcessMouseClick(mState.X, mState.Y);
-            
-                if (_rButton.ProcessMouseClick(mState.X, mState.Y))
+                if (_leftButtons.ProcessMouseClick(mState.X, mState.Y))
                 {
-                    _promMenu.ResetRequest();
                     base.Update(gameTime);
+                    _isMouseHold = true;
                     return;
                 }
-            
+
                 if (_promMenu.IsOn)
                 {
                     var fig = _promMenu.ProcessMouseClick(mState.X, mState.Y);
                     _board.Promote(fig);
             
                     base.Update(gameTime);
+                    _isMouseHold = true;
                     return;
                 }
                 
@@ -123,7 +135,7 @@ public class PixelChess : Game
         }
         else
         {
-            if (_isMouseHold == true)
+            if (_isMouseHold)
             {
                 var ret = _board.DropFigure(_board.Translate(mState.X, mState.Y)).mType;
                 if (ret == BoardPos.MoveType.PromotionMove || ret == BoardPos.MoveType.PromAndAttack)
@@ -146,23 +158,29 @@ public class PixelChess : Game
         _board.Draw();
         _promMenu.Draw();
         _timer.Draw(_board.WhiteTime, _board.BlackTime);
-        _rButton.Draw();
-        _fenButton.Draw();
-        _uButton.Draw();
+        _leftButtons.Draw();
         
         _spriteBatch.End();
         
         base.Draw(gameTime);
     }
     
+// ------------------------------
+// private fields
+// ------------------------------
+
+    // Monogame components
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
-    private readonly PromotionMenu _promMenu;
+    // whole game backed & drawing - consider segmentation
     private readonly Board _board;
+    
+    // UI elements
+    private readonly PromotionMenu _promMenu;
     private readonly Timer _timer;
-    private readonly ResetButton _rButton;
-    private readonly FenButton _fenButton;
-    private readonly UndoButton _uButton;
-    private bool _isMouseHold = false;
+    private readonly ButtonList _leftButtons;
+    
+    // Mouse state
+    private bool _isMouseHold;
 }

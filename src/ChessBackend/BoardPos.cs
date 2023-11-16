@@ -6,7 +6,7 @@ public struct BoardPos
 {
     public bool Equals(BoardPos other)
     {
-        return MoveT == other.MoveT && X == other.X && Y == other.Y;ZZ
+        return MoveT == other.MoveT && X == other.X && Y == other.Y;
     }
 
     public override bool Equals(object obj)
