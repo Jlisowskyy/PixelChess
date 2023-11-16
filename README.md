@@ -41,7 +41,7 @@ You can just use your IDE of choice to compile the program or use c# compiler by
 
 ```shell
 dotnet build
-```z
+```
 
 ## Roadmap
 
@@ -55,7 +55,7 @@ However, future plans include the incorporation of the following features:
 - [ ] Remote games
 - [ ] Position editing tools
 - [ ] Own competitive chess-engine written in C++
-- 
+
 ## License
 
 See `LICENSE.txt` for more information.
