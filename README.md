@@ -51,6 +51,7 @@ However, future plans include the incorporation of the following features:
 - [x] Correct chess rules implemented
 - [x] Working simple UI
 - [x] Fen notation support
+- [ ] Own pixel-art chess pieces
 - [ ] UCI implemented to enable connecting with any bot
 - [ ] Remote games
 - [ ] Position editing tools

@@ -29,7 +29,7 @@ public class PixelChess : Game
         _timer = new Timer();
         _leftButtons = new ButtonList(
             new Button[,] { { new ResetButton(_board, _promMenu), new FenButton(_board), new UndoButton(_board) } },
-            0, Timer.TimerNameBoardOffset, 350, 120
+            0, Timer.TimerNameBoardOffset, 35, 120
         );
     }
 
