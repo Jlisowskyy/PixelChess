@@ -75,70 +75,85 @@ public class Rook : Figure
     /*                      IMPORTANT
      *  All functions below returns updated arrPos as a result
      */
+    
+    public interface IStraightMove
+    {
+        public static virtual int Move { get; }
+        public static virtual bool RangeCheck(int i) => true;
+        public static virtual int InitIter(Figure fig) => 0;
+
+        public static virtual (int, int) GetPos(Figure fig, int iter) => (0, 0);
+    }
+
+    public abstract class VerIncrease: IStraightMove
+    {
+        private const int _move = 1;
+        public static int Move => _move;
+        public static bool RangeCheck(int i) => i <= BoardPos.MaxPos;
+        public static int InitIter(Figure fig) => fig.Pos.Y;
+        public static (int, int) GetPos(Figure fig, int iter) => (fig.Pos.X, iter);
+    }
+
+    public abstract class VerDecrease : IStraightMove
+    {
+        private const int _move = -1;
+        public static int Move => _move;
+        public static bool RangeCheck(int i) => i >= BoardPos.MinPos;
+        public static int InitIter(Figure fig) => fig.Pos.Y;
+        public static (int, int) GetPos(Figure fig, int iter) => (fig.Pos.X, iter);
+    }
+
+    public abstract class HorDecrease : IStraightMove
+    {
+        private const int _move = -1;
+        public static int Move => _move;
+        public static bool RangeCheck(int i) => i >= BoardPos.MinPos;
+        public static int InitIter(Figure fig) => fig.Pos.X;
+        public static (int, int) GetPos(Figure fig, int iter) => (iter, fig.Pos.Y);
+    }
+    
+    public abstract class HorIncrease : IStraightMove
+    {
+        private const int _move = 1;
+
+        public static int Move => _move;
+        public static bool RangeCheck(int i) => i <= BoardPos.MaxPos;
+        public static int InitIter(Figure fig) => fig.Pos.X;
+        public static (int, int) GetPos(Figure fig, int iter) => (iter, fig.Pos.Y);
+    }
+
+    public static int GenStraightLineMoves<TMoveConds>(Figure fig, BoardPos[] mArr, int arrPos)
+        where TMoveConds : IStraightMove
+    {
+        int init = TMoveConds.InitIter(fig) + TMoveConds.Move;
+
+        for (int i = init; TMoveConds.RangeCheck(i); i += TMoveConds.Move)
+        {
+            (int x, int y) = TMoveConds.GetPos(fig, i);
+            
+            if (IsEmpty(fig, x, y))
+                mArr[arrPos++] = new BoardPos(x, y);
+            else
+            {
+                if (IsEnemy(fig, x, y)) mArr[arrPos++] = new BoardPos(x, y, BoardPos.MoveType.AttackMove);
+                break;
+            }
+        }
+
+        return arrPos;
+    }
 
     public static int VertUpMoves(Figure fig, BoardPos[] mArr, int arrPos)
-    {
-        for (int i = fig.Pos.Y + 1; i <= BoardPos.MaxPos; ++i)
-        {
-            if (IsEmpty(fig, fig.Pos.X, i))
-                mArr[arrPos++] = new BoardPos(fig.Pos.X, i);
-            else
-            {
-                if (IsEnemy(fig, fig.Pos.X, i)) mArr[arrPos++] = new BoardPos(fig.Pos.X, i, BoardPos.MoveType.AttackMove);
-                break;
-            }
-        }
-
-        return arrPos;
-    }
+        => GenStraightLineMoves<VerIncrease>(fig, mArr, arrPos);
 
     public static int VertDownMoves(Figure fig, BoardPos[] mArr, int arrPos)
-    {
-        for (int i = fig.Pos.Y - 1; i >= BoardPos.MinPos; --i)
-        {
-            if (IsEmpty(fig, fig.Pos.X, i))
-                mArr[arrPos++] = new BoardPos(fig.Pos.X, i);
-            else
-            {
-                if (IsEnemy(fig, fig.Pos.X, i)) mArr[arrPos++] = new BoardPos(fig.Pos.X, i, BoardPos.MoveType.AttackMove);
-                break;
-            }
-        }
-
-        return arrPos;
-    }
+        => GenStraightLineMoves<VerDecrease>(fig, mArr, arrPos);
 
     public static int HorRightMoves(Figure fig, BoardPos[] mArr, int arrPos)
-    {
-        for (int i = fig.Pos.X + 1; i <= BoardPos.MaxPos; ++i)
-        {
-            if (IsEmpty(fig,i, fig.Pos.Y))
-                mArr[arrPos++] = new BoardPos(i, fig.Pos.Y);
-            else
-            {
-                if (IsEnemy(fig, i, fig.Pos.Y)) mArr[arrPos++] = new BoardPos(i, fig.Pos.Y, BoardPos.MoveType.AttackMove);
-                break;
-            }
-        }
-
-        return arrPos;
-    }
+        => GenStraightLineMoves<HorIncrease>(fig, mArr, arrPos);
 
     public static int HorLeftMoves(Figure fig, BoardPos[] mArr, int arrPos)
-    {
-        for (int i = fig.Pos.X - 1; i >= BoardPos.MinPos; --i)
-        {
-            if (IsEmpty(fig, i, fig.Pos.Y))
-                mArr[arrPos++] = new BoardPos(i, fig.Pos.Y);
-            else
-            {
-                if (IsEnemy(fig, i, fig.Pos.Y)) mArr[arrPos++] = new BoardPos(i, fig.Pos.Y, BoardPos.MoveType.AttackMove);
-                break;
-            }
-        }
-
-        return arrPos;
-    }
+        => GenStraightLineMoves<HorDecrease>(fig, mArr, arrPos);
     
 // ------------------------------
 // variables and properties

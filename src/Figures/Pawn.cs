@@ -76,7 +76,6 @@ public class Pawn : Figure
         {
             int nx = Pos.X + XAttackCords[i];
             
-            // TODO: checks speed changes after this removal
             if (nx > BoardPos.MaxPos || nx < BoardPos.MinPos) continue;
             
             if (!IsEmpty(nx, ny) && IsEnemy(nx, ny))
@@ -118,5 +117,5 @@ public class Pawn : Figure
     private readonly Board.ChessComponents _enemyPawnId;
     private const int MaxMoves = 4;
 
-    private static readonly int[] XAttackCords = new int[2] { -1, 1 };
+    private static readonly int[] XAttackCords = new[]{ -1, 1 };
 }

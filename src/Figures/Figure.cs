@@ -48,11 +48,7 @@ public abstract class Figure
         for (int i = 0; i < arrLimit; ++i)
         {
             if ((Parent.BlockedTiles[(int)Color][arr[i].X, arr[i].Y] & Board.TileState.AllowedTile) != 0)
-            {
-                arrRet[arrRetPos].X = arr[i].X;
-                arrRet[arrRetPos++].Y = arr[i].Y;
-            }
-            
+                arrRet[arrRetPos++] = arr[i];
         }
 
         return (arrRet, arrRetPos);

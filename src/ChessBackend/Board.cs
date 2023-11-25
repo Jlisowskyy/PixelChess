@@ -455,7 +455,10 @@ public class Board
                 // checks detection from pawns and knights, sliding figures should be detected before on fig blocking phase
                 // due to sliding properties
                 if ((mv.moves[j].MoveT & MoveType.AttackMove) != 0 && _boardFigures[mv.moves[j].X, mv.moves[j].Y] == _colorMetadataMap[(int)col].King)
+                {
                     _kingAttackingFigure = _figuresArray[i];
+                    _blockedTiles[(int)col][_figuresArray[i].Pos.X, _figuresArray[i].Pos.Y] |= TileState.AllowedTile;
+                }
             }
         }
     }
@@ -759,74 +762,80 @@ public class Board
         for(int i = 0; i < 4; ++i)
             _blockDiagonal(col, i);
     }
-
-    // TODO: ALL MOTHERFUCKERS BELOW SHOULD BE TEMPLATED AF
     
-    private void _blockHorizontalLeftLineOnKing(Figure.ColorT col)
-        // used to block figures covering col king from being killed on horizontal left line
+    private void _blockStraightLine<TMoveConds>(Figure.ColorT col)
+        where TMoveConds : Rook.IStraightMove
     {
         Figure kingToCheck = _colorMetadataMap[(int)col].King;
 
-        int mx = -1;
-        for (int x = kingToCheck.Pos.X - 1; x >= MinPos; --x)
+        int foundFigCord = -1;
+        int init = TMoveConds.InitIter(kingToCheck) + TMoveConds.Move;
+        
+        for (int iter = init; TMoveConds.RangeCheck(iter); iter+=TMoveConds.Move)
         {
-            if (!_isEmpty(x, kingToCheck.Pos.Y))
+            (int x, int y) = TMoveConds.GetPos(kingToCheck, iter);
+            
+            if (!_isEmpty(x, y))
                 // figure detected
             {
-                if (mx == -1)
+                if (foundFigCord == -1)
                     // first figure on the line
                 {
-                    if (_boardFigures[x, kingToCheck.Pos.Y].TextureIndex == _colorMetadataMap[(int)col].EnemyRook ||
-                        _boardFigures[x, kingToCheck.Pos.Y].TextureIndex == _colorMetadataMap[(int)col].EnemyQueen)
+                    if (_boardFigures[x, y].TextureIndex == _colorMetadataMap[(int)col].EnemyRook ||
+                        _boardFigures[x, y].TextureIndex == _colorMetadataMap[(int)col].EnemyQueen)
                         // if first figure is attacking king process allowed tiles and return
                     {
                         if (_kingAttackingFigure != null)
                             continue;
-                            // throw new ApplicationException("Double check detected - invalid move");
+                        // TODO: investigate    
+                        // throw new ApplicationException("Double check detected - invalid move");
                         
-                        _kingAttackingFigure = _boardFigures[x, kingToCheck.Pos.Y];
-                        _lastAllowedTilesCount = kingToCheck.Pos.X - x - 1;
+                        _kingAttackingFigure = _boardFigures[x, y];
+                        _lastAllowedTilesCount = int.Abs(TMoveConds.InitIter(kingToCheck) - iter);
                         _lastAllowedTilesArr = new BoardPos[_lastAllowedTilesCount];
-
+                        
                         for (int i = 0; i < _lastAllowedTilesCount; ++i)
                         {
-                            _lastAllowedTilesArr[i].Y = kingToCheck.Pos.Y;
-                            _lastAllowedTilesArr[i].X = x + 1 + i;
-                            _blockedTiles[(int)col][x + 1 + i, kingToCheck.Pos.Y] |= TileState.AllowedTile;
+                            (int nx, int ny) = TMoveConds.GetPos(kingToCheck, iter - i*TMoveConds.Move);
+                            _lastAllowedTilesArr[i].Y = ny;
+                            _lastAllowedTilesArr[i].X = nx;
+                            _blockedTiles[(int)col][iter + 1 + i, kingToCheck.Pos.Y] |= TileState.AllowedTile;
                         }
                         
                         return;
                     }
                     
-                    mx = x;
+                    foundFigCord = iter;
                 }
                 else
                 // second figure detected 
                 {
-                    if (_boardFigures[x, kingToCheck.Pos.Y].Color != col)
+                    (int nx, int ny) = TMoveConds.GetPos(kingToCheck, foundFigCord);
+                    
+                    if (_boardFigures[x, y].Color != col)
                         // second fig is enemy
                     {
-                        if (_boardFigures[mx, kingToCheck.Pos.Y].Color == col)
+                        if (_boardFigures[nx, ny].Color == col)
                             // second fig is enemy and first is ally
                         {
-                            if (_boardFigures[x, kingToCheck.Pos.Y].TextureIndex == _colorMetadataMap[(int)col].EnemyRook ||
-                                _boardFigures[x, kingToCheck.Pos.Y].TextureIndex == _colorMetadataMap[(int)col].EnemyQueen)
+                            if (_boardFigures[x, y].TextureIndex == _colorMetadataMap[(int)col].EnemyRook ||
+                                _boardFigures[x, y].TextureIndex == _colorMetadataMap[(int)col].EnemyQueen)
                                 // first fig (ally) blocked by rook or queen
-                                _boardFigures[mx, kingToCheck.Pos.Y].IsBlocked = true;
+                                _boardFigures[nx, ny].IsBlocked = true;
                             else
                                 // enemy figure is not attacking ally free to go
-                                _boardFigures[mx, kingToCheck.Pos.Y].IsBlocked = false;
+                                _boardFigures[nx, ny].IsBlocked = false;
                         }
                     }
                     else
                         // second fig is ally
                     {
                         // first fig cannot attack king so second is unblocked
-                        _boardFigures[x, kingToCheck.Pos.Y].IsBlocked = false;
+                        _boardFigures[x, y].IsBlocked = false;
 
                         // if we are sure first one is ally, he is free to go
-                        if (_boardFigures[mx, kingToCheck.Pos.Y].Color == col)
-                            _boardFigures[mx, kingToCheck.Pos.Y].IsBlocked = false;
+                        if (_boardFigures[nx, ny].Color == col)
+                            _boardFigures[nx, ny].IsBlocked = false;
                     }
                     
                     return;
@@ -834,219 +843,18 @@ public class Board
             }
         }
     }
-    
+
+    private void _blockHorizontalLeftLineOnKing(Figure.ColorT col)
+        => _blockStraightLine<Rook.HorDecrease>(col);
+
     private void _blockHorizontalRightLineOnKing(Figure.ColorT col)
-        // used to block figures covering col king from being killed on horizontal right line
-    {
-        Figure kingToCheck = _colorMetadataMap[(int)col].King;
+        => _blockStraightLine<Rook.HorIncrease>(col);
 
-        int mx = -1;
-        for (int x = kingToCheck.Pos.X + 1; x <= MaxPos; ++x)
-        {
-            if (!_isEmpty(x, kingToCheck.Pos.Y))
-                // figure detected
-            {
-                if (mx == -1)
-                    // first figure on the line
-                {
-                    if (_boardFigures[x, kingToCheck.Pos.Y].TextureIndex == _colorMetadataMap[(int)col].EnemyRook ||
-                        _boardFigures[x, kingToCheck.Pos.Y].TextureIndex == _colorMetadataMap[(int)col].EnemyQueen)
-                        // if first figure is attacking king process allowed tiles and return
-                    {
-                        if (_kingAttackingFigure != null)
-                            continue;
-                            // throw new ApplicationException("Double check detected - invalid move");
-                        
-                        _kingAttackingFigure = _boardFigures[x, kingToCheck.Pos.Y];
-                        _lastAllowedTilesCount = x - kingToCheck.Pos.X - 1;
-                        _lastAllowedTilesArr = new BoardPos[_lastAllowedTilesCount];
-
-                        for (int i = 0; i < _lastAllowedTilesCount; ++i)
-                        {
-                            _lastAllowedTilesArr[i].Y = kingToCheck.Pos.Y;
-                            _lastAllowedTilesArr[i].X = kingToCheck.Pos.X + 1 + i;
-                            _blockedTiles[(int)col][kingToCheck.Pos.X + 1 + i, kingToCheck.Pos.Y] |= TileState.AllowedTile;
-                        }
-                    }
-                    
-                    mx = x;
-                }
-                else
-                    // second figure detected 
-                {
-                    if (_boardFigures[x, kingToCheck.Pos.Y].Color != col)
-                        // second fig is enemy
-                    {
-                        if (_boardFigures[mx, kingToCheck.Pos.Y].Color == col)
-                            // second fig is enemy and first is ally
-                        {
-                            if (_boardFigures[x, kingToCheck.Pos.Y].TextureIndex == _colorMetadataMap[(int)col].EnemyRook ||
-                                _boardFigures[x, kingToCheck.Pos.Y].TextureIndex == _colorMetadataMap[(int)col].EnemyQueen)
-                                // first fig (ally) blocked by rook or queen
-                                _boardFigures[mx, kingToCheck.Pos.Y].IsBlocked = true;
-                            else
-                                // enemy figure is not attacking ally free to go
-                                _boardFigures[mx, kingToCheck.Pos.Y].IsBlocked = false;
-                        }
-                    }
-                    else
-                        // second fig is ally
-                    {
-                        // first fig cannot attack king so second is unblocked
-                        _boardFigures[x, kingToCheck.Pos.Y].IsBlocked = false;
-
-                        // if we are sure first one is ally, he is free to go
-                        if (_boardFigures[mx, kingToCheck.Pos.Y].Color == col)
-                            _boardFigures[mx, kingToCheck.Pos.Y].IsBlocked = false;
-                    }
-                    
-                    return;
-                }
-            }
-        }
-    }
-    
     private void _blockVerticalLowLineOnKing(Figure.ColorT col)
-        // used to block figures covering col king from being killed on vertical lower line
-    {
-        Figure kingToCheck = _colorMetadataMap[(int)col].King;
-
-        int my = -1;
-        for (int y = kingToCheck.Pos.Y - 1; y >= MinPos; --y)
-        {
-            if (!_isEmpty(kingToCheck.Pos.X, y))
-                // figure detected
-            {
-                if (my == -1)
-                    // first figure on the line
-                {
-                    if (_boardFigures[kingToCheck.Pos.X, y].TextureIndex == _colorMetadataMap[(int)col].EnemyRook ||
-                        _boardFigures[kingToCheck.Pos.X, y].TextureIndex == _colorMetadataMap[(int)col].EnemyQueen)
-                        // if first figure is attacking king process allowed tiles and return
-                    {
-                        if (_kingAttackingFigure != null)
-                            continue;
-                            // throw new ApplicationException("Double check detected - invalid move");
-                        
-                        _kingAttackingFigure = _boardFigures[kingToCheck.Pos.X, y];
-                        _lastAllowedTilesCount = kingToCheck.Pos.Y - y - 1;
-                        _lastAllowedTilesArr = new BoardPos[_lastAllowedTilesCount];
-
-                        for (int i = 0; i < _lastAllowedTilesCount; ++i)
-                        {
-                            _lastAllowedTilesArr[i].Y = y + 1 + i;
-                            _lastAllowedTilesArr[i].X = kingToCheck.Pos.X;
-                            _blockedTiles[(int)col][kingToCheck.Pos.X, y + 1 + i] |= TileState.AllowedTile;
-                        }
-                    }
-
-                    my = y;
-                }
-                else
-                    // second figure detected 
-                {
-                    if (_boardFigures[kingToCheck.Pos.X, y].Color != col)
-                        // second fig is enemy
-                    {
-                        if (_boardFigures[kingToCheck.Pos.X, my].Color == col)
-                            // second fig is enemy and first is ally
-                        {
-                            if (_boardFigures[kingToCheck.Pos.X, y].TextureIndex == _colorMetadataMap[(int)col].EnemyRook ||
-                                _boardFigures[kingToCheck.Pos.X, y].TextureIndex == _colorMetadataMap[(int)col].EnemyQueen)
-                                // first fig (ally) blocked by rook or queen
-                                _boardFigures[kingToCheck.Pos.X, my].IsBlocked = true;
-                            else
-                                // enemy figure is not attacking ally free to go
-                                _boardFigures[kingToCheck.Pos.X, my].IsBlocked = false;
-                        }
-                    }
-                    else
-                        // second fig is ally
-                    {
-                        // first fig cannot attack king so second is unblocked
-                        _boardFigures[kingToCheck.Pos.X, y].IsBlocked = false;
-
-                        // if we are sure first one is ally, he is free to go
-                        if (_boardFigures[kingToCheck.Pos.X, my].Color == col)
-                            _boardFigures[kingToCheck.Pos.X, my].IsBlocked = false;
-                    }
-                    
-                    return;
-                }
-            }
-        }
-    }
+        => _blockStraightLine<Rook.VerDecrease>(col);
 
     private void _blockVerticalUpLineOnKing(Figure.ColorT col)
-        // used to block figures covering col king from being killed on vertical upper line
-    {
-        Figure kingToCheck = _colorMetadataMap[(int)col].King;
-
-        int my = -1;
-        for (int y = kingToCheck.Pos.Y + 1; y <= MaxPos; ++y)
-        {
-            if (!_isEmpty(kingToCheck.Pos.X, y))
-                // figure detected
-            {
-                if (my == -1)
-                    // first figure on the line
-                {
-                    if (_boardFigures[kingToCheck.Pos.X, y].TextureIndex == _colorMetadataMap[(int)col].EnemyRook ||
-                        _boardFigures[kingToCheck.Pos.X, y].TextureIndex == _colorMetadataMap[(int)col].EnemyQueen)
-                        // if first figure is attacking king process allowed tiles and return
-                    {
-                        if (_kingAttackingFigure != null)
-                            continue;
-                            // throw new ApplicationException("Double check detected - invalid move");
-                        
-                        _kingAttackingFigure = _boardFigures[kingToCheck.Pos.X, y];
-                        _lastAllowedTilesCount = y - kingToCheck.Pos.Y - 1;
-                        _lastAllowedTilesArr = new BoardPos[_lastAllowedTilesCount];
-
-                        for (int i = 0; i < _lastAllowedTilesCount; ++i)
-                        {
-                            _lastAllowedTilesArr[i].Y = kingToCheck.Pos.Y + 1 + i;
-                            _lastAllowedTilesArr[i].X = kingToCheck.Pos.X;
-                            _blockedTiles[(int)col][kingToCheck.Pos.X, kingToCheck.Pos.Y + 1 + i] |= TileState.AllowedTile;
-                        }
-                    }
-
-                    my = y;
-                }
-                else
-                    // second figure detected 
-                {
-                    if (_boardFigures[kingToCheck.Pos.X, y].Color != col)
-                        // second fig is enemy
-                    {
-                        if (_boardFigures[kingToCheck.Pos.X, my].Color == col)
-                            // second fig is enemy and first is ally
-                        {
-                            if (_boardFigures[kingToCheck.Pos.X, y].TextureIndex == _colorMetadataMap[(int)col].EnemyRook ||
-                                _boardFigures[kingToCheck.Pos.X, y].TextureIndex == _colorMetadataMap[(int)col].EnemyQueen)
-                                // first fig (ally) blocked by rook or queen
-                                _boardFigures[kingToCheck.Pos.X, my].IsBlocked = true;
-                            else
-                                // enemy figure is not attacking ally free to go
-                                _boardFigures[kingToCheck.Pos.X, my].IsBlocked = false;
-                        }
-                    }
-                    else
-                        // second fig is ally
-                    {
-                        // first fig cannot attack king so second is unblocked
-                        _boardFigures[kingToCheck.Pos.X, y].IsBlocked = false;
-
-                        // if we are sure first one is ally, he is free to go
-                        if (_boardFigures[kingToCheck.Pos.X, my].Color == col)
-                            _boardFigures[kingToCheck.Pos.X, my].IsBlocked = false;
-                    }
-                    
-                    return;
-                }
-            }
-        }
-    }
+        => _blockStraightLine<Rook.VerDecrease>(col);
 
     private void _blockDiagonal(Figure.ColorT col, int dir)
         // used to block figures covering col king from being killed on diagonals
