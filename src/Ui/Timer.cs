@@ -1,8 +1,8 @@
-using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using PixelChess.ChessBackend;
 
-namespace PongGame;
+namespace PixelChess.Ui;
 
 public class Timer
 {
@@ -46,17 +46,8 @@ public class Timer
     {
         int mins = (int)(time / Board.Minute);
         int secs = (int)(time % Board.Minute / Board.Second);
-
-
-        string mString;
-        if (mins == 0) mString = "00";
-        else mString = mins.ToString();
-
-        string sString;
-        if (secs == 0) sString = "00";
-        else sString = secs.ToString();
-
-        return mString + ":" + sString;
+        
+        return $"{mins:D2}:{secs:D2}";
     }
 
 // ------------------------------

@@ -1,4 +1,4 @@
-namespace PongGame.Ui;
+namespace PixelChess.Ui;
 
 public abstract class Button: UiObject
     // IMPORTANT: Button should not be rotated, only scaling will work

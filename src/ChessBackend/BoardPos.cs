@@ -1,8 +1,10 @@
 using System;
+using PixelChess.Figures;
 
-namespace PongGame.ChessBackend;
+namespace PixelChess.ChessBackend;
 
 public struct BoardPos
+    // structure used to pass information about position on board, made moves and actions taken
 {
     public bool Equals(BoardPos other)
     {
@@ -21,8 +23,8 @@ public struct BoardPos
 
     public BoardPos(int x, int y, MoveType mov = MoveType.NormalMove)
     {
-        this.X = x;
-        this.Y = y;
+        X = x;
+        Y = y;
         MoveT = mov;
     }
 
@@ -52,15 +54,19 @@ public struct BoardPos
     public int Y;
 }
 
-public struct Move
+public struct HistoricalMove
+    // Class only used to represent state change of the state of the board during game, in other words,
+    // contains information about made moves.
 {
-    public Move(int ox, int oy, BoardPos madeMove, Figure fig, bool wasUnmoved = false, Figure killedFig = null)
+    public HistoricalMove(int ox, int oy, BoardPos madeMove, Figure fig, int halfMoves, 
+        bool wasUnmoved = false, Figure killedFig = null)
     {
         OldX = ox;
         OldY = oy;
         WasUnmoved = wasUnmoved;
         MadeMove = madeMove;
         Fig = fig;
+        HalfMoves = halfMoves;
         KilledFig = killedFig;
     }
 
@@ -70,4 +76,5 @@ public struct Move
     public readonly BoardPos MadeMove;
     public readonly Figure Fig;
     public readonly Figure KilledFig;
+    public readonly int HalfMoves;
 }

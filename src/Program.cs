@@ -1,3 +1,3 @@
 ﻿
-using var game = new PongGame.PixelChess();
+using var game = new PixelChess.PixelChess();
 game.Run();

@@ -1,7 +1,7 @@
 using System;
-using PongGame.ChessBackend;
+using PixelChess.ChessBackend;
 
-namespace PongGame.Figures;
+namespace PixelChess.Figures;
 
 public class Bishop : Figure
 {
@@ -35,6 +35,8 @@ public class Bishop : Figure
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
 
     {
+        if (!IsAlive) return (null, 0);
+        
         return IsBlocked ? _getMovesWhenBlocked() : _getNormalSituationMoves();
     }
     

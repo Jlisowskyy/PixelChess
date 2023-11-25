@@ -1,6 +1,7 @@
 using System;
+using PixelChess.ChessBackend;
 
-namespace PongGame.Ui;
+namespace PixelChess.Ui;
 
 public class FenButton : Button
 {

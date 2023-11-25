@@ -1,6 +1,5 @@
-using PongGame.ChessBackend;
-
-namespace PongGame.Figures;
+using PixelChess.ChessBackend;
+namespace PixelChess.Figures;
 
 public class Knight : Figure
 {
@@ -55,7 +54,7 @@ public class Knight : Figure
         BoardPos[] ret = new BoardPos[MaxPossibleTiles];
         int arrPos = 0;
         
-        if (IsBlocked) return (null, 0);
+        if (IsBlocked || !IsAlive) return (null, 0);
 
         for (int i = 0; i < movesTable[Pos.X, Pos.Y].Length; ++i)
         {
@@ -70,7 +69,7 @@ public class Knight : Figure
             else ret[arrPos++] = movesTable[Pos.X, Pos.Y][i];
         }
         
-        return FilterAllowedTiles(ret,arrPos);
+        return FilterAllowedTiles(ret, arrPos);
     }
     
 // ------------------------------

@@ -1,7 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace PongGame.Ui;
+namespace PixelChess.Ui;
 
 public abstract class UiObject
 {

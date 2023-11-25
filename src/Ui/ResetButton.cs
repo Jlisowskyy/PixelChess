@@ -1,4 +1,6 @@
-namespace PongGame.Ui;
+using PixelChess.ChessBackend;
+
+namespace PixelChess.Ui;
 
 public class ResetButton : Button
 { 

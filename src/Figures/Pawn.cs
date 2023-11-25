@@ -1,7 +1,6 @@
 using System;
-using PongGame.ChessBackend;
-
-namespace PongGame.Figures;
+using PixelChess.ChessBackend;
+namespace PixelChess.Figures;
 
 public class Pawn : Figure
 {
@@ -39,7 +38,7 @@ public class Pawn : Figure
         BoardPos[] moves = new BoardPos[MaxMoves];
         int arrPos = 0;
 
-        if (IsBlocked) return (null, 0);
+        if (IsBlocked || !IsAlive) return (null, 0);
         
         if (IsMoved)
             // does not check whether pawn goes out of board, assumes will promoted by board before next call

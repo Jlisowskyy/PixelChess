@@ -1,21 +1,17 @@
-using PongGame.Figures;
 using System;
-using System.Collections.Generic;
-using PongGame;
-using PongGame.ChessBackend;
+using PixelChess.Figures;
 
-namespace PongGame;
+namespace PixelChess.ChessBackend;
 
 public static class FenTranslator
 {
         public static string GetPosString(Board chessBoard){
             char[] fenResult = new char[MaxFenLength];
             int tabIndex = 0;
-            int dist = 0;
 
             for (int y = BoardPos.MaxPos; y >= BoardPos.MinPos; --y)
             {
-                dist = 0;
+                int dist = 0;
                 
                 for (int x = BoardPos.MinPos; x <= BoardPos.MaxPos; ++x)
                 {
@@ -138,17 +134,17 @@ public static class FenTranslator
         
         for (int col = 0; col < 2; ++col)
         {
-            var king = chessBoard.BoardFigures[kingPos[col].X, kingPos[col].Y];
-            if (king != null && king.TextureIndex == kingInd[col] && king.IsMoved == false)
+            var king = chessBoard.BoardFigures[KingPos[col].X, KingPos[col].Y];
+            if (king != null && king.TextureIndex == KingInd[col] && king.IsMoved == false)
             {
                 for (int castleType = 0; castleType < 2; ++castleType)
                 {
-                    var rook = chessBoard.BoardFigures[rookPos[col][castleType].X, rookPos[col][castleType].Y];
+                    var rook = chessBoard.BoardFigures[RookPos[col][castleType].X, RookPos[col][castleType].Y];
 
-                    if (rook != null && rook.TextureIndex == rookInd[col] && rook.IsMoved == false)
+                    if (rook != null && rook.TextureIndex == RookInd[col] && rook.IsMoved == false)
                     {
                         output[indp + offset++] =
-                            col == 0 ? char.ToUpper(castleChar[castleType]) : castleChar[castleType];
+                            col == 0 ? char.ToUpper(CastleChar[castleType]) : CastleChar[castleType];
                     }
                 }
             }
@@ -414,37 +410,37 @@ public static class FenTranslator
     private static int _whitePos;
 
 // ------------------------------
-// private consts
+// private constants
 // ------------------------------
 
     const int BoardTiles = Board.BoardSize * Board.BoardSize;
     
     
     // Used to simplify checking possible castling 
-    private static readonly BoardPos[] kingPos = new[] { new BoardPos(4,0 ), new BoardPos(4, 7) };
+    private static readonly BoardPos[] KingPos = new[] { new BoardPos(4,0 ), new BoardPos(4, 7) };
 
-    private static readonly BoardPos[][] rookPos = new[]
+    private static readonly BoardPos[][] RookPos = new[]
     {
         new[] { new BoardPos(7, 0), new BoardPos(0, 0) },
         new[] { new BoardPos(7, 7), new BoardPos(0, 7) }
     };
 
-    private static readonly char[] castleChar = new[] { 'k', 'q' };
+    private static readonly char[] CastleChar = new[] { 'k', 'q' };
 
-    private static readonly Board.ChessComponents[] rookInd = new[]
+    private static readonly Board.ChessComponents[] RookInd = new[]
     {
         Board.ChessComponents.WhiteRook,
         Board.ChessComponents.BlackRook
     };
 
-    private static readonly Board.ChessComponents[] kingInd = new[]
+    private static readonly Board.ChessComponents[] KingInd = new[]
     {
         Board.ChessComponents.WhiteKing,
         Board.ChessComponents.BlackKing
     };
     
 // ------------------------------
-// public consts
+// public constants
 // ------------------------------
 
     public const int MaxFenLength = 90;

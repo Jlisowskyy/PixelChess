@@ -1,11 +1,6 @@
-using System;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using PongGame.ChessBackend;
-using PongGame.Figures;
+using PixelChess.ChessBackend;
 
-namespace PongGame;
+namespace PixelChess.Figures;
     
     /*  GENERAL TODO:
      * - make fen translator
@@ -57,6 +52,7 @@ public abstract class Figure
                 arrRet[arrRetPos].X = arr[i].X;
                 arrRet[arrRetPos++].Y = arr[i].Y;
             }
+            
         }
 
         return (arrRet, arrRetPos);

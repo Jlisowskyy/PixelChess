@@ -2,7 +2,7 @@ using System;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace PongGame.Ui;
+namespace PixelChess.Ui;
 
 // TODO: add here button list to creat cycling menus or just static on ui buttons
 

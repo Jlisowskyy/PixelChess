@@ -1,9 +1,11 @@
 using System;
-using PongGame.Figures;
-
-namespace PongGame;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using PixelChess.ChessBackend;
+using PixelChess.Figures;
+
+namespace PixelChess.Ui;
+
 public class PromotionMenu
 {
 // --------------------------------

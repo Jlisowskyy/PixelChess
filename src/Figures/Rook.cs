@@ -1,6 +1,5 @@
-using PongGame.ChessBackend;
-
-namespace PongGame.Figures;
+using PixelChess.ChessBackend;
+namespace PixelChess.Figures;
 
 public class Rook : Figure
 {
@@ -16,13 +15,15 @@ public class Rook : Figure
 // --------------------------------
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
+        if (!IsAlive) return (null, 0);
+        
         return IsBlocked ? _getMovesWhenBlocked() : _getNormalSituationMoves();
     }
     
     public override Figure Clone() => new Rook(Pos.X, Pos.Y, Color)
     {
-        IsAlive = this.IsAlive,
-        IsMoved = this.IsMoved
+        IsAlive = IsAlive,
+        IsMoved = IsMoved
     };
     
     private (BoardPos[] moves, int movesCount) _getMovesWhenBlocked()

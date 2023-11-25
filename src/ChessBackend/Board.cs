@@ -6,11 +6,10 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using PongGame.ChessBackend;
-using PongGame.Figures;
-using static PongGame.ChessBackend.BoardPos;
+using PixelChess.Figures;
+using static PixelChess.ChessBackend.BoardPos;
 
-namespace PongGame;
+namespace PixelChess.ChessBackend;
 
 /*          GENERAL TODOS
  *   - repair drawing offsets XD
@@ -93,8 +92,8 @@ public class Board
         _boardFigures = new Figure[BoardSize, BoardSize];
         _figuresArray = new Figure[_startFiguresLayout.FigArr.Length];
         
-        _movesHistory = new LinkedList<Move>();
-        _movesHistory.AddFirst(new Move(0, 0, new BoardPos(0, 0), null)); // Sentinel
+        _movesHistory = new LinkedList<HistoricalMove>();
+        _movesHistory.AddFirst(new HistoricalMove(0, 0, new BoardPos(0, 0), null, 0)); // Sentinel
         _layoutDict = new Dictionary<string, int>();
         
         _blockedTiles = new[]
@@ -123,6 +122,7 @@ public class Board
 
         // should be reseted before initial check mate tests
         _isGameEnded = false;
+        _kingAttackingFigure = null;
         _movingColor = _startFiguresLayout.StartingColor;
         
         try
@@ -135,7 +135,7 @@ public class Board
             // TODO: test for not moving color check????
             
             if (_kingAttackingFigure != null && _colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
-                _processCheckMate(_movingColor);
+                _processCheckMate();
             else if (_colorMetadataMap[(int)_movingColor].FiguresCount == 1 
                      &&_colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
                 _announcePat();
@@ -183,7 +183,10 @@ public class Board
 // type interaction
 // ------------------------------
 
-    public void UndoMove() => _undoMove();
+    public void UndoMove()
+    {
+        if (!_isGameEnded) _undoMove();
+    }
     public void SetTimers(double whiteTime, double blackTime)
     {
         _startingWhiteTime = _whiteTime = whiteTime;
@@ -227,7 +230,8 @@ public class Board
     
     public void Promote(Figure promFig)
         // method used to communicate with PromotionMenu class and BoardClass
-        // accepts desired figure to replace promoting pawn
+        // accepts desired figure to replace promoting pawn and starts processing to next round 
+        // from interrupted moment.
     {
 #if DEBUG_
         if (_promotionPawn == null)
@@ -242,6 +246,9 @@ public class Board
         
         // adds promoted pawn to important figures metadata
         _extractDataFromFig(promFig);
+        
+        // restarts processing to next round
+        _processToNextRound();
     }
 
     private bool IsSelectedFigure() => _selectedFigure != null;
@@ -256,7 +263,7 @@ public class Board
     
 
 // ------------------------------
-// drawing method
+// drawing methods
 // ------------------------------
     public void Draw()
     {
@@ -317,10 +324,10 @@ public class Board
         
         _spriteBatch.Draw(GameEnds[_endGameTextureInd], new Vector2(_xOffset + horOffset, _yOffset + verOffset), Color.White);
     }
-    
-// ------------------------------
-// Private methods zone
-// ------------------------------
+
+// --------------------------------
+// Next round/move processing
+// --------------------------------
 
     private MoveType _processMove(BoardPos move)
         // calls special function to handle passed type of move, performs move consequences on board,
@@ -350,150 +357,58 @@ public class Board
                 break;
         }
         
-        _movesHistory.AddLast(new Move(_selectedFigure.Pos.X, _selectedFigure.Pos.Y, move, _selectedFigure, _selectedFigure.IsMoved, killedFig));
+        _movesHistory.AddLast(new HistoricalMove(_selectedFigure.Pos.X, _selectedFigure.Pos.Y, move,
+            _selectedFigure, _halfMoves, _selectedFigure.IsMoved, killedFig));
         _moveFigure(move); 
-        _processToNextRound();
+        
+        // If there is promotion incoming we should wait to get information about new figure 
+        if ((int)(move.MoveT & MoveType.PromotionMove) == 0)
+            _processToNextRound();
+        
         return move.MoveT;
     }
 
-    private void _replaceFigure(Figure replacementFig, Figure figToReplace)
+    private void _moveFigure(BoardPos move)
+        // adds moves to history and applies move consequences to all Board structures
     {
-        // replaces desired figure also on the figures Array
-        for(int i = 0; i < _figuresArray.Length; ++i)
-        {
-            if (ReferenceEquals(_figuresArray[i], figToReplace))
-            {
-                _figuresArray[i] = replacementFig;
-                _boardFigures[replacementFig.Pos.X, replacementFig.Pos.Y] = replacementFig;
-                return;
-            }
-        }
+        _boardFigures[_selectedFigure.Pos.X, _selectedFigure.Pos.Y] = null;
+        _boardFigures[move.X, move.Y] = _selectedFigure;
+        _selectedFigure.Pos = move;
+
+        if (_selectedFigure.Color == Figure.ColorT.Black)
+            ++_fullMoves;
+
+        ++_moveCounter;
         
-#if DEBUG_
-        throw new ApplicationException("Unexpected, figure to change not found");
-#endif
+        _selectedFigure.IsMoved = true;
+        _selectedFigure = null;
     }
 
-    private void _undoPositionChange(Move move)
-        // just changes position of passed move figure from new pos to old pos, performs no sanity checks
+    private Figure _killFigure(BoardPos move)
+        // removes figures from figures map and returns killed figure
     {
-        move.Fig.IsMoved = move.WasUnmoved;
-        _boardFigures[move.MadeMove.X, move.MadeMove.Y] = null;
-        _boardFigures[move.OldX, move.OldY] = move.Fig;
-        move.Fig.Pos.X = move.OldX;
-        move.Fig.Pos.Y = move.OldY;
-    }
-    
-    private void _undoPromotion(Move move)
-        // expects figure to be already move to old place
-    {
-        Figure oldPawn = new Pawn(move.OldX, move.OldY, _boardFigures[move.OldX, move.OldY].Color) { Parent = this };
-        _replaceFigure(oldPawn, _boardFigures[move.OldX, move.OldY]);
+        Figure retFig = _boardFigures[move.X, move.Y];
+        
+        _colorMetadataMap[(int)_boardFigures[move.X, move.Y].Color].FiguresCount--;   
+        _boardFigures[move.X, move.Y].IsAlive = false;
+        _boardFigures[move.X, move.Y] = null;
+
+        return retFig;
     }
 
-    private void _undoKill(Move move)
-        // assumes killed fig tile is empty just activates killed figure drawing and places it on the map
+    private void _castleKing(BoardPos newKingPos)
+        // assumes passed move is correct castling and selected figures is moving king
+        // only applies consequences of desired castling 
     {
-        move.KilledFig.IsAlive = true;
-        _boardFigures[move.MadeMove.X, move.MadeMove.Y] = move.KilledFig;
-    }
-
-    private void _undoCastling(Move move)
-    {
-        (int oldRookX, int newRookX) pos = move.OldX switch
+        (int oldRookX, int newRookX) pos = newKingPos.X switch
         {
             King.LongCastlingX => (MinPos, King.LongCastlingRookX),
             King.ShortCastlingX => (MaxPos, King.ShortCastlingRookX)
         };
         
-        _boardFigures[pos.newRookX, move.OldY].Pos = new BoardPos(pos.oldRookX, move.OldY);
-        _boardFigures[pos.oldRookX, move.OldY] = _boardFigures[pos.newRookX, move.OldY];
-        _boardFigures[pos.newRookX, move.OldY] = null;
-    }
-
-    private void _undoElPassant(Move move)
-    {
-        _boardFigures[move.MadeMove.X, move.OldY] = move.KilledFig;
-        move.KilledFig.IsAlive = true;
-    }
-
-    private void _undoMove()
-    {
-        var lastMove = _movesHistory.Last!.Value;
-        if (lastMove.Fig == null) return;
-        _undoPositionChange(lastMove);
-
-        switch (lastMove.MadeMove.MoveT)
-        {
-            case MoveType.NormalMove:
-                break;
-            case MoveType.AttackMove:
-                _undoKill(lastMove);
-                break;
-            case MoveType.PromotionMove:
-                _undoPromotion(lastMove);
-                break;
-            case MoveType.PromAndAttack:
-                _undoPromotion(lastMove);
-                _undoKill(lastMove);
-                break;
-            case MoveType.CastlingMove:
-                _undoCastling(lastMove);
-                break;
-            case MoveType.ElPass:
-                _undoElPassant(lastMove);
-                break;
-#if DEBUG_
-            default:
-                throw new ApplicationException("[DEBUG ERROR]");
-#endif
-        }
-
-        _movesHistory.RemoveLast();
-    }
-
-    private void _processDrawConditions()
-        // Processes all necessary calculations to check draw conditions, including moves counting
-        // and layout presence in past
-    {
-        if (_colorMetadataMap[(int)_movingColor].FiguresCount == 1 
-            &&_colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
-            _announcePat();
-        
-        // sentinel guarded
-        var move = _movesHistory.Last!.Value;
-
-        if ((move.MadeMove.MoveT & MoveType.AttackMove) != 0
-            || _boardFigures[move.MadeMove.X, move.MadeMove.Y] is Pawn)
-            _halfMoves = 0;
-        else _halfMoves++;
-        
-        if (_halfMoves == 50)
-            _announceDraw();
-        
-        if (_checkForPositionRepetitions(FenTranslator.GetPosString(this)))
-            _announceDraw();
-    }
-
-    private void _announceDraw()
-        // turns onn game ended flag and starts up correct animation
-    {
-        _isGameEnded = true;
-        _endGameTextureInd = (int) EndGameTexts.draw;
-    }
-
-    private void _announceWin()
-        // turns onn game ended flag and starts up correct animation
-    {
-        _isGameEnded = true;
-        _endGameTextureInd = (int) (_movingColor == Figure.ColorT.White ? EndGameTexts.bWin : EndGameTexts.wWin);
-    }
-
-    private void _announcePat()
-        // turns onn game ended flag and starts up correct animations
-    {
-        _isGameEnded = true;
-        _endGameTextureInd = (int) EndGameTexts.pat;
+        _boardFigures[pos.oldRookX, newKingPos.Y].Pos = new(pos.newRookX, newKingPos.Y);
+        _boardFigures[pos.newRookX, newKingPos.Y] = _boardFigures[pos.oldRookX, newKingPos.Y];
+        _boardFigures[pos.oldRookX, newKingPos.Y] = null;
     }
     private void _processToNextRound()
     {
@@ -513,8 +428,7 @@ public class Board
         _kingAttackingFigure = null;
         _movingColor = _movingColor == Figure.ColorT.White ? Figure.ColorT.Black : Figure.ColorT.White;
         
-        _blockedTiles[0] = new TileState[BoardSize,BoardSize];
-        _blockedTiles[1] = new TileState[BoardSize,BoardSize];
+        _blockedTiles[(int)_movingColor] = new TileState[BoardSize,BoardSize];
 
         _blockFigures(_movingColor);
         _blockFigures(_colorMetadataMap[(int)_movingColor].EnemyColor);
@@ -522,7 +436,7 @@ public class Board
         
         // only moving color can lose a game
         if (_kingAttackingFigure != null && _colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
-            _processCheckMate(_movingColor);
+            _processCheckMate();
         else
             _processDrawConditions();
     }
@@ -634,6 +548,200 @@ public class Board
             }
         }
     }
+    
+    private void _replaceFigure(Figure replacementFig, Figure figToReplace)
+        // replaces desired figure on board and figuresArray
+    {
+        for(int i = 0; i < _figuresArray.Length; ++i)
+        {
+            if (ReferenceEquals(_figuresArray[i], figToReplace))
+            {
+                _figuresArray[i] = replacementFig;
+                _boardFigures[replacementFig.Pos.X, replacementFig.Pos.Y] = replacementFig;
+                return;
+            }
+        }
+        
+#if DEBUG_
+        throw new ApplicationException("Unexpected, figure to change not found");
+#endif
+    }
+
+// ---------------------------------------
+// Game ending conditions processing
+// ---------------------------------------
+
+    private void _processCheckMate()
+        // checks if there are any legit moves and if not announces win
+    {
+        var range = _colorMetadataMap[(int)_movingColor].AliesRangeOnFigArr;
+        for (int i = range[0]; i < range[1]; ++i)
+            if (_figuresArray[i].GetMoves().movesCount != 0) return;
+        
+        _announceWin();
+    }
+
+    private void _processDrawConditions()
+        // Processes all necessary calculations to check draw conditions, including moves counting
+        // and layout presence in past
+    {
+        if (_colorMetadataMap[(int)_movingColor].FiguresCount == 1 
+            &&_colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
+            _announcePat();
+        
+        // sentinel guarded
+        var move = _movesHistory.Last!.Value;
+
+        if ((move.MadeMove.MoveT & MoveType.AttackMove) != 0
+            || _boardFigures[move.MadeMove.X, move.MadeMove.Y] is Pawn)
+            _halfMoves = 0;
+        else _halfMoves++;
+        
+        if (_halfMoves == 50)
+            _announceDraw();
+        
+        if (_checkForPositionRepetitions(FenTranslator.GetPosString(this)))
+            _announceDraw();
+    }
+
+    private void _announceDraw()
+        // turns onn game ended flag and starts up correct animation
+    {
+        _isGameEnded = true;
+        _endGameTextureInd = (int) EndGameTexts.draw;
+    }
+
+    private void _announceWin()
+        // turns onn game ended flag and starts up correct animation
+    {
+        _isGameEnded = true;
+        _endGameTextureInd = (int) (_movingColor == Figure.ColorT.White ? EndGameTexts.bWin : EndGameTexts.wWin);
+    }
+
+    private void _announcePat()
+        // turns onn game ended flag and starts up correct animations
+    {
+        _isGameEnded = true;
+        _endGameTextureInd = (int) EndGameTexts.pat;
+    }
+    
+    bool _checkForPositionRepetitions(string pos)
+    {
+        const int maxRepetitions = 3;
+        
+        if (_layoutDict.ContainsKey(pos))
+        {
+            if ((_layoutDict[pos] += 1) == maxRepetitions) return true;
+            Console.WriteLine(_layoutDict[pos]);
+        }
+        else _layoutDict.Add(pos, 1);
+
+        return false;
+    }
+    
+// --------------------------------
+// Move consequences removing
+// --------------------------------
+
+    private void _undoMove()
+    {
+        var lastMove = _movesHistory.Last!.Value;
+        
+        // There is some case guarding sentinel
+        if (lastMove.Fig == null) return;
+        _undoPositionChange(lastMove);
+
+        // All of below ones expects to be invoked after changing previously moved figure position
+        switch (lastMove.MadeMove.MoveT)
+        {
+            case MoveType.NormalMove:
+                break;
+            case MoveType.AttackMove:
+                _undoKill(lastMove);
+                break;
+            case MoveType.PromotionMove:
+                _undoPromotion(lastMove);
+                break;
+            case MoveType.PromAndAttack:
+                _undoPromotion(lastMove);
+                _undoKill(lastMove);
+                break;
+            case MoveType.CastlingMove:
+                _undoCastling(lastMove);
+                break;
+            case MoveType.ElPass:
+                _undoElPassant(lastMove);
+                break;
+#if DEBUG_
+            default:
+                throw new ApplicationException("[DEBUG ERROR]");
+#endif
+        }
+
+        _halfMoves = lastMove.HalfMoves;
+        // Full moves are counted after black moved
+        if (lastMove.Fig.Color == Figure.ColorT.Black)
+            --_fullMoves;
+
+        _movingColor = lastMove.Fig.Color;
+        _movesHistory.RemoveLast();
+        
+        // Cleaning of blocked tiles and figures
+        _kingAttackingFigure = null;
+        
+        _blockedTiles[(int)_movingColor] = new TileState[BoardSize,BoardSize];
+        
+        _blockFigures(_movingColor);
+        _blockFigures(_colorMetadataMap[(int)_movingColor].EnemyColor);
+        _blockTiles(_movingColor);
+    }
+    
+    private void _undoPositionChange(HistoricalMove historicalMove)
+        // just changes position of passed move figure from new pos to old pos, performs no sanity checks
+    {
+        historicalMove.Fig.IsMoved = historicalMove.WasUnmoved;
+        _boardFigures[historicalMove.MadeMove.X, historicalMove.MadeMove.Y] = null;
+        _boardFigures[historicalMove.OldX, historicalMove.OldY] = historicalMove.Fig;
+        historicalMove.Fig.Pos.X = historicalMove.OldX;
+        historicalMove.Fig.Pos.Y = historicalMove.OldY;
+    }
+    
+    private void _undoPromotion(HistoricalMove historicalMove)
+        // expects figure to be already move to old place
+    {
+        Figure oldPawn = new Pawn(historicalMove.OldX, historicalMove.OldY, _boardFigures[historicalMove.OldX, historicalMove.OldY].Color) { Parent = this };
+        _replaceFigure(oldPawn, _boardFigures[historicalMove.OldX, historicalMove.OldY]);
+    }
+
+    private void _undoKill(HistoricalMove historicalMove)
+        // assumes killed fig tile is empty just activates killed figure drawing and places it on the map
+    {
+        historicalMove.KilledFig.IsAlive = true;
+        _boardFigures[historicalMove.MadeMove.X, historicalMove.MadeMove.Y] = historicalMove.KilledFig;
+    }
+
+    private void _undoCastling(HistoricalMove historicalMove)
+    {
+        (int oldRookX, int newRookX) pos = historicalMove.OldX switch
+        {
+            King.LongCastlingX => (MinPos, King.LongCastlingRookX),
+            King.ShortCastlingX => (MaxPos, King.ShortCastlingRookX)
+        };
+        
+        _boardFigures[pos.newRookX, historicalMove.OldY].Pos = new BoardPos(pos.oldRookX, historicalMove.OldY);
+        _boardFigures[pos.oldRookX, historicalMove.OldY] = _boardFigures[pos.newRookX, historicalMove.OldY];
+        _boardFigures[pos.newRookX, historicalMove.OldY] = null;
+    }
+
+    private void _undoElPassant(HistoricalMove historicalMove)
+    {
+        _boardFigures[historicalMove.MadeMove.X, historicalMove.OldY] = historicalMove.KilledFig;
+        historicalMove.KilledFig.IsAlive = true;
+    }
+    
+// ---------------------------------
+// King/Tiles blocking methods
+// ---------------------------------
 
     private void _blockAllLinesOnKing(Figure.ColorT col)
         // used to block figures covering col king from being killed on all lines (diagonal and simple ones)
@@ -1024,51 +1132,12 @@ public class Board
             }
         }
     }
-
-
-    private void _moveFigure(BoardPos move)
-        // adds moves to history and applies move consequences to all Board structures
-    {
-        _boardFigures[_selectedFigure.Pos.X, _selectedFigure.Pos.Y] = null;
-        _boardFigures[move.X, move.Y] = _selectedFigure;
-        _selectedFigure.Pos = move;
-
-        if (_selectedFigure.Color == Figure.ColorT.Black)
-            ++_fullMoves;
-
-        ++_moveCounter;
-        
-        _selectedFigure.IsMoved = true;
-        _selectedFigure = null;
-    }
-
-    private Figure _killFigure(BoardPos move)
-        // removes figures from figures map and returns killed figure
-    {
-        Figure retFig = _boardFigures[move.X, move.Y];
-        
-        _colorMetadataMap[(int)_boardFigures[move.X, move.Y].Color].FiguresCount--;   
-        _boardFigures[move.X, move.Y].IsAlive = false;
-        _boardFigures[move.X, move.Y] = null;
-
-        return retFig;
-    }
-
-    private void _castleKing(BoardPos newKingPos)
-        // assumes passed move is correct castling and selected figures is moving king
-        // only applies consequences of desired castling 
-    {
-        (int oldRookX, int newRookX) pos = newKingPos.X switch
-        {
-            King.LongCastlingX => (MinPos, King.LongCastlingRookX),
-            King.ShortCastlingX => (MaxPos, King.ShortCastlingRookX)
-        };
-        
-        _boardFigures[pos.oldRookX, newKingPos.Y].Pos = new(pos.newRookX, newKingPos.Y);
-        _boardFigures[pos.newRookX, newKingPos.Y] = _boardFigures[pos.oldRookX, newKingPos.Y];
-        _boardFigures[pos.oldRookX, newKingPos.Y] = null;
-    }
     
+// ------------------------------
+// Metadata extraction
+// ------------------------------
+
+
     private void _copyAndExtractMetadata()
         // performs deep copy of saved starting layout to in-game figures array
         // used mainly when initialising game or restarting to start position
@@ -1141,28 +1210,7 @@ public class Board
                 _colorMetadataMap[(int)fig.Color].WhiteTilesBishops.AddLast(fig);
         }
     }
-
-    bool _checkForPositionRepetitions(string pos)
-    {
-        const int MaxRepetitions = 3;
-        
-        if (_layoutDict.ContainsKey(pos))
-            if ((_layoutDict[pos] += 1) == MaxRepetitions) return true;
-        else _layoutDict.Add(pos, 1);
-
-        return false;
-    }
-
-    private void _processCheckMate(Figure.ColorT lostColor)
-        // checks if there are any legit moves and if not anonunces win
-    {
-        var range = _colorMetadataMap[(int)_movingColor].AliesRangeOnFigArr;
-        for (int i = range[0]; i < range[1]; ++i)
-            if (_figuresArray[i].GetMoves().movesCount != 0) return;
-        
-        _announceWin();
-    }
-
+    
     private bool _isEmpty(int x, int y) => _boardFigures[x, y] == null;
     
 // -----------------------------------
@@ -1206,6 +1254,7 @@ public class Board
 
         return ret;
     }
+    
 // ------------------------------
 // public types
 // ------------------------------
@@ -1306,7 +1355,7 @@ public class Board
 // ------------------------------
     public Figure PromotionPawn => _promotionPawn;
     // used to copy pawn parameter to extern promotion class
-    public LinkedList<Move> MovesHistory => _movesHistory;
+    public LinkedList<HistoricalMove> MovesHistory => _movesHistory;
     // contains all made moves, used in some function, which needs historical data e.g. el passant moves generators
     // TODO: in future to save games in some database
     public Figure[,] BoardFigures => _boardFigures;
@@ -1367,7 +1416,7 @@ public class Board
     private Figure.ColorT _movingColor;
     // actually moving color
 
-    private LinkedList<Move> _movesHistory;
+    private LinkedList<HistoricalMove> _movesHistory;
 
     private TileState[][,] _blockedTiles;
     // filtering maps used to block moves

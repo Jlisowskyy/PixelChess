@@ -1,6 +1,5 @@
-using PongGame.ChessBackend;
-
-namespace PongGame.Figures;
+using PixelChess.ChessBackend;
+namespace PixelChess.Figures;
 
 public class King : Figure
 {
@@ -44,8 +43,8 @@ public class King : Figure
     
     public override Figure Clone() => new King(Pos.X, Pos.Y, Color)
     {
-        IsAlive = this.IsAlive,
-        IsMoved = this.IsMoved
+        IsAlive = IsAlive,
+        IsMoved = IsMoved
     };
     
 // ------------------------------
