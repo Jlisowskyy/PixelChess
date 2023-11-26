@@ -799,7 +799,7 @@ public class Board
                             (int nx, int ny) = TMoveConds.GetPos(kingToCheck, iter - i*TMoveConds.Move);
                             _lastAllowedTilesArr[i].Y = ny;
                             _lastAllowedTilesArr[i].X = nx;
-                            _blockedTiles[(int)col][iter + 1 + i, kingToCheck.Pos.Y] |= TileState.AllowedTile;
+                            _blockedTiles[(int)col][nx, ny] |= TileState.AllowedTile;
                         }
                         
                         return;
@@ -915,7 +915,7 @@ public class Board
                         if (_boardFigures[mx, my].Color == col)
                             // second fig is enemy and first is ally
                         {
-                            if (_boardFigures[nx, ny].TextureIndex == _colorMetadataMap[(int)col].EnemyRook ||
+                            if (_boardFigures[nx, ny].TextureIndex == _colorMetadataMap[(int)col].EnemyBishop ||
                                 _boardFigures[nx, ny].TextureIndex == _colorMetadataMap[(int)col].EnemyQueen)
                                 // first fig (ally) blocked by rook or queen
                                 _boardFigures[mx, my].IsBlocked = true;

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using PixelChess.ChessBackend;
 namespace PixelChess.Figures;
 
@@ -49,16 +50,11 @@ public class Pawn : Figure
                 moves[arrPos++] = new BoardPos(Pos.X, Pos.Y + _mvCord, mt);
             }
 
-            if (Pos.Y == _elPassantX)
+            var lMove = Parent.MovesHistory.Last!.Value;
+            if (Pos.Y == _elPassantX && _isLastMovedFigFreshPawn() &&
+                int.Abs(lMove.OldY - lMove.MadeMove.Y) == 2 &&  int.Abs(lMove.MadeMove.X - Pos.X) == 1)
             {
-                for (int i = 0; i < 2; ++i)
-                {
-                    int nx = Pos.X + XAttackCords[i];
-                    if (nx >= BoardPos.MinPos && !IsEmpty(nx, Pos.Y) && _isElPassPossible(nx, Pos.Y))
-                    {
-                        moves[arrPos++] = new BoardPos(nx, Pos.Y + _mvCord, BoardPos.MoveType.ElPass);
-                    }
-                }
+                moves[arrPos++] = new BoardPos(lMove.MadeMove.X, Pos.Y + _mvCord, BoardPos.MoveType.ElPass);
             }
         }
         else
@@ -100,11 +96,12 @@ public class Pawn : Figure
     private BoardPos.MoveType _addPromTile(BoardPos.MoveType move, int y)
         => y == _promTile ? move | BoardPos.MoveType.PromotionMove : move;
     
-    private bool _isElPassPossible(int nx, int ny)
+    private bool _isLastMovedFigFreshPawn()
     {
-        if (Parent.BoardFigures[nx, ny].TextureIndex == _enemyPawnId && Parent.MovesHistory.Last!.Value.Fig.TextureIndex == _enemyPawnId
-            && Math.Abs(Parent.MovesHistory.Last.Value.OldY - Parent.MovesHistory.Last.Value.MadeMove.Y) == 2) return true;
-        else return false;
+        if (Parent.MovesHistory.Last!.Value.Fig.TextureIndex == _enemyPawnId &&
+            Parent.MovesHistory.Last!.Value.WasUnmoved) return true;
+        
+        return false;
     }
     
 // ------------------------------
