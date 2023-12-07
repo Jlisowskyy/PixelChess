@@ -1048,16 +1048,24 @@ public class Board
                 
                 for (int j = 0; j < mv.movesCount; ++j)
                 {
+                    _selectedFigure = _figuresArray[i];
                     _processMove(mv.moves[j]);
                     var recResult = _testMoveGeneration(depth - 1);
-                    Array.Copy(recResult, 0, ret, 1, recResult.Length);
-                    // TODO: undo move
-                    throw new NotImplementedException("implement undo move");
+                    
+                    // adding generated moves
+                    for (int k = 0; k < recResult.Length; ++k)
+                    {
+                        ret[1 + k] += recResult[k];
+                    }
+                    
+                    _undoMove();
                 }
             }
 
         return ret;
     }
+
+    public ulong[] TestMoveGeneration(int depth) => _testMoveGeneration(depth);
     
 // ------------------------------
 // public types
