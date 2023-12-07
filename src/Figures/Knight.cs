@@ -7,7 +7,7 @@ public class Knight : Figure
 // type construction / setups
 // --------------------------------
     public Knight(int x, int y, ColorT color):
-        base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhiteKnight : Board.ChessComponents.BlackKnight) {}
+        base(x, y, color, TextInd[(int)color]) {}
 
     static Knight()
         // precalculates moves for all fields
@@ -34,17 +34,11 @@ public class Knight : Figure
                         ret[arrPos++] = new BoardPos(tempX, tempY);
                 }
 
-                movesTable[x, y] = ret[..arrPos];
+                MovesTable[x, y] = ret[..arrPos];
             }
         }
     }
     
-    public override Figure Clone() => new Knight(Pos.X, Pos.Y, Color)
-    {
-        IsAlive = this.IsAlive,
-        IsMoved = this.IsMoved
-    };
-
 // --------------------------------
 // abstract method overwrite
 // --------------------------------
@@ -56,28 +50,39 @@ public class Knight : Figure
         
         if (IsBlocked || !IsAlive) return (null, 0);
 
-        for (int i = 0; i < movesTable[Pos.X, Pos.Y].Length; ++i)
+        for (int i = 0; i < MovesTable[Pos.X, Pos.Y].Length; ++i)
         {
-            if (!IsEmpty(movesTable[Pos.X, Pos.Y][i].X, movesTable[Pos.X, Pos.Y][i].Y))
+            if (!IsEmpty(MovesTable[Pos.X, Pos.Y][i].X, MovesTable[Pos.X, Pos.Y][i].Y))
             {
-                if (IsEnemy(movesTable[Pos.X, Pos.Y][i].X, movesTable[Pos.X, Pos.Y][i].Y))
+                if (IsEnemy(MovesTable[Pos.X, Pos.Y][i].X, MovesTable[Pos.X, Pos.Y][i].Y))
                 {
-                    var dt = movesTable[Pos.X, Pos.Y][i]; 
+                    var dt = MovesTable[Pos.X, Pos.Y][i]; 
                     ret[arrPos++] = new BoardPos(dt.X, dt.Y, BoardPos.MoveType.AttackMove);
                 }
             }
-            else ret[arrPos++] = movesTable[Pos.X, Pos.Y][i];
+            else ret[arrPos++] = MovesTable[Pos.X, Pos.Y][i];
         }
         
         return FilterAllowedTiles(ret, arrPos);
     }
+
+    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlocked()
+        => (MovesTable[Pos.X, Pos.Y], MovesTable[Pos.X, Pos.Y].Length);
+
+    public override Figure Clone() => new Knight(Pos.X, Pos.Y, Color)
+    {
+        IsAlive = IsAlive,
+        IsMoved = IsMoved
+    };
     
 // ------------------------------
 // variables and properties
 // ------------------------------
     
     private const int MaxPossibleTiles = 8;
-    private static readonly int[] XPosTable = new[] { -2, -1, 1, 2 };
-    private static readonly int[] YPosTable = new[] { 1, 2, 2, 1 };
-    private static BoardPos[,][] movesTable = new BoardPos[8,8][];
+    private static readonly int[] XPosTable = { -2, -1, 1, 2 };
+    private static readonly int[] YPosTable = { 1, 2, 2, 1 };
+    private static readonly BoardPos[,][] MovesTable = new BoardPos[8,8][];
+    private static readonly Board.ChessComponents[] TextInd =
+        { Board.ChessComponents.WhiteKnight, Board.ChessComponents.BlackKnight };
 }

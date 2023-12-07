@@ -9,7 +9,7 @@ public class Queen : Figure
 // type construction / setups
 // --------------------------------
     public Queen(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhiteQueen : Board.ChessComponents.BlackQueen){}
+        base(x, y, color, TextInd[(int)color]){}
     
 // --------------------------------
 // abstract method overwrite
@@ -20,6 +20,32 @@ public class Queen : Figure
         
         return IsBlocked ? _getMovesWhenBlocked() : _getNormalMoves();
     }
+
+    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlocked()
+    {
+        BoardPos[] tiles = new BoardPos[MaxCorrectTiles];
+        int tilesPos = 0;
+        
+        tilesPos = Rook.HorLeftBlocks(this, tiles, tilesPos);
+        tilesPos = Rook.HorRightBlocks(this, tiles, tilesPos);
+        tilesPos = Rook.VertDownBlocks(this, tiles, tilesPos);
+        tilesPos = Rook.VertUpBlocks(this, tiles, tilesPos);
+        
+        for (int i = 0; i < 4; ++i)
+            tilesPos = Bishop.DirChosenMoves(this, tiles, tilesPos, (Bishop.Dir)i, true);
+
+        return (tiles, tilesPos);
+    }
+    
+    public override Figure Clone() => new Queen(Pos.X, Pos.Y, Color)
+    {
+        IsAlive = IsAlive,
+        IsMoved = IsMoved
+    };
+    
+// ------------------------------
+// private methods
+// ------------------------------
 
     private (BoardPos[] moves, int movesCount) _getNormalMoves()
     {
@@ -87,12 +113,13 @@ public class Queen : Figure
         }
     }
     
-    public override Figure Clone() => new Queen(Pos.X, Pos.Y, Color)
-    {
-        IsAlive = this.IsAlive,
-        IsMoved = this.IsMoved
-    };
+// ------------------------------
+// variables and properties
+// ------------------------------
     
     private const int MaxCorrectTiles = Rook.MaxCorrectTiles + Bishop.MaxPossibleTiles;
     private const int BlockedMaxTiles = 6;
+
+    private static readonly Board.ChessComponents[] TextInd =
+        { Board.ChessComponents.WhiteQueen, Board.ChessComponents.BlackQueen };
 }

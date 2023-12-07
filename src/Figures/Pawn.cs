@@ -9,26 +9,9 @@ public class Pawn : Figure
 // type construction / setups
 // --------------------------------
 
-// TODO: WTF IS THAT
     public Pawn(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhitePawn : Board.ChessComponents.BlackPawn)
-    {
-        // consider creating array of those values? TODO
-        if (color == ColorT.White)
-        {
-            _mvCord = 1;
-            _promTile = BoardPos.MaxPos;
-            _enemyPawnId = Board.ChessComponents.BlackPawn;
-        }
-        else
-        {
-            _mvCord = -1;
-            _promTile = BoardPos.MinPos;
-            _enemyPawnId = Board.ChessComponents.WhitePawn;
-        }
-
-        _elPassantX = _promTile - 3 * _mvCord;
-    }
+        base(x, y, color, TextId[(int)color])
+    {}
     
 // --------------------------------
 // abstract method overwrite
@@ -44,30 +27,30 @@ public class Pawn : Figure
         if (IsMoved)
             // does not check whether pawn goes out of board, assumes will promoted by board before next call
         {
-            if (IsEmpty(Pos.X, Pos.Y + _mvCord))
+            if (IsEmpty(Pos.X, Pos.Y + MvCord[(int)Color]))
             {
-                BoardPos.MoveType mt = _addPromTile(BoardPos.MoveType.NormalMove, Pos.Y + _mvCord);
-                moves[arrPos++] = new BoardPos(Pos.X, Pos.Y + _mvCord, mt);
+                BoardPos.MoveType mt = _addPromTile(BoardPos.MoveType.NormalMove, Pos.Y + MvCord[(int)Color]);
+                moves[arrPos++] = new BoardPos(Pos.X, Pos.Y + MvCord[(int)Color], mt);
             }
 
             var lMove = Parent.MovesHistory.Last!.Value;
-            if (Pos.Y == _elPassantX && _isLastMovedFigFreshPawn() &&
+            if (Pos.Y == ElPassantTiles[(int)Color] && _isLastMovedFigFreshPawn() &&
                 int.Abs(lMove.OldY - lMove.MadeMove.Y) == 2 &&  int.Abs(lMove.MadeMove.X - Pos.X) == 1)
             {
-                moves[arrPos++] = new BoardPos(lMove.MadeMove.X, Pos.Y + _mvCord, BoardPos.MoveType.ElPass);
+                moves[arrPos++] = new BoardPos(lMove.MadeMove.X, Pos.Y + MvCord[(int)Color], BoardPos.MoveType.ElPass);
             }
         }
         else
         {
             for (int dist = 1; dist < 3; ++dist)
             {
-                if (IsEmpty(Pos.X, Pos.Y + dist * _mvCord))
-                    moves[arrPos++] = new BoardPos(Pos.X, Pos.Y + dist * _mvCord);
+                if (IsEmpty(Pos.X, Pos.Y + dist * MvCord[(int)Color]))
+                    moves[arrPos++] = new BoardPos(Pos.X, Pos.Y + dist * MvCord[(int)Color]);
                 else break;
             }
         }
 
-        int ny = Pos.Y + _mvCord;
+        int ny = Pos.Y + MvCord[(int)Color];
         for (int i = 0; i < 2; ++i)
         {
             int nx = Pos.X + XAttackCords[i];
@@ -83,6 +66,23 @@ public class Pawn : Figure
         return FilterAllowedTiles(moves, arrPos);
     }
 
+    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlocked()
+    {
+        BoardPos[] tiles = new BoardPos[MaxBlockedTiles];
+        int tilesPos = 0;
+        
+        foreach (var xOffset in XAttackCords)
+        {
+            int attackX = Pos.X + xOffset;
+            if (attackX >= BoardPos.MinPos && attackX <= BoardPos.MaxPos)
+            {
+                tiles[tilesPos++] = new BoardPos(attackX, Pos.Y + MvCord[(int)Color]);
+            }
+        }
+        
+        return (tiles, tilesPos);
+    }
+
     public override Figure Clone() => new Pawn(Pos.X, Pos.Y, Color)
     {
         IsAlive = this.IsAlive,
@@ -94,11 +94,11 @@ public class Pawn : Figure
 // ------------------------------
 
     private BoardPos.MoveType _addPromTile(BoardPos.MoveType move, int y)
-        => y == _promTile ? move | BoardPos.MoveType.PromotionMove : move;
+        => y == PromTiles[(int)Color] ? move | BoardPos.MoveType.PromotionMove : move;
     
     private bool _isLastMovedFigFreshPawn()
     {
-        if (Parent.MovesHistory.Last!.Value.Fig.TextureIndex == _enemyPawnId &&
+        if (Parent.MovesHistory.Last!.Value.Fig.TextureIndex == EnemyPawn[(int)Color] &&
             Parent.MovesHistory.Last!.Value.WasUnmoved) return true;
         
         return false;
@@ -108,11 +108,15 @@ public class Pawn : Figure
 // variables and properties
 // ------------------------------
 
-    private readonly int _promTile;
-    private readonly int _mvCord;
-    private readonly int _elPassantX;
-    private readonly Board.ChessComponents _enemyPawnId;
     private const int MaxMoves = 4;
+    private const int MaxBlockedTiles = 2;
 
-    private static readonly int[] XAttackCords = new[]{ -1, 1 };
+    private static readonly int[] XAttackCords = { -1, 1 };
+    private static readonly int[] MvCord = { 1, -1 };
+    private static readonly int[] PromTiles = { 7, 0 };
+    private static readonly int[] ElPassantTiles = { 4, 3 };
+    private static readonly Board.ChessComponents[] EnemyPawn =
+        { Board.ChessComponents.BlackPawn, Board.ChessComponents.WhitePawn };
+    private static readonly Board.ChessComponents[] TextId =
+        { Board.ChessComponents.WhitePawn, Board.ChessComponents.BlackPawn };
 }

@@ -7,31 +7,51 @@ public class King : Figure
 // type construction / setups
 // --------------------------------
     public King(int x, int y, ColorT color):
-        base(x, y, color, color == ColorT.White? Board.ChessComponents.WhiteKing : Board.ChessComponents.BlackKing) {}
+        base(x, y, color, TextInd[(int)color]) {}
+
+    static King()
+    {
+        for (int x = BoardPos.MinPos; x <= BoardPos.MaxPos; ++x)
+            for (int y = BoardPos.MinPos; y <= BoardPos.MaxPos; ++y)
+            {
+                var arr = new BoardPos[MaxKingMoves];
+                int arrPos = 0;
+                
+                for (int xOff = -1; xOff < 2; ++xOff)
+                    for (int yOff = -1; yOff < 2; ++yOff)
+                    {
+                        if (xOff == 0 && yOff == 0) continue;
+                        
+                        int tempX = x + xOff;
+                        int tempY = y + yOff;
+
+                        if (BoardPos.isOnBoard(tempX, tempY))
+                        {
+                            arr[arrPos++] = new BoardPos(tempX, tempY);
+                        }
+                    }
+
+                KingMoves[x, y] = arr[..arrPos];
+            }
+        
+    }
 
 // --------------------------------
 // abstract method overwrite
 // --------------------------------
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
-        BoardPos[] ret = new BoardPos[KingMaxTiles];
+        BoardPos[] ret = new BoardPos[MaxKingMoves];
         int arrPos = 0;
-
-        for (int i = -1; i < 2; ++i)
+        
+        foreach (var move  in KingMoves[Pos.X, Pos.Y])
         {
-            for (int j = -1; j < 2; ++j)
+            if (Parent.BlockedTiles[(int)Color][move.X, move.Y] == Board.TileState.UnblockedTile)
             {
-                if (i == 0 && j == 0) continue;
-
-                int tempX = Pos.X + i;
-                int tempY = Pos.Y + j;
-                if (BoardPos.isOnBoard(tempX, tempY) && Parent.BlockedTiles[(int)Color][tempX, tempY] == Board.TileState.UnblockedTile)
-                {
-                    if (IsEmpty(tempX, tempY))
-                        ret[arrPos++] = new BoardPos(tempX, tempY);
-                    else if (IsEnemy(tempX, tempY))
-                        ret[arrPos++] = new BoardPos(tempX, tempY, BoardPos.MoveType.AttackMove);
-                }
+                if (IsEmpty(move.X, move.Y))
+                    ret[arrPos++] = new BoardPos(move.X, move.Y);
+                else if (IsEnemy(move.X, move.Y))
+                    ret[arrPos++] = new BoardPos(move.X, move.Y, BoardPos.MoveType.AttackMove);
             }
         }
         
@@ -40,7 +60,10 @@ public class King : Figure
 
         return (ret, arrPos);
     }
-    
+
+    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlocked()
+        => (KingMoves[Pos.X, Pos.Y], KingMoves[Pos.X, Pos.Y].Length);
+
     public override Figure Clone() => new King(Pos.X, Pos.Y, Color)
     {
         IsAlive = IsAlive,
@@ -98,5 +121,8 @@ public class King : Figure
     public const int LongCastlingX = 2;
     public const int ShortCastlingRookX = 5;
     public const int LongCastlingRookX= 3;
-    private const int KingMaxTiles = 8 + 2;
+    private const int MaxKingMoves = 8;
+    private static readonly Board.ChessComponents[] TextInd =
+        { Board.ChessComponents.WhiteKing, Board.ChessComponents.BlackKing };
+    private static readonly BoardPos[,][] KingMoves = new BoardPos[8, 8][];
 }

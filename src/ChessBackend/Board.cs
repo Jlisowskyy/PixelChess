@@ -165,16 +165,20 @@ public class Board
         if (_movingColor == Figure.ColorT.White)
         {
             _whiteTime -= spentTime;
-            
-            // TODO:
-            if (_whiteTime < 0){}
+
+            if (_whiteTime < 0)
+            {
+                _announceWin();
+            }
         }
         else
         {
             _blackTime -= spentTime;
-            
-            // TODO:
-            if (_blackTime < 0){}
+
+            if (_blackTime < 0)
+            {
+                _announceWin();
+            }
         }
         
     }
@@ -446,15 +450,15 @@ public class Board
     {
         for (int i = _colorMetadataMap[(int)col].EnemyRangeOnFigArr[0]; i < _colorMetadataMap[(int)col].EnemyRangeOnFigArr[1]; ++i)
         {
-            var mv = _figuresArray[i].GetMoves();
+            var mv = _figuresArray[i].GetBlocked();
     
-            for (int j = 0; j < mv.movesCount; ++j)
+            for (int j = 0; j < mv.tileCount; ++j)
             {
-                _blockedTiles[(int)col][mv.moves[j].X, mv.moves[j].Y] |= TileState.BlockedTile;
+                _blockedTiles[(int)col][mv.blockedTiles[j].X, mv.blockedTiles[j].Y] |= TileState.BlockedTile;
                 
                 // checks detection from pawns and knights, sliding figures should be detected before on fig blocking phase
                 // due to sliding properties
-                if ((mv.moves[j].MoveT & MoveType.AttackMove) != 0 && _boardFigures[mv.moves[j].X, mv.moves[j].Y] == _colorMetadataMap[(int)col].King)
+                if ((mv.blockedTiles[j].MoveT & MoveType.AttackMove) != 0 && _boardFigures[mv.blockedTiles[j].X, mv.blockedTiles[j].Y] == _colorMetadataMap[(int)col].King)
                 {
                     _kingAttackingFigure = _figuresArray[i];
                     _blockedTiles[(int)col][_figuresArray[i].Pos.X, _figuresArray[i].Pos.Y] |= TileState.AllowedTile;
@@ -519,7 +523,6 @@ public class Board
                     else // Sw
                         _blockDiagonal(col, (int)Bishop.Dir.Sw);
                 }
-
             }
         }
     }
@@ -1277,7 +1280,6 @@ public class Board
     public const double Minute = 60 * Second;
     public const double BasicWhiteTime = 10 * Minute;
     public const double BasicBlackTIme = 10 * Minute;
-
     
     public static readonly Layout BasicBeginningLayout = new Layout
     {

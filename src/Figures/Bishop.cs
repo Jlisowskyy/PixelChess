@@ -9,7 +9,7 @@ public class Bishop : Figure
 // type construction / setups
 // --------------------------------
     public Bishop(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhiteBishop : Board.ChessComponents.BlackBishop) {}
+        base(x, y, color, TextInd[(int)color]) {}
 
     static Bishop()
     {
@@ -39,7 +39,19 @@ public class Bishop : Figure
         
         return IsBlocked ? _getMovesWhenBlocked() : _getNormalSituationMoves();
     }
-    
+
+    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlocked()
+    {
+        BoardPos[] tiles = new BoardPos[MaxPossibleTiles];
+        int tilesPos = 0;
+        
+        // loops through all directions from [ sw nw ne se ]
+        for (int i = 0; i < 4; ++i)
+            tilesPos = DirChosenMoves(this, tiles, tilesPos, (Dir)i, true);
+
+        return (tiles, tilesPos);
+    }
+
     public override Figure Clone() => new Bishop(Pos.X, Pos.Y, Color)
     {
         IsAlive = this.IsAlive,
@@ -95,7 +107,9 @@ public class Bishop : Figure
      *  All functions below returns updated arrPos as a result
      */ 
 
-    public static int DirChosenMoves(Figure fig, BoardPos[] mArr, int arrPos, Dir dir)
+    public static int DirChosenMoves(Figure fig, BoardPos[] mArr, int arrPos, Dir dir, bool isBlockChecking = false)
+        // isBlockChecking flag - indicates whether method is generating moves or blocked tiles positions.
+        // Differs only on last step, add last tiles without checking is it enemy (attacking move) or not.
     {
         int nx = fig.Pos.X;
         int ny = fig.Pos.Y;
@@ -106,7 +120,8 @@ public class Bishop : Figure
 
             if (!IsEmpty(fig, nx, ny))
             {
-                if (IsEnemy(fig, nx, ny))
+                if (isBlockChecking) mArr[arrPos++] = new BoardPos(nx, ny);
+                else if (IsEnemy(fig, nx, ny))
                     mArr[arrPos++] = new BoardPos(nx, ny, BoardPos.MoveType.AttackMove);
                 break;
             }
@@ -140,4 +155,7 @@ public class Bishop : Figure
     // in order [ sw nw ne se ]
     public static readonly int[] XMoves = { -1, -1, 1, 1 };
     public static readonly int[] YMoves = { -1, 1, 1, -1 };
+
+    public static readonly Board.ChessComponents[] TextInd =
+        { Board.ChessComponents.WhiteBishop, Board.ChessComponents.BlackBishop };
 }

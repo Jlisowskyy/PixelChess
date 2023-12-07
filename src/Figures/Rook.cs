@@ -7,7 +7,7 @@ public class Rook : Figure
 // type construction / setups
 // --------------------------------
     public Rook(int x, int y, ColorT color) :
-        base(x, y, color, color == ColorT.White ? Board.ChessComponents.WhiteRook : Board.ChessComponents.BlackRook)
+        base(x, y, color, TextInd[(int)color])
     {}
 
 // --------------------------------
@@ -19,7 +19,20 @@ public class Rook : Figure
         
         return IsBlocked ? _getMovesWhenBlocked() : _getNormalSituationMoves();
     }
-    
+
+    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlocked()
+    {
+        BoardPos[] tiles = new BoardPos[MaxCorrectTiles];
+        int tilesPos = 0;
+
+        tilesPos = VertUpBlocks(this, tiles, tilesPos);
+        tilesPos = VertDownBlocks(this, tiles, tilesPos);
+        tilesPos = HorRightBlocks(this, tiles, tilesPos);
+        tilesPos = HorLeftBlocks(this, tiles, tilesPos);
+
+        return (tiles, tilesPos);
+    }
+
     public override Figure Clone() => new Rook(Pos.X, Pos.Y, Color)
     {
         IsAlive = IsAlive,
@@ -122,8 +135,9 @@ public class Rook : Figure
         public static (int, int) GetPos(Figure fig, int iter) => (iter, fig.Pos.Y);
     }
 
-    public static int GenStraightLineMoves<TMoveConds>(Figure fig, BoardPos[] mArr, int arrPos)
+    public static int GenStraightLineActions<TMoveConds>(Figure fig, BoardPos[] mArr, int arrPos, bool isBlockChecking = false)
         where TMoveConds : IStraightMove
+        // isBlockChecking flag - indicates whether method is generating moves or blocked tiles positions
     {
         int init = TMoveConds.InitIter(fig) + TMoveConds.Move;
 
@@ -135,7 +149,8 @@ public class Rook : Figure
                 mArr[arrPos++] = new BoardPos(x, y);
             else
             {
-                if (IsEnemy(fig, x, y)) mArr[arrPos++] = new BoardPos(x, y, BoardPos.MoveType.AttackMove);
+                if (isBlockChecking) mArr[arrPos++] = new BoardPos(x, y);
+                else if (IsEnemy(fig, x, y)) mArr[arrPos++] = new BoardPos(x, y, BoardPos.MoveType.AttackMove);
                 break;
             }
         }
@@ -144,16 +159,28 @@ public class Rook : Figure
     }
 
     public static int VertUpMoves(Figure fig, BoardPos[] mArr, int arrPos)
-        => GenStraightLineMoves<VerIncrease>(fig, mArr, arrPos);
+        => GenStraightLineActions<VerIncrease>(fig, mArr, arrPos);
 
     public static int VertDownMoves(Figure fig, BoardPos[] mArr, int arrPos)
-        => GenStraightLineMoves<VerDecrease>(fig, mArr, arrPos);
+        => GenStraightLineActions<VerDecrease>(fig, mArr, arrPos);
 
     public static int HorRightMoves(Figure fig, BoardPos[] mArr, int arrPos)
-        => GenStraightLineMoves<HorIncrease>(fig, mArr, arrPos);
+        => GenStraightLineActions<HorIncrease>(fig, mArr, arrPos);
 
     public static int HorLeftMoves(Figure fig, BoardPos[] mArr, int arrPos)
-        => GenStraightLineMoves<HorDecrease>(fig, mArr, arrPos);
+        => GenStraightLineActions<HorDecrease>(fig, mArr, arrPos);
+    
+    public static int VertUpBlocks(Figure fig, BoardPos[] mArr, int arrPos)
+        => GenStraightLineActions<VerIncrease>(fig, mArr, arrPos, true);
+
+    public static int VertDownBlocks(Figure fig, BoardPos[] mArr, int arrPos)
+        => GenStraightLineActions<VerDecrease>(fig, mArr, arrPos, true);
+
+    public static int HorRightBlocks(Figure fig, BoardPos[] mArr, int arrPos)
+        => GenStraightLineActions<HorIncrease>(fig, mArr, arrPos, true);
+
+    public static int HorLeftBlocks(Figure fig, BoardPos[] mArr, int arrPos)
+        => GenStraightLineActions<HorDecrease>(fig, mArr, arrPos, true);
     
 // ------------------------------
 // variables and properties
@@ -161,4 +188,7 @@ public class Rook : Figure
 
     internal const int MaxCorrectTiles = 14;
     private const int BlockedMaxTiles = 6;
+
+    private static readonly Board.ChessComponents[] TextInd =
+        { Board.ChessComponents.WhiteRook, Board.ChessComponents.BlackRook };
 }
