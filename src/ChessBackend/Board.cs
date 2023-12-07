@@ -14,21 +14,15 @@ namespace PixelChess.ChessBackend;
 /*          GENERAL TODOS
  *   - repair drawing offsets XD
  *   - change structure of game elements
- *   - add interactive menus
  *   - change texture holding
  * 
  *   - make tests for moves
- *   - implement check mate
  *   - add sounds
- *   - open source models
  *   - update readme and docs
  *
- *   - blocking tiles function should process all possible moves
  *   - checking errors
  * 
  */
-
-// TODO: 
 
 public class Board
 {
@@ -638,7 +632,6 @@ public class Board
         if (_layoutDict.ContainsKey(pos))
         {
             if ((_layoutDict[pos] += 1) == maxRepetitions) return true;
-            Console.WriteLine(_layoutDict[pos]);
         }
         else _layoutDict.Add(pos, 1);
 
