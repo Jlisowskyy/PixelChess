@@ -444,15 +444,16 @@ public class Board
     {
         for (int i = _colorMetadataMap[(int)col].EnemyRangeOnFigArr[0]; i < _colorMetadataMap[(int)col].EnemyRangeOnFigArr[1]; ++i)
         {
+            if (_figuresArray[i].IsAlive == false) continue;
+            
             var mv = _figuresArray[i].GetBlocked();
-    
             for (int j = 0; j < mv.tileCount; ++j)
             {
                 _blockedTiles[(int)col][mv.blockedTiles[j].X, mv.blockedTiles[j].Y] |= TileState.BlockedTile;
                 
                 // checks detection from pawns and knights, sliding figures should be detected before on fig blocking phase
                 // due to sliding properties
-                if ((mv.blockedTiles[j].MoveT & MoveType.AttackMove) != 0 && _boardFigures[mv.blockedTiles[j].X, mv.blockedTiles[j].Y] == _colorMetadataMap[(int)col].King)
+                if (_boardFigures[mv.blockedTiles[j].X, mv.blockedTiles[j].Y] == _colorMetadataMap[(int)col].King)
                 {
                     _kingAttackingFigure = _figuresArray[i];
                     _blockedTiles[(int)col][_figuresArray[i].Pos.X, _figuresArray[i].Pos.Y] |= TileState.AllowedTile;
@@ -1051,8 +1052,15 @@ public class Board
                     _selectedFigure = _figuresArray[i];
                     _processMove(mv.moves[j]);
                     var recResult = _testMoveGeneration(depth - 1);
+                    if (depth == 4) Console.WriteLine($"{{{ recResult[0]}:{mv.moves[j]}}}");
                     
                     // adding generated moves
+                    if (depth == 3) {
+                        for (int z = 0; z < mv.movesCount; ++z)
+                        {
+                            Console.WriteLine($"    {mv.moves[z]}");
+                        }
+                    };
                     for (int k = 0; k < recResult.Length; ++k)
                     {
                         ret[1 + k] += recResult[k];

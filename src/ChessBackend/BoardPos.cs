@@ -21,6 +21,9 @@ public struct BoardPos
         return HashCode.Combine((int)MoveT, X, Y);
     }
 
+    public override string ToString()
+        => $"{{{MoveT} : [{(char)('A'+X)}{1+Y}]}}";
+
     public BoardPos(int x, int y, MoveType mov = MoveType.NormalMove)
     {
         X = x;

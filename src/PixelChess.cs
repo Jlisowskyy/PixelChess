@@ -23,7 +23,7 @@ namespace PixelChess
         
             // Actual elements
             _board = new Board(Board.BasicBeginningLayout);
-            // _board = new Board("r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1 b - - 1");
+            // _board = new Board("k6r/5Rpp/pp1rp3/3p4/6P1/P3P2P/1Pn5/2K2R2 w  - 1 26");
         
             _promMenu = new PromotionMenu();
             _timer = new Timer();
