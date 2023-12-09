@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -1111,7 +1112,8 @@ public class Board
                             // displaying results after specific moves
                             if (depth == _initDepth)
                             {
-                                Console.WriteLine($"{_figuresArray[i]}:{mv.moves[j]}:{recResult[^1]}, upgraded to: {UpgradeInfo}");
+                                // Console.WriteLine($"{_figuresArray[i]}:{mv.moves[j]}:{recResult[^1]}, upgraded to: {UpgradeInfo}");
+                                Console.WriteLine($"{UCITranslator.GetUCIMoveCode(_figuresArray[i].Pos, mv.moves[j], upgrade)}: {recResult[^1]}");
                             }
                     
                             // adding generated moves
@@ -1131,7 +1133,9 @@ public class Board
                         // displaying results after specific moves
                         if (depth == _initDepth)
                         {
-                            Console.WriteLine($"{_figuresArray[i]}:{mv.moves[j]}:{recResult[^1]}");
+                            // Console.WriteLine($"{_figuresArray[i]}:{mv.moves[j]}:{recResult[^1]}");
+                            Console.WriteLine($"{UCITranslator.GetUCIMoveCode(_figuresArray[i].Pos, mv.moves[j])}: {recResult[^1]}");
+
                         }
                     
                         // adding generated moves
@@ -1148,6 +1152,23 @@ public class Board
 
     public ulong[] TestMoveGeneration(int depth)
     {
+        // Loading stockfish perft to compare
+        Console.WriteLine("Starting stockfish to get correct numbers...");
+        
+        Process stock = new Process();
+        stock.StartInfo.UseShellExecute = false;
+        stock.StartInfo.RedirectStandardOutput = true;
+        stock.StartInfo.FileName = "Deps/stockfish";
+        stock.StartInfo.Arguments = "go perft 2";
+        stock.Start();
+
+        string stockOutput = stock.StandardOutput.ReadToEnd();
+        stock.WaitForExit();
+        
+        Console.WriteLine("Stockfish finished his job!");
+        Console.WriteLine(stockOutput);
+        
+        // Performs own tests on positions
         _initDepth = depth;
         long t1 = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
         ulong[] arr = _testMoveGeneration(depth);
@@ -1415,86 +1436,6 @@ public class Board
             new Rook(7, 7, Figure.ColorT.Black),
         },
         FirstBlackFig = 16,
-        StartingColor = Figure.ColorT.White
-    };
-    
-    public static readonly Layout BasicBeginningWoutPawnsLayout = new Layout
-    {
-        FigArr = new Figure[]
-        {
-            new Rook(0, 0, Figure.ColorT.White),
-            new Knight(1, 0, Figure.ColorT.White),
-            new Bishop(2,0, Figure.ColorT.White),
-            new Queen(3, 0, Figure.ColorT.White),
-            new King(4,0, Figure.ColorT.White),
-            new Bishop(5,0, Figure.ColorT.White),
-            new Knight(6, 0, Figure.ColorT.White),
-            new Rook(7, 0, Figure.ColorT.White),
-            new Rook(0, 7, Figure.ColorT.Black),
-            new Knight(1, 7, Figure.ColorT.Black),
-            new Bishop(2,7, Figure.ColorT.Black),
-            new Queen(3, 7, Figure.ColorT.Black),
-            new King(4,7, Figure.ColorT.Black),
-            new Bishop(5,7, Figure.ColorT.Black),
-            new Knight(6, 7, Figure.ColorT.Black),
-            new Rook(7, 7, Figure.ColorT.Black),
-        },
-        FirstBlackFig = 8,
-        StartingColor = Figure.ColorT.White
-
-    };
-    
-    public static readonly Layout PawnPromLayout = new Layout
-    {
-        FigArr = new Figure[]
-        {
-            new Pawn(6, 3, Figure.ColorT.White),
-            new King(0,0 , Figure.ColorT.White),
-            new Pawn(5,6, Figure.ColorT.Black),
-            new King(0, 7, Figure.ColorT.Black)
-        },
-        FirstBlackFig = 2,
-        StartingColor = Figure.ColorT.White
-
-    };
-    
-    public static readonly Layout CastlingLayout = new Layout
-    {
-        FigArr = new Figure[]
-        {
-            new King(4, 0, Figure.ColorT.White),
-            new Rook(0, 0, Figure.ColorT.White),
-            new Rook(7, 0, Figure.ColorT.White),
-            new King(0,7, Figure.ColorT.Black),
-        },
-        FirstBlackFig = 3,
-        StartingColor = Figure.ColorT.White
-
-    };
-
-    public static readonly Layout DiagTest = new Layout
-    {
-        FigArr = new Figure[]
-        {
-            new Bishop(4, 4, Figure.ColorT.White),
-            new Queen(3, 3, Figure.ColorT.White),
-            new King(0, 7, Figure.ColorT.White),
-            new King(7,0, Figure.ColorT.Black),
-        },
-        FirstBlackFig = 2,
-        StartingColor = Figure.ColorT.White
-
-    };
-    
-    public static readonly Layout BlockTest = new Layout
-    {
-        FigArr = new Figure[]
-        {
-            new King(3, 0, Figure.ColorT.White),
-            new Rook(1,1, Figure.ColorT.Black),
-            new King(0, 7, Figure.ColorT.Black),
-        },
-        FirstBlackFig = 1,
         StartingColor = Figure.ColorT.White
     };
 }
