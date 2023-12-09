@@ -85,8 +85,8 @@ public class Pawn : Figure
 
     public override Figure Clone() => new Pawn(Pos.X, Pos.Y, Color)
     {
-        IsAlive = this.IsAlive,
-        IsMoved = this.IsMoved
+        IsAlive = IsAlive,
+        IsMoved = IsMoved
     };
     
     public override string ToString()

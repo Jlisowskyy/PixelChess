@@ -21,6 +21,7 @@ namespace PixelChess.ChessBackend;
  *   - update readme and docs
  *
  *   - checking errors
+ *   - add removing from dict elements on move
  * 
  */
 
@@ -356,7 +357,7 @@ public class Board
         }
         
         _movesHistory.AddLast(new HistoricalMove(_selectedFigure.Pos.X, _selectedFigure.Pos.Y, move,
-            _selectedFigure, _halfMoves, _selectedFigure.IsMoved, killedFig));
+            _selectedFigure, _halfMoves, !_selectedFigure.IsMoved, killedFig));
         _moveFigure(move); 
         
         // If there is promotion incoming we should wait to get information about new figure 
@@ -417,9 +418,16 @@ public class Board
         _movingColor = _movingColor == Figure.ColorT.White ? Figure.ColorT.Black : Figure.ColorT.White;
         
         _blockedTiles[(int)_movingColor] = new TileState[BoardSize,BoardSize];
-
-        _blockFigures(_movingColor);
-        _blockFigures(_colorMetadataMap[(int)_movingColor].EnemyColor);
+        
+        int[] range = _colorMetadataMap[(int)_movingColor].AliesRangeOnFigArr;
+        for (int i = range[0]; i < range[1]; ++i)
+        {
+            _figuresArray[i].IsBlocked = false;
+        }
+        _blockAllLinesOnKing(_movingColor);
+        // TODO: temporary blocked - to be solved in future
+        // _blockFigures(_movingColor);
+        // _blockFigures(_colorMetadataMap[(int)_movingColor].EnemyColor);
         _blockTiles(_movingColor);
         
         // only moving color can lose a game
@@ -620,14 +628,14 @@ public class Board
     {
         const int maxRepetitions = 3;
         
-        if (_layoutDict.ContainsKey(pos))
-        {
-            // TODO: replaced only to test positions
-            // if ((_layoutDict[pos] += 1) == maxRepetitions) return true;
-
-            return false;
-        }
-        else _layoutDict.Add(pos, 1);
+        // if (_layoutDict.ContainsKey(pos))
+        // {
+        //     // TODO: replaced only to test positions
+        //     // if ((_layoutDict[pos] += 1) == maxRepetitions) return true;
+        //
+        //     return false;
+        // }
+        // else _layoutDict.Add(pos, 1);
 
         return false;
     }
@@ -648,6 +656,7 @@ public class Board
         switch (lastMove.MadeMove.MoveT)
         {
             case MoveType.NormalMove:
+                _boardFigures[lastMove.MadeMove.X, lastMove.MadeMove.Y] = null;
                 break;
             case MoveType.AttackMove:
                 _undoKill(lastMove);
@@ -699,8 +708,7 @@ public class Board
     private void _undoPositionChange(HistoricalMove historicalMove)
         // just changes position of passed move figure from new pos to old pos, performs no sanity checks
     {
-        historicalMove.Fig.IsMoved = historicalMove.WasUnmoved;
-        _boardFigures[historicalMove.MadeMove.X, historicalMove.MadeMove.Y] = null;
+        historicalMove.Fig.IsMoved = !historicalMove.WasUnmoved;
         _boardFigures[historicalMove.OldX, historicalMove.OldY] = historicalMove.Fig;
         historicalMove.Fig.Pos.X = historicalMove.OldX;
         historicalMove.Fig.Pos.Y = historicalMove.OldY;
@@ -709,8 +717,8 @@ public class Board
     private void _undoPromotion(HistoricalMove historicalMove)
         // expects figure to be already moved to old place
     {
-        Figure oldPawn = new Pawn(historicalMove.OldX, historicalMove.OldY, _boardFigures[historicalMove.OldX, historicalMove.OldY].Color) { Parent = this };
-        _replaceFigure(oldPawn, _boardFigures[historicalMove.OldX, historicalMove.OldY]);
+        _replaceFigure(historicalMove.Fig, 
+            _boardFigures[historicalMove.MadeMove.X, historicalMove.MadeMove.Y]);
     }
 
     private void _undoKill(HistoricalMove historicalMove)
@@ -723,7 +731,8 @@ public class Board
 
     private void _undoCastling(HistoricalMove historicalMove)
     {
-        (int oldRookX, int newRookX) pos = historicalMove.OldX switch
+        _boardFigures[historicalMove.MadeMove.X, historicalMove.MadeMove.Y] = null;
+        (int oldRookX, int newRookX) pos = historicalMove.MadeMove.X switch
         {
             King.LongCastlingX => (MinPos, King.LongCastlingRookX),
             King.ShortCastlingX => (MaxPos, King.ShortCastlingRookX)
@@ -736,6 +745,7 @@ public class Board
 
     private void _undoElPassant(HistoricalMove historicalMove)
     {
+        _boardFigures[historicalMove.MadeMove.X, historicalMove.MadeMove.Y] = null;
         _boardFigures[historicalMove.MadeMove.X, historicalMove.OldY] = historicalMove.KilledFig;
         historicalMove.KilledFig.IsAlive = true;
     }
@@ -1046,6 +1056,7 @@ public class Board
                 _spriteBatch.Draw(TileHighlightersTextures[(int)TileHighlighters.SelectedTile], Translate(new BoardPos(x, y)), Color.White);
     }
 
+    private int _initDepth;
     private ulong[] _testMoveGeneration(int depth)
     {
         ulong[] ret = new ulong[depth];
@@ -1056,40 +1067,103 @@ public class Board
             {
                 var mv = _figuresArray[i].GetMoves();
                 
-                if (depth == 3 && mv.movesCount == 0) {
-                    for (int z = 0; z < mv.movesCount; ++z)
-                    {
-                        Console.WriteLine($"    {mv.moves[z]}");
-                    }
-                };
-                
                 ret[0] += (ulong)mv.movesCount;
+                if (_figuresArray[i] is Pawn)
+                {
+                    for (int z = 0; z < mv.movesCount; z++)
+                    {
+                        if ((mv.moves[z].MoveT & MoveType.PromotionMove) != 0)
+                        {
+                            ret[0] += 3;
+                        }
+                    }
+                }
                 
                 // no need to process all moves when deeper depth is not expected
                 if (depth == 1) continue;
                 
                 for (int j = 0; j < mv.movesCount; ++j)
                 {
-                    _selectedFigure = _figuresArray[i];
-                    _processMove(mv.moves[j]);
-                    var recResult = _testMoveGeneration(depth - 1);
-                    if (depth == 4 && recResult[0] != 20)
-                        Console.WriteLine(_figuresArray[i]);
+                    ulong[] recResult;
                     
-                    // adding generated moves
-                    for (int k = 0; k < recResult.Length; ++k)
+                    // performing promotions when neccessary
+                    if ((mv.moves[j].MoveT & MoveType.PromotionMove) != 0)
                     {
-                        ret[1 + k] += recResult[k];
-                    }
+                        Figure[] upgrades = new Figure[] {
+                            new Knight(mv.moves[j].X, mv.moves[j].Y, _figuresArray[i].Color),
+                            new Bishop(mv.moves[j].X, mv.moves[j].Y, _figuresArray[i].Color),
+                            new Rook(mv.moves[j].X, mv.moves[j].Y, _figuresArray[i].Color),
+                            new Queen(mv.moves[j].X, mv.moves[j].Y, _figuresArray[i].Color)
+                        };
+                        
+                        foreach (var upgrade in upgrades)
+                        {
+                            string UpgradeInfo = upgrade.ToString();
+                            
+                            _selectedFigure = _figuresArray[i];
+                            _processMove(mv.moves[j]);
+                            upgrade.IsMoved = true;
+                            upgrade.Parent = this;
+                            Promote(upgrade);
+                            recResult = _testMoveGeneration(depth - 1);
+                            _undoMove(); 
+                        
+                            // displaying results after specific moves
+                            if (depth == _initDepth)
+                            {
+                                Console.WriteLine($"{_figuresArray[i]}:{mv.moves[j]}:{recResult[^1]}, upgraded to: {UpgradeInfo}");
+                            }
                     
-                    _undoMove();
+                            // adding generated moves
+                            for (int k = 0; k < recResult.Length; ++k)
+                            {
+                                ret[1 + k] += recResult[k];
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _selectedFigure = _figuresArray[i];
+                        _processMove(mv.moves[j]);
+                        recResult = _testMoveGeneration(depth - 1);
+                        _undoMove(); 
+                        
+                        // displaying results after specific moves
+                        if (depth == _initDepth)
+                        {
+                            Console.WriteLine($"{_figuresArray[i]}:{mv.moves[j]}:{recResult[^1]}");
+                        }
+                    
+                        // adding generated moves
+                        for (int k = 0; k < recResult.Length; ++k)
+                        {
+                            ret[1 + k] += recResult[k];
+                        }
+                    }
                 }
             }
 
         return ret;
     }
 
-    public ulong[] TestMoveGeneration(int depth) => _testMoveGeneration(depth);
+    public ulong[] TestMoveGeneration(int depth)
+    {
+        _initDepth = depth;
+        long t1 = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+        ulong[] arr = _testMoveGeneration(depth);
+        long t2 = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+        
+        Console.WriteLine("----------------------------------------------------");
+        Console.WriteLine("                 Final test summary");
+        Console.WriteLine("----------------------------------------------------");
+        Console.WriteLine($"Spent time: {(t2-t1)} (milliseconds)");
+        for (int i = 0; i < arr.Length; ++i)
+        {
+            Console.WriteLine($"On depth {i + 1}, game generated {arr[i]} moves");
+        }
+
+        return arr;
+    }
     
 // ------------------------------
 // public types

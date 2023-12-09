@@ -26,7 +26,7 @@ public struct BoardPos
 
     public string ToStringPos() => NumToStringPos(X, Y);
     public override string ToString()
-        => $"{{{MoveT} : [{NumToStringPos(X, Y)}}}";
+        => $"{{{MoveT} : [{NumToStringPos(X, Y)}]}}";
 
     public BoardPos(int x, int y, MoveType mov = MoveType.NormalMove)
     {

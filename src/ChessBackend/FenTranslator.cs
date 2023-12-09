@@ -353,7 +353,8 @@ public static class FenTranslator
                     PlaceFigure(new King(x, y, col));
                     break;
                 case 'P':
-                    PlaceFigure(new Pawn(x, y, col));
+                    int unMovedPos = col == Figure.ColorT.White ? 1 : 6;
+                    PlaceFigure(new Pawn(x, y, col) { IsMoved = !(y == unMovedPos)});
                     break;
                 case '/':
                     if (_inLineTile > Board.BoardSize)
