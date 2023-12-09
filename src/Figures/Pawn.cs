@@ -89,6 +89,9 @@ public class Pawn : Figure
         IsMoved = this.IsMoved
     };
     
+    public override string ToString()
+        => $"{{{(Color == ColorT.White ? 'P' : 'p')}:{Pos.ToStringPos()}}}";
+    
 // ------------------------------
 // helping methods
 // ------------------------------

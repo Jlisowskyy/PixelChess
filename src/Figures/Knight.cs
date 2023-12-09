@@ -75,6 +75,9 @@ public class Knight : Figure
         IsMoved = IsMoved
     };
     
+    public override string ToString()
+        => $"{{{(Color == ColorT.White ? 'N' : 'n')}:{Pos.ToStringPos()}}}";
+    
 // ------------------------------
 // variables and properties
 // ------------------------------

@@ -43,6 +43,9 @@ public class Queen : Figure
         IsMoved = IsMoved
     };
     
+    public override string ToString()
+        => $"{{{(Color == ColorT.White ? 'Q' : 'q')}:{Pos.ToStringPos()}}}";
+    
 // ------------------------------
 // private methods
 // ------------------------------

@@ -70,16 +70,21 @@ public class King : Figure
         IsMoved = IsMoved
     };
     
+    public override string ToString()
+        => $"{{{(Color == ColorT.White ? 'K' : 'k')}:{Pos.ToStringPos()}}}";
+    
 // ------------------------------
 // private help method
 // ------------------------------
     
     private int GetCastlingMoves(BoardPos[] moves, int arrPos)
     {
+        if (Parent.IsChecked) return arrPos;
+
         Board.ChessComponents rookType =
             Color == ColorT.White ? Board.ChessComponents.WhiteRook : Board.ChessComponents.BlackRook; 
         int i;
-
+        
         if (!IsEmpty(BoardPos.MinPos, Pos.Y) 
             && Parent.BoardFigures[BoardPos.MinPos, Pos.Y].TextureIndex == rookType 
             && Parent.BoardFigures[BoardPos.MinPos, Pos.Y].IsMoved == false)

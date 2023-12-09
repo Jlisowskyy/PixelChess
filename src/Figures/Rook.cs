@@ -39,6 +39,13 @@ public class Rook : Figure
         IsMoved = IsMoved
     };
     
+    public override string ToString()
+        => $"{{{(Color == ColorT.White ? 'R' : 'r')}:{Pos.ToStringPos()}}}";
+    
+// ------------------------------
+// private methods
+// ------------------------------
+    
     private (BoardPos[] moves, int movesCount) _getMovesWhenBlocked()
     {
         // Horizontal line

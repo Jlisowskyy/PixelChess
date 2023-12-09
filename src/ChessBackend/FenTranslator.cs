@@ -116,7 +116,9 @@ public static class FenTranslator
         var lastMove = chessBoard.MovesHistory.Last!.Value;
         var fig = chessBoard.BoardFigures[lastMove.MadeMove.X, lastMove.MadeMove.Y];
 
-        if (fig.TextureIndex == ElPassantInd[(int)fig.Color] && Math.Abs(lastMove.OldY - lastMove.MadeMove.Y) == 2)
+        // there is sentinel on history list with null figure so we should exit before
+        
+        if (fig != null && fig.TextureIndex == ElPassantInd[(int)fig.Color] && Math.Abs(lastMove.OldY - lastMove.MadeMove.Y) == 2)
         {
             output[indp + offset++] = (char)('a' + lastMove.MadeMove.X);
             output[indp + offset++] = (char)('1' + lastMove.MadeMove.Y - 1);
@@ -251,16 +253,16 @@ public static class FenTranslator
         {
             switch (fenInput[_strPos])
             {
-                case 'K':
+                case 'Q':
                     FindCastlingRook(0, 0, Figure.ColorT.White);
                     break;
-                case 'Q':
+                case 'K':
                     FindCastlingRook(7, 0, Figure.ColorT.White);
                     break;
-                case 'k':
+                case 'q':
                     FindCastlingRook(0, 7, Figure.ColorT.Black);
                     break;
-                case 'q':
+                case 'k':
                     FindCastlingRook(7, 7, Figure.ColorT.Black);
                     break;
                 default:
@@ -297,7 +299,7 @@ public static class FenTranslator
             }
         }
 
-        throw new ApplicationException("Fen inputs says castling is available bur there is no such rook");
+        // throw new ApplicationException("Fen inputs says castling is available bur there is no such rook");
     }
 
     private static Figure.ColorT ProcessMovingColor(string fen)
@@ -415,26 +417,22 @@ public static class FenTranslator
 
     const int BoardTiles = Board.BoardSize * Board.BoardSize;
     
-    
     // Used to simplify checking possible castling 
-    private static readonly BoardPos[] KingPos = new[] { new BoardPos(4,0 ), new BoardPos(4, 7) };
+    private static readonly BoardPos[] KingPos = { new(4,0 ), new(4, 7) };
 
-    private static readonly BoardPos[][] RookPos = new[]
-    {
+    private static readonly BoardPos[][] RookPos = {
         new[] { new BoardPos(7, 0), new BoardPos(0, 0) },
         new[] { new BoardPos(7, 7), new BoardPos(0, 7) }
     };
 
-    private static readonly char[] CastleChar = new[] { 'k', 'q' };
+    private static readonly char[] CastleChar = { 'k', 'q' };
 
-    private static readonly Board.ChessComponents[] RookInd = new[]
-    {
+    private static readonly Board.ChessComponents[] RookInd = {
         Board.ChessComponents.WhiteRook,
         Board.ChessComponents.BlackRook
     };
 
-    private static readonly Board.ChessComponents[] KingInd = new[]
-    {
+    private static readonly Board.ChessComponents[] KingInd = {
         Board.ChessComponents.WhiteKing,
         Board.ChessComponents.BlackKing
     };

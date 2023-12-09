@@ -52,6 +52,13 @@ public class Bishop : Figure
         return (tiles, tilesPos);
     }
 
+    public override string ToString()
+        => $"{{{(Color == ColorT.White ? 'B' : 'b')}:{Pos.ToStringPos()}}}";
+
+    // ------------------------------
+// private methods
+// ------------------------------
+
     public override Figure Clone() => new Bishop(Pos.X, Pos.Y, Color)
     {
         IsAlive = this.IsAlive,

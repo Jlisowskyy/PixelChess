@@ -412,16 +412,6 @@ public class Board
     {
         // performs cleaning after previous round, like blocking figures, blocking tiles for king
         // and performing checks for game endings
-        
-        // TODO: temporary all blocking strategy
-        
-        // if (_lastAllowedTilesCount != 0){
-        //     for (int i = 0; i < _lastAllowedTilesCount; ++i)
-        //         _blockedTiles[(int)_movingColor][_lastAllowedTilesArr[i].X, _lastAllowedTilesArr[i].Y] ^=
-        //             TileState.AllowedTile;
-        //
-        //     _lastAllowedTilesCount = 0;
-        // }
             
         _kingAttackingFigure = null;
         _movingColor = _movingColor == Figure.ColorT.White ? Figure.ColorT.Black : Figure.ColorT.White;
@@ -632,7 +622,10 @@ public class Board
         
         if (_layoutDict.ContainsKey(pos))
         {
-            if ((_layoutDict[pos] += 1) == maxRepetitions) return true;
+            // TODO: replaced only to test positions
+            // if ((_layoutDict[pos] += 1) == maxRepetitions) return true;
+
+            return false;
         }
         else _layoutDict.Add(pos, 1);
 
@@ -691,8 +684,15 @@ public class Board
         
         _blockedTiles[(int)_movingColor] = new TileState[BoardSize,BoardSize];
         
-        _blockFigures(_movingColor);
-        _blockFigures(_colorMetadataMap[(int)_movingColor].EnemyColor);
+        // IMPORTANT NOTE: _blockFigures function is not reversible in current state so only valid solution now is to 
+        // just unblock and block them all
+        int[] range = _colorMetadataMap[(int)_movingColor].AliesRangeOnFigArr;
+        for (int i = range[0]; i < range[1]; ++i)
+        {
+            _figuresArray[i].IsBlocked = false;
+        }
+        _blockAllLinesOnKing(_movingColor);
+        
         _blockTiles(_movingColor);
     }
     
@@ -707,7 +707,7 @@ public class Board
     }
     
     private void _undoPromotion(HistoricalMove historicalMove)
-        // expects figure to be already move to old place
+        // expects figure to be already moved to old place
     {
         Figure oldPawn = new Pawn(historicalMove.OldX, historicalMove.OldY, _boardFigures[historicalMove.OldX, historicalMove.OldY].Color) { Parent = this };
         _replaceFigure(oldPawn, _boardFigures[historicalMove.OldX, historicalMove.OldY]);
@@ -717,6 +717,7 @@ public class Board
         // assumes killed fig tile is empty just activates killed figure drawing and places it on the map
     {
         historicalMove.KilledFig.IsAlive = true;
+        _colorMetadataMap[(int)historicalMove.KilledFig.Color].FiguresCount++;
         _boardFigures[historicalMove.MadeMove.X, historicalMove.MadeMove.Y] = historicalMove.KilledFig;
     }
 
@@ -782,21 +783,26 @@ public class Board
                         _boardFigures[x, y].TextureIndex == _colorMetadataMap[(int)col].EnemyQueen)
                         // if first figure is attacking king process allowed tiles and return
                     {
+                        #if DEBUG_
                         if (_kingAttackingFigure != null)
-                            continue;
-                        // TODO: investigate    
-                        // throw new ApplicationException("Double check detected - invalid move");
+                            throw new ApplicationException("Double check detected - invalid move");
+                        #endif
                         
                         _kingAttackingFigure = _boardFigures[x, y];
-                        _lastAllowedTilesCount = int.Abs(TMoveConds.InitIter(kingToCheck) - iter);
-                        _lastAllowedTilesArr = new BoardPos[_lastAllowedTilesCount];
+                        int lastAllowedTilesCount = int.Abs(TMoveConds.InitIter(kingToCheck) - iter);
                         
-                        for (int i = 0; i < _lastAllowedTilesCount; ++i)
+                        for (int i = 0; i < lastAllowedTilesCount; ++i)
                         {
                             (int nx, int ny) = TMoveConds.GetPos(kingToCheck, iter - i*TMoveConds.Move);
-                            _lastAllowedTilesArr[i].Y = ny;
-                            _lastAllowedTilesArr[i].X = nx;
                             _blockedTiles[(int)col][nx, ny] |= TileState.AllowedTile;
+                        }
+
+                        // blocking tile behind the king to prevent illegal king backup move
+                        var (tempX, tempY) = TMoveConds.GetPos(kingToCheck,
+                            TMoveConds.InitIter(kingToCheck) - TMoveConds.Move);
+                        if (isOnBoard(tempX, tempY))
+                        {
+                            _blockedTiles[(int)col][tempX, tempY] |= TileState.BlockedTile;
                         }
                         
                         return;
@@ -878,25 +884,32 @@ public class Board
                         _boardFigures[nx, ny].TextureIndex == _colorMetadataMap[(int)col].EnemyQueen)
                         // if first figure is attacking king process allowed tiles and return
                     {
+                        #if DEBUG_
                         if (_kingAttackingFigure != null)
-                            continue;
-                            // throw new ApplicationException("Double check detected - invalid move");
-                        
+                            throw new ApplicationException("Double check detected - invalid move");
+                        #endif
                         
                         _kingAttackingFigure = _boardFigures[nx, ny];
-                        _lastAllowedTilesCount = Math.Abs(kingToCheck.Pos.Y - ny) - 1;
-                        _lastAllowedTilesArr = new BoardPos[_lastAllowedTilesCount];
+                        int lastAllowedTilesCount = Math.Abs(kingToCheck.Pos.Y - ny) - 1;
 
                         nx = kingToCheck.Pos.X + Bishop.XMoves[dir];
                         ny = kingToCheck.Pos.Y + Bishop.YMoves[dir];
                     
-                        for (int i = 0; i < _lastAllowedTilesCount; ++i)
+                        // marking fields that moves directing to this tiles are actually legal
+                        for (int i = 0; i < lastAllowedTilesCount; ++i)
                         {
-                            _lastAllowedTilesArr[i].X = nx;
-                            _lastAllowedTilesArr[i].Y = ny;
                             _blockedTiles[(int)col][nx, ny] |= TileState.AllowedTile;
                             nx += Bishop.XMoves[dir];
                             ny += Bishop.YMoves[dir];
+                        }
+                        
+                        // blocking king move on same line but in opposite dirrection
+                        
+                        int tempX = kingToCheck.Pos.X - Bishop.XMoves[dir];
+                        int tempY = kingToCheck.Pos.Y - Bishop.YMoves[dir];
+                        if (isOnBoard(tempX, tempY))
+                        {
+                            _blockedTiles[(int)col][tempX, tempY] |= TileState.BlockedTile;
                         }
                     }
 
@@ -1042,6 +1055,14 @@ public class Board
             if (_figuresArray[i].IsAlive)
             {
                 var mv = _figuresArray[i].GetMoves();
+                
+                if (depth == 3 && mv.movesCount == 0) {
+                    for (int z = 0; z < mv.movesCount; ++z)
+                    {
+                        Console.WriteLine($"    {mv.moves[z]}");
+                    }
+                };
+                
                 ret[0] += (ulong)mv.movesCount;
                 
                 // no need to process all moves when deeper depth is not expected
@@ -1052,15 +1073,10 @@ public class Board
                     _selectedFigure = _figuresArray[i];
                     _processMove(mv.moves[j]);
                     var recResult = _testMoveGeneration(depth - 1);
-                    if (depth == 4) Console.WriteLine($"{{{ recResult[0]}:{mv.moves[j]}}}");
+                    if (depth == 4 && recResult[0] != 20)
+                        Console.WriteLine(_figuresArray[i]);
                     
                     // adding generated moves
-                    if (depth == 3) {
-                        for (int z = 0; z < mv.movesCount; ++z)
-                        {
-                            Console.WriteLine($"    {mv.moves[z]}");
-                        }
-                    };
                     for (int k = 0; k < recResult.Length; ++k)
                     {
                         ret[1 + k] += recResult[k];
@@ -1220,9 +1236,6 @@ public class Board
     private ColorMetadata[] _colorMetadataMap;
     // metadata per figures color about players figures deck
 
-    private BoardPos[] _lastAllowedTilesArr; // TODO: temporary
-    private int _lastAllowedTilesCount;
-    // used to remove old allowed tiles
     
     private Figure[,] _boardFigures;
     // actual figures on board used to map positions to figures
