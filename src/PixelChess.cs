@@ -14,7 +14,7 @@ namespace PixelChess
 // type creation / initialization
 // ------------------------------------
 
-        public PixelChess()
+        public PixelChess(string begLayout = Board.BasicStartingLayoutFen)
         {
             // Monogame components
             _graphics = new GraphicsDeviceManager(this);
@@ -22,8 +22,7 @@ namespace PixelChess
             IsMouseVisible = true;
         
             // Actual elements
-            // _board = new Board(Board.BasicBeginningLayout);
-            _board = new Board("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
+            _board = new Board(begLayout);
         
             _promMenu = new PromotionMenu();
             _timer = new Timer();

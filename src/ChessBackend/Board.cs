@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -26,21 +27,15 @@ namespace PixelChess.ChessBackend;
  * 
  */
 
-public class Board
+public partial class Board
 {
 // --------------------------------
 // type construction / setups
 // --------------------------------
-    public Board(Layout layout)
-        // expects layout array to be grouped to colors groups fitted together, where firs group is white,
-        // there also should be exactly one king per color and more than one figure different than king
-    {
-        _startFiguresLayout = layout;
-        ResetBoard();
-    }
 
-    public Board(string fenNotationInput)
+    public Board(string fenNotationInput = BasicStartingLayoutFen)
     {
+        _startingFiguresLayoutFen = fenNotationInput;
         try
         {
             _startFiguresLayout = FenTranslator.Translate(fenNotationInput);
@@ -50,7 +45,8 @@ public class Board
             Console.Error.WriteLine($"Error occured during fen translation: {exc.Message}");
             Console.Error.WriteLine("Loading default layout...");
 
-            _startFiguresLayout = BasicBeginningLayout;
+            _startingFiguresLayoutFen = BasicStartingLayoutFen;
+            _startFiguresLayout = FenTranslator.Translate(BasicStartingLayoutFen);
         }
         ResetBoard();
     }
@@ -71,16 +67,20 @@ public class Board
         _spriteBatch = batch;
     }
 
-    public void ChangeGameLayout(Layout layout)
-    {
-        _startFiguresLayout = layout;
-        ResetBoard();
-    }
-
     public void ChangeGameLayout(string fenNotationInput)
     {
-        _startFiguresLayout = FenTranslator.Translate(fenNotationInput);
-        ResetBoard();
+        try
+        {
+            Layout nLayout = FenTranslator.Translate(fenNotationInput);
+            _startFiguresLayout = FenTranslator.Translate(fenNotationInput);
+            _startingFiguresLayoutFen = fenNotationInput;
+            ResetBoard();
+        }
+        catch (ApplicationException exc)
+        {
+            Console.Error.WriteLine($"Error occured during fen translation: {exc.Message}");
+            Console.Error.WriteLine("Changing nothing...");
+        }
     }
 
     public void ResetBoard()
@@ -113,10 +113,10 @@ public class Board
         _colorMetadataMap[(int)Figure.ColorT.Black].EnemyRangeOnFigArr[0] = 0;
         _colorMetadataMap[(int)Figure.ColorT.Black].EnemyRangeOnFigArr[1] = _startFiguresLayout.FirstBlackFig;
         
-        // Needs to be reseted, cuz its only counts in game moves
+        // Needs to be restarted, cuz its only counts in game moves
         _moveCounter = 0;
 
-        // should be reseted before initial check mate tests
+        // should be restarted before initial check mate tests
         _isGameEnded = false;
         _kingAttackingFigure = null;
         _movingColor = _startFiguresLayout.StartingColor;
@@ -141,7 +141,8 @@ public class Board
             Console.Error.WriteLine($"Incorrect layout passed: {exc.Message}");
             Console.Error.WriteLine("Loading default layout...");
 
-            _startFiguresLayout = BasicBeginningLayout;
+            _startFiguresLayout = FenTranslator.Translate(BasicStartingLayoutFen);
+            _startingFiguresLayoutFen = BasicStartingLayoutFen;
             // Must contain valid layout
             ResetBoard();
         }
@@ -182,6 +183,39 @@ public class Board
 // ------------------------------
 // type interaction
 // ------------------------------
+
+    public void MakeUciMove(string uciMove)
+    {
+        var moveData = UciTranslator.FromUciToInGame(uciMove);
+        SelectFigure(moveData.fPos);
+        var (wasHit, type) = DropFigure(moveData.nPos);
+        
+        // TODO: there is different semantics of wasHit return flag
+#if DEBUG_
+        // Board didnt recognized such move, there is bug inside the board or the engine
+        if (!wasHit)
+        {
+            throw new ApplicationException("Encountered invalid move on UCI interface, this should never happen!");
+        }
+#endif
+
+        if (moveData.prom != 'x' && (type & MoveType.PromotionMove) != 0)
+        {
+            Figure fig = UciTranslator.GetUpdateType(moveData.prom, _promotionPawn, this);
+            Promote(fig);
+        }
+#if DEBUG_
+        else if (moveData.prom != 'x')
+        {
+            throw new ApplicationException(
+                "On the other site of UCI interface promotion was marked, but move made on board wasn't the promoting one!!!");
+        }
+        else if ((type & MoveType.PromotionMove) != 0)
+        {
+            throw new ApplicationException("Board detected promotionMove but there was no promotion char on uci move!!");
+        }
+#endif
+    }
 
     public void UndoMove()
     {
@@ -914,7 +948,7 @@ public class Board
                             ny += Bishop.YMoves[dir];
                         }
                         
-                        // blocking king move on same line but in opposite dirrection
+                        // blocking king move on same line but in opposite direction
                         
                         int tempX = kingToCheck.Pos.X - Bishop.XMoves[dir];
                         int tempY = kingToCheck.Pos.Y - Bishop.YMoves[dir];
@@ -965,7 +999,6 @@ public class Board
 // ------------------------------
 // Metadata extraction
 // ------------------------------
-
 
     private void _copyAndExtractMetadata()
         // performs deep copy of saved starting layout to in-game figures array
@@ -1045,7 +1078,6 @@ public class Board
 // -----------------------------------
 // debugging and testing methods
 // -----------------------------------
-
     private void _drawDesiredBishopColoredTiles(Figure.ColorT col)
         // used in tests - debug only
     {
@@ -1057,133 +1089,16 @@ public class Board
                 _spriteBatch.Draw(TileHighlightersTextures[(int)TileHighlighters.SelectedTile], Translate(new BoardPos(x, y)), Color.White);
     }
 
-    private int _initDepth;
-    private ulong[] _testMoveGeneration(int depth)
+    public void PerformShallowTest(int depth)
     {
-        ulong[] ret = new ulong[depth];
-
-        var range = _colorMetadataMap[(int)_movingColor].AliesRangeOnFigArr;
-        for (int i = range[0]; i < range[1]; ++i)
-            if (_figuresArray[i].IsAlive)
-            {
-                var mv = _figuresArray[i].GetMoves();
-                
-                ret[0] += (ulong)mv.movesCount;
-                if (_figuresArray[i] is Pawn)
-                {
-                    for (int z = 0; z < mv.movesCount; z++)
-                    {
-                        if ((mv.moves[z].MoveT & MoveType.PromotionMove) != 0)
-                        {
-                            ret[0] += 3;
-                        }
-                    }
-                }
-                
-                // no need to process all moves when deeper depth is not expected
-                if (depth == 1) continue;
-                
-                for (int j = 0; j < mv.movesCount; ++j)
-                {
-                    ulong[] recResult;
-                    
-                    // performing promotions when neccessary
-                    if ((mv.moves[j].MoveT & MoveType.PromotionMove) != 0)
-                    {
-                        Figure[] upgrades = new Figure[] {
-                            new Knight(mv.moves[j].X, mv.moves[j].Y, _figuresArray[i].Color),
-                            new Bishop(mv.moves[j].X, mv.moves[j].Y, _figuresArray[i].Color),
-                            new Rook(mv.moves[j].X, mv.moves[j].Y, _figuresArray[i].Color),
-                            new Queen(mv.moves[j].X, mv.moves[j].Y, _figuresArray[i].Color)
-                        };
-                        
-                        foreach (var upgrade in upgrades)
-                        {
-                            string UpgradeInfo = upgrade.ToString();
-                            
-                            _selectedFigure = _figuresArray[i];
-                            _processMove(mv.moves[j]);
-                            upgrade.IsMoved = true;
-                            upgrade.Parent = this;
-                            Promote(upgrade);
-                            recResult = _testMoveGeneration(depth - 1);
-                            _undoMove(); 
-                        
-                            // displaying results after specific moves
-                            if (depth == _initDepth)
-                            {
-                                // Console.WriteLine($"{_figuresArray[i]}:{mv.moves[j]}:{recResult[^1]}, upgraded to: {UpgradeInfo}");
-                                Console.WriteLine($"{UCITranslator.GetUCIMoveCode(_figuresArray[i].Pos, mv.moves[j], upgrade)}: {recResult[^1]}");
-                            }
-                    
-                            // adding generated moves
-                            for (int k = 0; k < recResult.Length; ++k)
-                            {
-                                ret[1 + k] += recResult[k];
-                            }
-                        }
-                    }
-                    else
-                    {
-                        _selectedFigure = _figuresArray[i];
-                        _processMove(mv.moves[j]);
-                        recResult = _testMoveGeneration(depth - 1);
-                        _undoMove(); 
-                        
-                        // displaying results after specific moves
-                        if (depth == _initDepth)
-                        {
-                            // Console.WriteLine($"{_figuresArray[i]}:{mv.moves[j]}:{recResult[^1]}");
-                            Console.WriteLine($"{UCITranslator.GetUCIMoveCode(_figuresArray[i].Pos, mv.moves[j])}: {recResult[^1]}");
-
-                        }
-                    
-                        // adding generated moves
-                        for (int k = 0; k < recResult.Length; ++k)
-                        {
-                            ret[1 + k] += recResult[k];
-                        }
-                    }
-                }
-            }
-
-        return ret;
+        MoveGenerationTester test = new MoveGenerationTester(this);
+        test.PerformShallowMoveGenerationTest(depth);
     }
 
-    public ulong[] TestMoveGeneration(int depth)
+    public void PerformDeepTest(int depth)
     {
-        // Loading stockfish perft to compare
-        Console.WriteLine("Starting stockfish to get correct numbers...");
-        
-        Process stock = new Process();
-        stock.StartInfo.UseShellExecute = false;
-        stock.StartInfo.RedirectStandardOutput = true;
-        stock.StartInfo.FileName = "Deps/stockfish";
-        stock.StartInfo.Arguments = "go perft 2";
-        stock.Start();
-
-        string stockOutput = stock.StandardOutput.ReadToEnd();
-        stock.WaitForExit();
-        
-        Console.WriteLine("Stockfish finished his job!");
-        Console.WriteLine(stockOutput);
-        
-        // Performs own tests on positions
-        _initDepth = depth;
-        long t1 = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-        ulong[] arr = _testMoveGeneration(depth);
-        long t2 = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-        
-        Console.WriteLine("----------------------------------------------------");
-        Console.WriteLine("                 Final test summary");
-        Console.WriteLine("----------------------------------------------------");
-        Console.WriteLine($"Spent time: {(t2-t1)} (milliseconds)");
-        for (int i = 0; i < arr.Length; ++i)
-        {
-            Console.WriteLine($"On depth {i + 1}, game generated {arr[i]} moves");
-        }
-
-        return arr;
+        MoveGenerationTester test = new MoveGenerationTester(this);
+        test.PerformDeepMoveGenerationTest(depth);
     }
     
 // ------------------------------
@@ -1330,13 +1245,13 @@ public class Board
     
     private ColorMetadata[] _colorMetadataMap;
     // metadata per figures color about players figures deck
-
     
     private Figure[,] _boardFigures;
     // actual figures on board used to map positions to figures
     
     private Layout _startFiguresLayout;
     // storing starting position used to restore start layout 
+    private string _startingFiguresLayoutFen;
 
     private Figure[] _figuresArray;
     // used to look up throughout all figures for e.g. to process all enemy moves
@@ -1397,45 +1312,6 @@ public class Board
     public const double Minute = 60 * Second;
     public const double BasicWhiteTime = 10 * Minute;
     public const double BasicBlackTIme = 10 * Minute;
-    
-    public static readonly Layout BasicBeginningLayout = new Layout
-    {
-        FigArr = new Figure[]
-        {
-            new Pawn(0,1, Figure.ColorT.White),
-            new Pawn(1,1, Figure.ColorT.White),
-            new Pawn(2,1, Figure.ColorT.White),
-            new Pawn(3,1, Figure.ColorT.White),
-            new Pawn(4,1, Figure.ColorT.White),
-            new Pawn(5,1, Figure.ColorT.White),
-            new Pawn(6,1, Figure.ColorT.White),
-            new Pawn(7,1, Figure.ColorT.White),
-            new Rook(0, 0, Figure.ColorT.White),
-            new Knight(1, 0, Figure.ColorT.White),
-            new Bishop(2,0, Figure.ColorT.White),
-            new Queen(3, 0, Figure.ColorT.White),
-            new King(4,0, Figure.ColorT.White),
-            new Bishop(5,0, Figure.ColorT.White),
-            new Knight(6, 0, Figure.ColorT.White),
-            new Rook(7, 0, Figure.ColorT.White),
-            new Pawn(0,6, Figure.ColorT.Black),
-            new Pawn(1,6, Figure.ColorT.Black),
-            new Pawn(2,6, Figure.ColorT.Black),
-            new Pawn(3,6, Figure.ColorT.Black),
-            new Pawn(4,6, Figure.ColorT.Black),
-            new Pawn(5,6, Figure.ColorT.Black),
-            new Pawn(6,6, Figure.ColorT.Black),
-            new Pawn(7,6, Figure.ColorT.Black),
-            new Rook(0, 7, Figure.ColorT.Black),
-            new Knight(1, 7, Figure.ColorT.Black),
-            new Bishop(2,7, Figure.ColorT.Black),
-            new Queen(3, 7, Figure.ColorT.Black),
-            new King(4,7, Figure.ColorT.Black),
-            new Bishop(5,7, Figure.ColorT.Black),
-            new Knight(6, 7, Figure.ColorT.Black),
-            new Rook(7, 7, Figure.ColorT.Black),
-        },
-        FirstBlackFig = 16,
-        StartingColor = Figure.ColorT.White
-    };
+
+    public const string BasicStartingLayoutFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 }

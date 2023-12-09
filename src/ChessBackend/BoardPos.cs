@@ -6,20 +6,11 @@ namespace PixelChess.ChessBackend;
 public struct BoardPos
     // structure used to pass information about position on board, made moves and actions taken
 {
-    public bool Equals(BoardPos other)
-    {
-        return MoveT == other.MoveT && X == other.X && Y == other.Y;
-    }
-
     public override bool Equals(object obj)
-    {
-        return obj is BoardPos other && Equals(other);
-    }
+        => obj is BoardPos other && other == this;
 
     public override int GetHashCode()
-    {
-        return HashCode.Combine((int)MoveT, X, Y);
-    }
+        => HashCode.Combine((int)MoveT, X, Y);
 
     public static string NumToStringPos(int x, int y)
         => $"{(char)('A'+x)}{1+y}";
@@ -36,7 +27,7 @@ public struct BoardPos
     }
 
     public static bool operator ==(BoardPos a, BoardPos b) => a.X == b.X && a.Y == b.Y;
-    public static bool operator !=(BoardPos a, BoardPos b) => a.X != b.X || a.Y != b.Y;
+    public static bool operator !=(BoardPos a, BoardPos b) => !(a == b);
     
     public static bool isOnBoard(int x, int y)  => x >= MinPos && y >= MinPos && x <= MaxPos && y <= MaxPos;
 
