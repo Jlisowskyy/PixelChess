@@ -12,7 +12,9 @@ public static class Program
         // board.PerformShallowTest(2);
 
         Board board = new Board();
-        board.PerformDeepTest(5);
+        board.PerformShallowTest(5);
+        // board.PerformDeepTest(4);
+        // board.PerformDeepTest(5);
         
         using var game = new PixelChess();
         game.Run();

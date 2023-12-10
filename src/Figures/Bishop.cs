@@ -81,8 +81,6 @@ public class Bishop : Figure
             ProcessDirections(yDist < 0 ? new[] { Dir.Nw, Dir.Se } : new[] { Dir.Ne, Dir.Sw });
 
         return (ret, arrPos);
-
-        
         
         // Expression simplifier helper
         

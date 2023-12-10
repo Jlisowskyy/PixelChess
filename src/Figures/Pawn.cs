@@ -19,10 +19,65 @@ public class Pawn : Figure
 
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
+        if (!IsAlive) return (null, 0);
+
+        return IsBlocked ? _getBlockedMoves() : _getUnblockedMoves();
+    }
+
+    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlocked()
+    {
+        BoardPos[] tiles = new BoardPos[MaxBlockedTiles];
+        int tilesPos = 0;
+        
+        foreach (var xOffset in XAttackCords)
+        {
+            int attackX = Pos.X + xOffset;
+            if (attackX >= BoardPos.MinPos && attackX <= BoardPos.MaxPos)
+            {
+                tiles[tilesPos++] = new BoardPos(attackX, Pos.Y + MvCord[(int)Color]);
+            }
+        }
+        
+        return (tiles, tilesPos);
+    }
+
+    public override Figure Clone() => new Pawn(Pos.X, Pos.Y, Color)
+    {
+        IsAlive = IsAlive,
+        IsMoved = IsMoved
+    };
+    
+    public override string ToString()
+        => $"{{{(Color == ColorT.White ? 'P' : 'p')}:{Pos.ToStringPos()}}}";
+    
+// ------------------------------
+// private methods
+// ------------------------------
+
+    private (BoardPos[], int) _getBlockedMoves()
+    {
+        // TODO: find better solution
+        int xDist = Parent.ColorMetadataMap[(int)Color].King.Pos.X - Pos.X;
+        int attackX = Pos.X - int.Sign(xDist);
+        int attackY = Pos.Y + MvCord[(int)Color];
+
+        if (!IsEmpty(attackX, attackY) &&
+            (Parent.BoardFigures[attackX, attackY].TextureIndex == Parent.ColorMetadataMap[(int)Color].EnemyQueen ||
+             Parent.BoardFigures[attackX, attackY].TextureIndex == Parent.ColorMetadataMap[(int)Color].EnemyBishop))
+        {
+            BoardPos[] ret = new[]
+                { new BoardPos(attackX, attackY, _addPromTile(BoardPos.MoveType.AttackMove, attackY)) };
+            return (ret, 1);
+        }
+        
+        return (null, 0);
+    }
+
+
+    private (BoardPos[], int) _getUnblockedMoves()
+    {
         BoardPos[] moves = new BoardPos[MaxMoves];
         int arrPos = 0;
-
-        if (IsBlocked || !IsAlive) return (null, 0);
         
         if (IsMoved)
             // does not check whether pawn goes out of board, assumes will promoted by board before next call
@@ -65,37 +120,6 @@ public class Pawn : Figure
         
         return FilterAllowedTiles(moves, arrPos);
     }
-
-    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlocked()
-    {
-        BoardPos[] tiles = new BoardPos[MaxBlockedTiles];
-        int tilesPos = 0;
-        
-        foreach (var xOffset in XAttackCords)
-        {
-            int attackX = Pos.X + xOffset;
-            if (attackX >= BoardPos.MinPos && attackX <= BoardPos.MaxPos)
-            {
-                tiles[tilesPos++] = new BoardPos(attackX, Pos.Y + MvCord[(int)Color]);
-            }
-        }
-        
-        return (tiles, tilesPos);
-    }
-
-    public override Figure Clone() => new Pawn(Pos.X, Pos.Y, Color)
-    {
-        IsAlive = IsAlive,
-        IsMoved = IsMoved
-    };
-    
-    public override string ToString()
-        => $"{{{(Color == ColorT.White ? 'P' : 'p')}:{Pos.ToStringPos()}}}";
-    
-// ------------------------------
-// helping methods
-// ------------------------------
-
     private BoardPos.MoveType _addPromTile(BoardPos.MoveType move, int y)
         => y == PromTiles[(int)Color] ? move | BoardPos.MoveType.PromotionMove : move;
     
