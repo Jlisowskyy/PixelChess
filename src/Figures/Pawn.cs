@@ -61,6 +61,7 @@ public class Pawn : Figure
         int attackX = Pos.X - int.Sign(xDist);
         int attackY = Pos.Y + MvCord[(int)Color];
 
+        // Pawn should be able to attack figure aiming on king
         if (!IsEmpty(attackX, attackY) &&
             (Parent.BoardFigures[attackX, attackY].TextureIndex == Parent.ColorMetadataMap[(int)Color].EnemyQueen ||
              Parent.BoardFigures[attackX, attackY].TextureIndex == Parent.ColorMetadataMap[(int)Color].EnemyBishop))
@@ -69,16 +70,49 @@ public class Pawn : Figure
                 { new BoardPos(attackX, attackY, _addPromTile(BoardPos.MoveType.AttackMove, attackY)) };
             return (ret, 1);
         }
+
+        // Pawn should be able to march forward if he is on the line of attack
+        int yDist = Parent.ColorMetadataMap[(int)Color].King.Pos.Y - Pos.Y;
+        if (xDist == 0 && yDist * MvCord[(int)Color] < 0)
+        {
+            BoardPos[] moves = new BoardPos[MaxMarchMoves];
+            return (moves, _getStraightMarchMoves(moves, 0));
+        }
         
         return (null, 0);
     }
-
-
+    
     private (BoardPos[], int) _getUnblockedMoves()
     {
         BoardPos[] moves = new BoardPos[MaxMoves];
         int arrPos = 0;
+
+        arrPos = _getStraightMarchMoves(moves, arrPos);
+        arrPos = _getAttackMoves(moves, arrPos);
         
+        return FilterAllowedTiles(moves, arrPos);
+    }
+
+    private int _getAttackMoves(BoardPos[] moves, int arrPos)
+    {
+        int ny = Pos.Y + MvCord[(int)Color];
+        for (int i = 0; i < 2; ++i)
+        {
+            int nx = Pos.X + XAttackCords[i];
+            
+            if (nx > BoardPos.MaxPos || nx < BoardPos.MinPos) continue;
+            
+            if (!IsEmpty(nx, ny) && IsEnemy(nx, ny))
+            {
+                moves[arrPos++] = new BoardPos(nx, ny, _addPromTile(BoardPos.MoveType.AttackMove, ny));
+            }
+        }
+
+        return arrPos;
+    }
+
+    private int _getStraightMarchMoves(BoardPos[] moves, int arrPos)
+    {
         if (IsMoved)
             // does not check whether pawn goes out of board, assumes will promoted by board before next call
         {
@@ -105,21 +139,9 @@ public class Pawn : Figure
             }
         }
 
-        int ny = Pos.Y + MvCord[(int)Color];
-        for (int i = 0; i < 2; ++i)
-        {
-            int nx = Pos.X + XAttackCords[i];
-            
-            if (nx > BoardPos.MaxPos || nx < BoardPos.MinPos) continue;
-            
-            if (!IsEmpty(nx, ny) && IsEnemy(nx, ny))
-            {
-                moves[arrPos++] = new BoardPos(nx, ny, _addPromTile(BoardPos.MoveType.AttackMove, ny));
-            }
-        }
-        
-        return FilterAllowedTiles(moves, arrPos);
+        return arrPos;
     }
+    
     private BoardPos.MoveType _addPromTile(BoardPos.MoveType move, int y)
         => y == PromTiles[(int)Color] ? move | BoardPos.MoveType.PromotionMove : move;
     
@@ -137,6 +159,7 @@ public class Pawn : Figure
 
     private const int MaxMoves = 4;
     private const int MaxBlockedTiles = 2;
+    private const int MaxMarchMoves = 2;
 
     private static readonly int[] XAttackCords = { -1, 1 };
     private static readonly int[] MvCord = { 1, -1 };

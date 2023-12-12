@@ -850,7 +850,7 @@ public partial class Board
                             _blockedTiles[(int)col][tempX, tempY] |= TileState.BlockedTile;
                         }
                         
-                        return;
+                        // return;
                     }
                     
                     foundFigCord = iter;
@@ -902,7 +902,7 @@ public partial class Board
         => _blockStraightLine<Rook.VerDecrease>(col);
 
     private void _blockVerticalUpLineOnKing(Figure.ColorT col)
-        => _blockStraightLine<Rook.VerDecrease>(col);
+        => _blockStraightLine<Rook.VerIncrease>(col);
 
     private void _blockDiagonal(Figure.ColorT col, int dir)
         // used to block figures covering col king from being killed on diagonals
@@ -1025,7 +1025,9 @@ public partial class Board
         for (int i = 0; i < 2; ++i)
             _colorMetadataMap[i].FiguresCount = _colorMetadataMap[i].AliesRangeOnFigArr[1] - _colorMetadataMap[i].AliesRangeOnFigArr[0];
     }
-
+    
+    // TODO: is not used currently, should gather information from layout to boost up performance, but not used
+    // TODO: correct behaviour when figure is killed etc is not implemented so it should not be used
     private void _extractDataFromFig(Figure fig)
         // used to extract some data when loading layout from starting array or fen input
     {
