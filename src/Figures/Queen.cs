@@ -17,11 +17,11 @@ public class Queen : Figure
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         if (!IsAlive) return (null, 0);
-        
-        return IsBlocked ? _getMovesWhenBlocked() : _getNormalMoves();
+        var mvs = IsBlocked ? _getMovesWhenBlocked() : _getNormalMoves();
+        return FilterAllowedTiles(mvs.moves, mvs.movesCount);
     }
 
-    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlocked()
+    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlockedTiles()
     {
         BoardPos[] tiles = new BoardPos[MaxCorrectTiles];
         int tilesPos = 0;
@@ -63,7 +63,7 @@ public class Queen : Figure
         for (int i = 0; i < 4; ++i)
             arrPos = Bishop.DirChosenMoves(this, ret, arrPos, (Bishop.Dir)i);
 
-        return FilterAllowedTiles(ret, arrPos);
+        return (ret, arrPos);
     }
 
     private (BoardPos[] moves, int movesCount) _getMovesWhenBlocked()

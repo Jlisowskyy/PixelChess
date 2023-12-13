@@ -66,7 +66,7 @@ public class Knight : Figure
         return FilterAllowedTiles(ret, arrPos);
     }
 
-    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlocked()
+    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlockedTiles()
         => (MovesTable[Pos.X, Pos.Y], MovesTable[Pos.X, Pos.Y].Length);
 
     public override Figure Clone() => new Knight(Pos.X, Pos.Y, Color)

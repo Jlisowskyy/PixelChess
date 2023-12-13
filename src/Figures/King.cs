@@ -46,7 +46,7 @@ public class King : Figure
         
         foreach (var move  in KingMoves[Pos.X, Pos.Y])
         {
-            if (Parent.BlockedTiles[(int)Color][move.X, move.Y] == Board.TileState.UnblockedTile)
+            if ((Parent.BlockedTiles[(int)Color][move.X, move.Y] & Board.TileState.BlockedTile) == 0)
             {
                 if (IsEmpty(move.X, move.Y))
                     ret[arrPos++] = new BoardPos(move.X, move.Y);
@@ -61,7 +61,7 @@ public class King : Figure
         return (ret, arrPos);
     }
 
-    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlocked()
+    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlockedTiles()
         => (KingMoves[Pos.X, Pos.Y], KingMoves[Pos.X, Pos.Y].Length);
 
     public override Figure Clone() => new King(Pos.X, Pos.Y, Color)

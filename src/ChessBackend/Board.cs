@@ -475,11 +475,12 @@ public partial class Board
     private void _blockTiles(Figure.ColorT col)
         // blocks tiles for king to prevent illegal moves, actually just checks all possibilities
     {
-        for (int i = _colorMetadataMap[(int)col].EnemyRangeOnFigArr[0]; i < _colorMetadataMap[(int)col].EnemyRangeOnFigArr[1]; ++i)
+        var range = _colorMetadataMap[(int)col].EnemyRangeOnFigArr;
+        for (int i = range[0]; i < range[1]; ++i)
         {
             if (_figuresArray[i].IsAlive == false) continue;
             
-            var mv = _figuresArray[i].GetBlocked();
+            var mv = _figuresArray[i].GetBlockedTiles();
             for (int j = 0; j < mv.tileCount; ++j)
             {
                 _blockedTiles[(int)col][mv.blockedTiles[j].X, mv.blockedTiles[j].Y] |= TileState.BlockedTile;

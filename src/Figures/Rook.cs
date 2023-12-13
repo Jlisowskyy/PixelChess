@@ -16,11 +16,11 @@ public class Rook : Figure
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         if (!IsAlive) return (null, 0);
-        
-        return IsBlocked ? _getMovesWhenBlocked() : _getNormalSituationMoves();
+        var mvs = IsBlocked ? _getMovesWhenBlocked() : _getNormalSituationMoves();
+        return FilterAllowedTiles(mvs.moves, mvs.movesCount);
     }
 
-    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlocked()
+    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlockedTiles()
     {
         BoardPos[] tiles = new BoardPos[MaxCorrectTiles];
         int tilesPos = 0;
@@ -85,7 +85,7 @@ public class Rook : Figure
         arrPos = VertDownMoves(this, ret, arrPos);
         arrPos = VertUpMoves(this, ret, arrPos);
 
-        return FilterAllowedTiles(ret, arrPos);
+        return (ret, arrPos);
     }
     
 // ----------------------------------------------------------------------

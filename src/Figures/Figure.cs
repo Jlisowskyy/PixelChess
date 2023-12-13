@@ -23,7 +23,7 @@ public abstract class Figure
     }
     
     public abstract (BoardPos[] moves, int movesCount) GetMoves();
-    public abstract (BoardPos[] blockedTiles, int tileCount) GetBlocked();
+    public abstract (BoardPos[] blockedTiles, int tileCount) GetBlockedTiles();
     public abstract Figure Clone();
     
     

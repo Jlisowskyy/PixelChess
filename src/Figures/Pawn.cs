@@ -20,11 +20,11 @@ public class Pawn : Figure
     public sealed override (BoardPos[] moves, int movesCount) GetMoves()
     {
         if (!IsAlive) return (null, 0);
-
-        return IsBlocked ? _getBlockedMoves() : _getUnblockedMoves();
+        var mvs = IsBlocked ? _getBlockedMoves() : _getUnblockedMoves();
+        return FilterAllowedTiles(mvs.Item1, mvs.Item2);
     }
 
-    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlocked()
+    public sealed override (BoardPos[] blockedTiles, int tileCount) GetBlockedTiles()
     {
         BoardPos[] tiles = new BoardPos[MaxBlockedTiles];
         int tilesPos = 0;
@@ -56,12 +56,17 @@ public class Pawn : Figure
 
     private (BoardPos[], int) _getBlockedMoves()
     {
-        // TODO: find better solution
         int xDist = Parent.ColorMetadataMap[(int)Color].King.Pos.X - Pos.X;
+        int yDist = Parent.ColorMetadataMap[(int)Color].King.Pos.Y - Pos.Y;
+        // Pawn should be able to march forward if he is on the line of attack
+        if (xDist == 0 && yDist * MvCord[(int)Color] < 0)
+        {
+            BoardPos[] moves = new BoardPos[MaxMarchMoves];
+            return (moves, _getStraightMarchMoves(moves, 0));
+        }
+        // Pawn should be able to attack figure aiming on king
         int attackX = Pos.X - int.Sign(xDist);
         int attackY = Pos.Y + MvCord[(int)Color];
-
-        // Pawn should be able to attack figure aiming on king
         if (!IsEmpty(attackX, attackY) &&
             (Parent.BoardFigures[attackX, attackY].TextureIndex == Parent.ColorMetadataMap[(int)Color].EnemyQueen ||
              Parent.BoardFigures[attackX, attackY].TextureIndex == Parent.ColorMetadataMap[(int)Color].EnemyBishop))
@@ -69,14 +74,6 @@ public class Pawn : Figure
             BoardPos[] ret = new[]
                 { new BoardPos(attackX, attackY, _addPromTile(BoardPos.MoveType.AttackMove, attackY)) };
             return (ret, 1);
-        }
-
-        // Pawn should be able to march forward if he is on the line of attack
-        int yDist = Parent.ColorMetadataMap[(int)Color].King.Pos.Y - Pos.Y;
-        if (xDist == 0 && yDist * MvCord[(int)Color] < 0)
-        {
-            BoardPos[] moves = new BoardPos[MaxMarchMoves];
-            return (moves, _getStraightMarchMoves(moves, 0));
         }
         
         return (null, 0);
@@ -89,8 +86,8 @@ public class Pawn : Figure
 
         arrPos = _getStraightMarchMoves(moves, arrPos);
         arrPos = _getAttackMoves(moves, arrPos);
-        
-        return FilterAllowedTiles(moves, arrPos);
+
+        return (moves, arrPos);
     }
 
     private int _getAttackMoves(BoardPos[] moves, int arrPos)
