@@ -88,22 +88,6 @@ public class King : Figure
             && Parent.BoardFigures[BoardPos.MinPos, Pos.Y].TextureIndex == rookType 
             && Parent.BoardFigures[BoardPos.MinPos, Pos.Y].IsMoved == false)
         {
-            for (i = Pos.X + 1; i < BoardPos.MaxPos; ++i)
-            {
-                if (!IsEmpty(i, Pos.Y) || Parent.BlockedTiles[(int)Color][i, Pos.Y] == Board.TileState.BlockedTile)
-                    break;
-
-                // TODO: check for attacks
-            }
-
-            if (i == BoardPos.MaxPos)
-                moves[arrPos++] = new BoardPos(ShortCastlingX, Pos.Y, BoardPos.MoveType.CastlingMove);
-        }
-
-        if (!IsEmpty(BoardPos.MaxPos, Pos.Y) 
-            && Parent.BoardFigures[BoardPos.MaxPos, Pos.Y].TextureIndex == rookType 
-            && Parent.BoardFigures[BoardPos.MaxPos, Pos.Y].IsMoved == false)
-        {
             for (i = Pos.X - 1; i > BoardPos.MinPos; --i)
             {
                 if (!IsEmpty(i, Pos.Y) || Parent.BlockedTiles[(int)Color][i, Pos.Y] == Board.TileState.BlockedTile)
@@ -112,6 +96,20 @@ public class King : Figure
 
             if (i == BoardPos.MinPos)
                 moves[arrPos++] = new BoardPos(LongCastlingX, Pos.Y, BoardPos.MoveType.CastlingMove);
+        }
+
+        if (!IsEmpty(BoardPos.MaxPos, Pos.Y) 
+            && Parent.BoardFigures[BoardPos.MaxPos, Pos.Y].TextureIndex == rookType 
+            && Parent.BoardFigures[BoardPos.MaxPos, Pos.Y].IsMoved == false)
+        {
+            for (i = Pos.X + 1; i < BoardPos.MaxPos; ++i)
+            {
+                if (!IsEmpty(i, Pos.Y) || Parent.BlockedTiles[(int)Color][i, Pos.Y] == Board.TileState.BlockedTile)
+                    break;
+            }
+
+            if (i == BoardPos.MaxPos)
+                moves[arrPos++] = new BoardPos(ShortCastlingX, Pos.Y, BoardPos.MoveType.CastlingMove);
         }
 
         return arrPos;

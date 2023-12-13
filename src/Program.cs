@@ -7,7 +7,7 @@ public static class Program
 {
     public static void Main()
     {
-        // BoardTests.MoveGenerationTest(5);
+        BoardTests.MoveGenerationTest(2);
         
         using var game = new PixelChess();
         game.Run();
