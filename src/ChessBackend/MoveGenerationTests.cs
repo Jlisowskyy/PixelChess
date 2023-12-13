@@ -193,6 +193,7 @@ public partial class Board
             stock.StartInfo.RedirectStandardInput = true;
             stock.StartInfo.FileName = "Deps/stockfish";
             stock.Start();
+            Console.WriteLine($"position fen {FenTranslator.Translate(_bd)}");
             stock.StandardInput.WriteLine($"position fen {FenTranslator.Translate(_bd)}");
             stock.StandardInput.WriteLine($"go perft {depth}");
             stock.StandardInput.WriteLine("quit");

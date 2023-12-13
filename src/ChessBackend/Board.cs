@@ -126,9 +126,7 @@ public partial class Board
             _copyAndExtractMetadata();
             _blockAllLinesOnKing(Figure.ColorT.White);
             _blockAllLinesOnKing(Figure.ColorT.Black);
-            _blockTilesInit(_movingColor);
-            
-            // TODO: test for not moving color check????
+            _blockTiles(_movingColor);
             
             if (_kingAttackingFigure != null && _colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
                 _processCheckMate();
@@ -551,34 +549,6 @@ public partial class Board
                         _blockDiagonal(col, (int)Bishop.Dir.Nw);
                     else // Sw
                         _blockDiagonal(col, (int)Bishop.Dir.Sw);
-                }
-            }
-        }
-    }
-    
-    private void _blockTilesInit(Figure.ColorT col)
-        // blocks tiles for king and also checks whether there is check or not, if kings has no moves ends the game
-    {
-        for (int i = _colorMetadataMap[(int)col].EnemyRangeOnFigArr[0]; i < _colorMetadataMap[(int)col].EnemyRangeOnFigArr[1]; ++i)
-        {
-            var moves = _figuresArray[i].GetMoves();
-    
-            for (int j = 0; j < moves.movesCount; ++j)
-            {
-                _blockedTiles[(int)col][moves.moves[j].X, moves.moves[j].Y] |= TileState.BlockedTile;
-                if (_boardFigures[moves.moves[j].X, moves.moves[j].Y] == null)continue;
-                
-                var type = _boardFigures[moves.moves[j].X, moves.moves[j].Y].TextureIndex;
-                // checks detection from pawns and knights, sliding figures should be detected before blocking phase
-                if (type == _colorMetadataMap[(int)col].King.TextureIndex &&
-                    type != _colorMetadataMap[(int)col].EnemyQueen && 
-                    type != _colorMetadataMap[(int)col].EnemyRook &&
-                    type != _colorMetadataMap[(int)col].EnemyBishop)
-                {
-                    if (_kingAttackingFigure != null)
-                        throw new ApplicationException("Double check detected - invalid layout");
-                    
-                    _kingAttackingFigure = _figuresArray[i];
                 }
             }
         }

@@ -1,3 +1,5 @@
+#define DEBUG_
+
 using System;
 using PixelChess.Figures;
 
@@ -74,6 +76,9 @@ public static class FenTranslator
         _blackFigs = new Figure[BoardTiles];
         _whiteFigs = new Figure[BoardTiles];
         _strPos = _whitePos = _blackPos = _inLineTile = _tile = 0;
+        
+        // assuring that, there are no additional blank characters
+        fenInput = fenInput.Trim();
         
         for (; fenInput[_strPos] != ' ' && _strPos < fenInput.Length; ++_strPos)
             ProcessPositionalInput(fenInput);
@@ -154,7 +159,10 @@ public static class FenTranslator
         }
 
         if (offset == 0)
-            output[offset++] = '-';
+        {
+            output[indp] = '-';
+            offset++;
+        }
         
         return indp + offset;
     }
@@ -275,7 +283,7 @@ public static class FenTranslator
     private static void FindCastlingRook(int x, int y, Figure.ColorT col)
     {
         Figure[] arr;
-        Board.ChessComponents ind;
+        Board.ChessComponents ind, kInd;
         int bound;
 
         if (col == Figure.ColorT.White)
@@ -283,24 +291,42 @@ public static class FenTranslator
             arr = _whiteFigs;
             bound = _whitePos;
             ind = Board.ChessComponents.WhiteRook;
+            kInd = Board.ChessComponents.WhiteKing;
         }
         else
         {
             arr = _blackFigs;
             bound = _blackPos;
             ind = Board.ChessComponents.BlackRook;
+            kInd = Board.ChessComponents.BlackKing;
         }
-
+        
+        bool rookFound = false;
+        // checking whole array, whether it contains required rook
         for (int i = 0; i < bound; ++i)
         {
             if (arr[i].TextureIndex == ind && arr[i].Pos.X == x && arr[i].Pos.Y == y)
+            {
+                arr[i].IsMoved = false;
+                rookFound = true;
+                break;
+            }
+        }
+        
+        if (!rookFound)
+            throw new ApplicationException("Fen inputs says castling is available bur there is no such rook on required position!");
+        
+        // checking whole array to setup 
+        for (int i = 0; i < bound; ++i)
+        {
+            if (arr[i].TextureIndex == kInd && arr[i].Pos.X == King.StartingXPos && arr[i].Pos.Y == y)
             {
                 arr[i].IsMoved = false;
                 return;
             }
         }
 
-        // throw new ApplicationException("Fen inputs says castling is available bur there is no such rook");
+        throw new ApplicationException("There is no king on the input or king is placed on wrong position!");
     }
 
     private static Figure.ColorT ProcessMovingColor(string fen)
@@ -351,7 +377,7 @@ public static class FenTranslator
                     PlaceFigure(new Queen(x, y, col));
                     break;
                 case 'K':
-                    PlaceFigure(new King(x, y, col));
+                    PlaceFigure(new King(x, y, col) { IsMoved = true });
                     break;
                 case 'P':
                     int unMovedPos = col == Figure.ColorT.White ? 1 : 6;

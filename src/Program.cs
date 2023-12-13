@@ -7,9 +7,10 @@ public static class Program
 {
     public static void Main()
     {
+        // BoardTests.FenGeneratingTest();
         BoardTests.MoveGenerationTest(2);
         
-        using var game = new PixelChess();
-        game.Run();
+        // using var game = new PixelChess();
+        // game.Run();
     }
 }

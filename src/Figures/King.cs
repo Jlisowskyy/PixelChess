@@ -88,13 +88,13 @@ public class King : Figure
             && Parent.BoardFigures[BoardPos.MinPos, Pos.Y].TextureIndex == rookType 
             && Parent.BoardFigures[BoardPos.MinPos, Pos.Y].IsMoved == false)
         {
-            for (i = Pos.X - 1; i > BoardPos.MinPos; --i)
+            for (i = Pos.X - 1; i > 1; --i)
             {
                 if (!IsEmpty(i, Pos.Y) || Parent.BlockedTiles[(int)Color][i, Pos.Y] == Board.TileState.BlockedTile)
                     break;
             }
 
-            if (i == BoardPos.MinPos)
+            if (i == 1 && IsEmpty(1, Pos.Y))
                 moves[arrPos++] = new BoardPos(LongCastlingX, Pos.Y, BoardPos.MoveType.CastlingMove);
         }
 
@@ -123,6 +123,7 @@ public class King : Figure
     public const int LongCastlingX = 2;
     public const int ShortCastlingRookX = 5;
     public const int LongCastlingRookX= 3;
+    public const int StartingXPos = 4;
     private const int MaxKingMoves = 8;
     private static readonly Board.ChessComponents[] TextInd =
         { Board.ChessComponents.WhiteKing, Board.ChessComponents.BlackKing };
