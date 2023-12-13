@@ -1097,10 +1097,10 @@ public partial class Board
         test.PerformShallowMoveGenerationTest(depth);
     }
 
-    public void PerformDeepTest(int depth)
+    public void PerformDeepTest(int depth, int maxPaths = int.MaxValue)
     {
         MoveGenerationTester test = new MoveGenerationTester(this);
-        test.PerformDeepMoveGenerationTest(depth);
+        test.PerformDeepMoveGenerationTest(depth, maxPaths);
     }
     
 // ------------------------------
