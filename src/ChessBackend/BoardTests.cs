@@ -26,6 +26,7 @@ public abstract class BoardTests
             Console.WriteLine("-----------------------------------------------------------------------------");
             Board bd = new Board(position);
 
+            Console.WriteLine($"Testing position: {position}");
             _printSimpleFenPos(position);
             bool result = bd.PerformShallowTest(depth);
             
@@ -36,9 +37,8 @@ public abstract class BoardTests
                 Console.WriteLine("Board failed on this position, starting deep searching...");
                 bd.PerformDeepTest(depth, 1);
             }
-            
-            Console.WriteLine("-----------------------------------------------------------------------------");
         }
+        Console.WriteLine("-----------------------------------------------------------------------------");
     }
 
     public static void FenGeneratingTest()
