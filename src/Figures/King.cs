@@ -81,8 +81,7 @@ public class King : Figure
     {
         if (Parent.IsChecked) return arrPos;
 
-        Board.ChessComponents rookType =
-            Color == ColorT.White ? Board.ChessComponents.WhiteRook : Board.ChessComponents.BlackRook; 
+        Board.ChessComponents rookType = FriendlyRooks[(int)Color];
         int i;
         
         if (!IsEmpty(BoardPos.MinPos, Pos.Y) 
@@ -129,5 +128,7 @@ public class King : Figure
     private const int MaxKingMoves = 8;
     private static readonly Board.ChessComponents[] TextInd =
         { Board.ChessComponents.WhiteKing, Board.ChessComponents.BlackKing };
+    private static readonly Board.ChessComponents[] FriendlyRooks =
+        { Board.ChessComponents.WhiteRook, Board.ChessComponents.BlackRook };
     private static readonly BoardPos[,][] KingMoves = new BoardPos[8, 8][];
 }

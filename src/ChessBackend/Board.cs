@@ -18,12 +18,11 @@ namespace PixelChess.ChessBackend;
  *   - change structure of game elements
  *   - change texture holding
  * 
- *   - make tests for moves
  *   - add sounds
  *   - update readme and docs
  *
  *   - checking errors
- *   - add removing from dict elements on move
+ *   - remove ismoved flag from figure, replace with iswhitekingmoved etc
  * 
  */
 
@@ -89,7 +88,8 @@ public partial class Board
         _figuresArray = new Figure[_startFiguresLayout.FigArr.Length];
         
         _movesHistory = new LinkedList<HistoricalMove>();
-        _movesHistory.AddFirst(new HistoricalMove(0, 0, new BoardPos(0, 0), null, 0)); // Sentinel
+        _movesHistory.AddFirst(new HistoricalMove(-1, -1, new BoardPos(0, 0),
+            new Knight(0,0, Figure.ColorT.White), -1)); // Sentinel
         _layoutDict = new Dictionary<string, int>();
         
         _blockedTiles = new[]
@@ -685,7 +685,7 @@ public partial class Board
         var lastMove = _movesHistory.Last!.Value;
         
         // There is some case guarding sentinel
-        if (lastMove.Fig == null) return;
+        if (lastMove.HalfMoves == -1) return;
         _undoPositionChange(lastMove);
 
         // All of below ones expects to be invoked after changing previously moved figure position
@@ -1092,10 +1092,11 @@ public partial class Board
                 _spriteBatch.Draw(TileHighlightersTextures[(int)TileHighlighters.SelectedTile], Translate(new BoardPos(x, y)), Color.White);
     }
 
-    public void PerformShallowTest(int depth)
+    public bool PerformShallowTest(int depth)
     {
         MoveGenerationTester test = new MoveGenerationTester(this);
-        test.PerformShallowMoveGenerationTest(depth);
+        var (_, result) = test.PerformShallowMoveGenerationTest(depth);
+        return result;
     }
 
     public void PerformDeepTest(int depth, int maxPaths = int.MaxValue)

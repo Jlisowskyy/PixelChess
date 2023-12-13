@@ -3,6 +3,7 @@ using PixelChess.Figures;
 
 namespace PixelChess.ChessBackend;
 
+// TODO: probably there should be some check whether king stays on correct not moved position
 public static class FenTranslator
 {
         public static string GetPosString(Board chessBoard){
