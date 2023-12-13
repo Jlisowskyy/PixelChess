@@ -121,7 +121,8 @@ public class Pawn : Figure
 
             var lMove = Parent.MovesHistory.Last!.Value;
             if (Pos.Y == ElPassantTiles[(int)Color] && _isLastMovedFigFreshPawn() &&
-                int.Abs(lMove.OldY - lMove.MadeMove.Y) == 2 &&  int.Abs(lMove.MadeMove.X - Pos.X) == 1)
+                int.Abs(lMove.OldY - lMove.MadeMove.Y) == 2 &&  int.Abs(lMove.MadeMove.X - Pos.X) == 1 && 
+                _isElPassantLegal(lMove.MadeMove.X))
             {
                 moves[arrPos++] = new BoardPos(lMove.MadeMove.X, Pos.Y + MvCord[(int)Color], BoardPos.MoveType.ElPass);
             }
@@ -149,6 +150,39 @@ public class Pawn : Figure
         
         return false;
     }
+
+    // should be used only, when all el passant requirements are true and we are not sure if the move will uncover king
+    private bool _isElPassantLegal(int elPassantPawnX)
+    {
+        if (Parent.ColorMetadataMap[(int)Color].King.Pos.Y == Pos.Y)
+        {
+            int xDiff = Parent.ColorMetadataMap[(int)Color].King.Pos.X - Pos.X;
+            
+            return xDiff > 0 ? _elPassantCheckLeft(elPassantPawnX) : _elPassantCheckRight(elPassantPawnX);
+        }
+
+        return true;
+    }
+
+    private bool _elPassantCheckLeft(int elPassantPawnX)
+        => _elPassantCheck<Rook.HorDecrease>(elPassantPawnX);
+
+    private bool _elPassantCheckRight(int elPassantPawnX)
+        => _elPassantCheck<Rook.HorIncrease>(elPassantPawnX);
+    private bool _elPassantCheck<TMoveConds>(int elPassantPawnX) where TMoveConds : Rook.IStraightMove
+        // TMoveConds should only be left or right ones
+    {
+        int init = TMoveConds.InitIter(this) + TMoveConds.Move;
+        if (init == elPassantPawnX) init += TMoveConds.Move;
+
+        for (int x = init; TMoveConds.RangeCheck(x); x += TMoveConds.Move)
+        {
+            if (!IsEmpty(x, Pos.Y) && Parent.BoardFigures[x, Pos.Y].TextureIndex == EnemyRook[(int)Color])
+                return false;
+        }
+
+        return true;
+    }
     
 // ------------------------------
 // variables and properties
@@ -166,4 +200,6 @@ public class Pawn : Figure
         { Board.ChessComponents.BlackPawn, Board.ChessComponents.WhitePawn };
     private static readonly Board.ChessComponents[] TextId =
         { Board.ChessComponents.WhitePawn, Board.ChessComponents.BlackPawn };
+    private static readonly Board.ChessComponents[] EnemyRook =
+        { Board.ChessComponents.BlackRook, Board.ChessComponents.WhiteRook };
 }

@@ -10,7 +10,7 @@ public static class Program
         // BoardTests.FenGeneratingTest();
         BoardTests.MoveGenerationTest(2);
         
-        // using var game = new PixelChess();
-        // game.Run();
+        using var game = new PixelChess();
+        game.Run();
     }
 }
