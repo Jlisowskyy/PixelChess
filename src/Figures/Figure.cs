@@ -43,6 +43,9 @@ public abstract class Figure
     {
         if (!Parent.IsChecked) return (arr, arrLimit);
 
+        // in this situation the only legal move belongs to king
+        if (Parent.KingAttackingFiguresCount > 1) return (null, 0);
+
         BoardPos[] arrRet = new BoardPos[arrLimit];
         int arrRetPos = 0;
         

@@ -2,9 +2,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -70,7 +68,6 @@ public partial class Board
     {
         try
         {
-            Layout nLayout = FenTranslator.Translate(fenNotationInput);
             _startFiguresLayout = FenTranslator.Translate(fenNotationInput);
             _startingFiguresLayoutFen = fenNotationInput;
             ResetBoard();
@@ -118,7 +115,7 @@ public partial class Board
 
         // should be restarted before initial check mate tests
         _isGameEnded = false;
-        _kingAttackingFigure = null;
+        _clearCheck();
         _movingColor = _startFiguresLayout.StartingColor;
         
         try
@@ -128,10 +125,10 @@ public partial class Board
             _blockAllLinesOnKing(Figure.ColorT.Black);
             _blockTiles(_movingColor);
             
-            if (_kingAttackingFigure != null && _colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
+            if (IsChecked && IsKingNotAbleToMove)
                 _processCheckMate();
             else if (_colorMetadataMap[(int)_movingColor].FiguresCount == 1 
-                     &&_colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
+                     && IsKingNotAbleToMove)
                 _announcePat();
         }
         catch (ApplicationException exc)
@@ -321,7 +318,7 @@ public partial class Board
                 _spriteBatch.Draw(TileHighlightersTextures[(int)moves.moves[i].MoveT], Translate(moves.moves[i]), Color.White);
         }
 
-        if (_kingAttackingFigure != null)
+        if (IsChecked)
             _spriteBatch.Draw(TileHighlightersTextures[(int)TileHighlighters.KingAttackTile], Translate(_colorMetadataMap[(int)_movingColor].King.Pos), Color.White);
     }
 
@@ -447,7 +444,7 @@ public partial class Board
         // performs cleaning after previous round, like blocking figures, blocking tiles for king
         // and performing checks for game endings
             
-        _kingAttackingFigure = null;
+        _clearCheck();
         _movingColor = _movingColor == Figure.ColorT.White ? Figure.ColorT.Black : Figure.ColorT.White;
         
         _blockedTiles[(int)_movingColor] = new TileState[BoardSize,BoardSize];
@@ -464,7 +461,7 @@ public partial class Board
         _blockTiles(_movingColor);
         
         // only moving color can lose a game
-        if (_kingAttackingFigure != null && _colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
+        if (IsChecked && _colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0)
             _processCheckMate();
         else
             _processDrawConditions();
@@ -487,7 +484,7 @@ public partial class Board
                 // due to sliding properties
                 if (_boardFigures[mv.blockedTiles[j].X, mv.blockedTiles[j].Y] == _colorMetadataMap[(int)col].King)
                 {
-                    _kingAttackingFigure = _figuresArray[i];
+                    _checkKing(_figuresArray[i]);
                     _blockedTiles[(int)col][_figuresArray[i].Pos.X, _figuresArray[i].Pos.Y] |= TileState.AllowedTile;
                 }
             }
@@ -695,7 +692,7 @@ public partial class Board
         _movesHistory.RemoveLast();
         
         // Cleaning of blocked tiles and figures
-        _kingAttackingFigure = null;
+        _clearCheck();
         
         _blockedTiles[(int)_movingColor] = new TileState[BoardSize,BoardSize];
         
@@ -799,12 +796,7 @@ public partial class Board
                         _boardFigures[x, y].TextureIndex == _colorMetadataMap[(int)col].EnemyQueen)
                         // if first figure is attacking king process allowed tiles and return
                     {
-                        #if DEBUG_
-                        if (_kingAttackingFigure != null)
-                            throw new ApplicationException("Double check detected - invalid move");
-                        #endif
-                        
-                        _kingAttackingFigure = _boardFigures[x, y];
+                        _checkKing(_boardFigures[x, y]);
                         int lastAllowedTilesCount = int.Abs(TMoveConds.InitIter(kingToCheck) - iter);
                         
                         for (int i = 0; i < lastAllowedTilesCount; ++i)
@@ -900,12 +892,7 @@ public partial class Board
                         _boardFigures[nx, ny].TextureIndex == _colorMetadataMap[(int)col].EnemyQueen)
                         // if first figure is attacking king process allowed tiles and return
                     {
-                        #if DEBUG_
-                        if (_kingAttackingFigure != null)
-                            throw new ApplicationException("Double check detected - invalid move");
-                        #endif
-                        
-                        _kingAttackingFigure = _boardFigures[nx, ny];
+                        _checkKing(_boardFigures[nx, ny]);
                         int lastAllowedTilesCount = Math.Abs(kingToCheck.Pos.Y - ny) - 1;
 
                         nx = kingToCheck.Pos.X + Bishop.XMoves[dir];
@@ -1047,6 +1034,23 @@ public partial class Board
     }
     
     private bool _isEmpty(int x, int y) => _boardFigures[x, y] == null;
+
+    private void _checkKing(Figure fig)
+    {
+        if (!IsChecked || !ReferenceEquals(fig, _kingAttackingFigure))
+        {
+            _kingAttackingFigure = fig;
+            ++_kingAttackingFigureCount;
+        }
+    }
+
+    private void _clearCheck()
+    {
+        _kingAttackingFigure = null;
+        _kingAttackingFigureCount = 0;
+    }
+
+    private bool IsKingNotAbleToMove => _colorMetadataMap[(int)_movingColor].King.GetMoves().movesCount == 0;
     
 // -----------------------------------
 // debugging and testing methods
@@ -1187,6 +1191,7 @@ public partial class Board
     public Figure.ColorT MovingColor => _movingColor;
 
     public bool IsChecked => _kingAttackingFigure != null;
+    public int KingAttackingFiguresCount => _kingAttackingFigureCount;
     public double WhiteTime => _whiteTime;
     public double BlackTime => _blackTime;
     public ColorMetadata[] ColorMetadataMap => _colorMetadataMap;
@@ -1216,6 +1221,8 @@ public partial class Board
     
     private Figure _kingAttackingFigure;
     // figure currently attacking king, used also as check detecting flag
+
+    private int _kingAttackingFigureCount;
     
     private ColorMetadata[] _colorMetadataMap;
     // metadata per figures color about players figures deck

@@ -20,6 +20,7 @@ public abstract class BoardTests
         // Function performs perft tests on board with set of fen position, which are commonly used to evaluate quality
         // and correctness of chess engines worldwide. 
     {
+        int testCount = 0;
         foreach (var position in MainTestPositions)
         {
             Console.WriteLine("-----------------------------------------------------------------------------");
@@ -27,7 +28,7 @@ public abstract class BoardTests
 
             try
             {
-                Console.WriteLine($"Testing position: {position}");
+                Console.WriteLine($"[ TEST {++testCount} ] Testing position: {position}");
                 _printSimpleFenPos(position);
                 bool result = bd.PerformShallowTest(depth);
 
@@ -42,7 +43,9 @@ public abstract class BoardTests
             catch (Exception exc)
             {
                 Console.Error.WriteLine($"[ ERROR ] Aborted test, critical error occured!\nError: {exc}\nPosition before error:");
-                _printSimpleFenPos(FenTranslator.GetPosString(bd));
+                string fenPos = FenTranslator.GetPosString(bd);
+                Console.WriteLine(fenPos);
+                _printSimpleFenPos(fenPos);
             }
 
         }
