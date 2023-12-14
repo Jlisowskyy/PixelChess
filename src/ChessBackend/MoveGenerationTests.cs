@@ -153,10 +153,12 @@ public partial class Board
                                 upgrade.Parent = _bd;
                                 
                                 _bd._selectedFigure = _bd._figuresArray[i];
+                                _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
                                 _bd._processMove(mv.moves[j]);
                                 _bd.Promote(upgrade);
                                 var recResult = _testMoveGeneration(depth - 1, depth, correctNumbers);
                                 _bd._undoMove();
+                                _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
 
                                 // adding to invalid moves list if necessary
                                 string uciMoveCode = UciTranslator.GetUciMoveCode(_bd._figuresArray[i].Pos,
@@ -167,9 +169,11 @@ public partial class Board
                         else
                         {
                             _bd._selectedFigure = _bd._figuresArray[i];
+                            _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
                             _bd._processMove(mv.moves[j]);
                             var recResult = _testMoveGeneration(depth - 1, depth, correctNumbers);
                             _bd._undoMove(); 
+                            _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
                             
                             // adding to invalid moves list if necessary
                             string uciMoveCode = UciTranslator.GetUciMoveCode(_bd._figuresArray[i].Pos, mv.moves[j]);
@@ -281,11 +285,13 @@ public partial class Board
                                 upgrade.Parent = _bd;
                                 
                                 _bd._selectedFigure = _bd._figuresArray[i];
+                                _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
                                 _bd._processMove(mv.moves[j]);
                                 _bd.Promote(upgrade);
                                 recResult = _testMoveGeneration(depth - 1, maxDepth, correctNumbers);
                                 _bd._undoMove(); 
-                            
+                                _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
+                                
                                 // displaying results after specific moves
                                 if (depth == maxDepth)
                                 {
@@ -304,9 +310,11 @@ public partial class Board
                         else
                         {
                             _bd._selectedFigure = _bd._figuresArray[i];
+                            _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
                             _bd._processMove(mv.moves[j]);
                             recResult = _testMoveGeneration(depth - 1, maxDepth, correctNumbers);
                             _bd._undoMove(); 
+                            _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
                             
                             // displaying results after specific moves
                             if (depth == maxDepth)
