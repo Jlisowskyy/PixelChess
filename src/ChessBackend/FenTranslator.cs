@@ -105,6 +105,22 @@ public static class FenTranslator
         return ret;
     }
     
+    public static void PrintSimpleFenPos(string fenPos)
+    {
+        Console.Write("+---+---+---+---+---+---+---+---+\n|");
+        for (int i = 0; i < fenPos.Length && fenPos[i] != ' '; ++i)
+        {
+            if (fenPos[i] == '/') Console.Write("\n+---+---+---+---+---+---+---+---+\n|");
+            else if (char.IsNumber(fenPos[i]))
+            {
+                for (int j = 0; j < fenPos[i] - '0'; ++j)
+                    Console.Write($"   |");
+            }
+            else Console.Write($" {fenPos[i]} |");
+        }
+        Console.Write("\n+---+---+---+---+---+---+---+---+\n");
+    }
+    
 // ------------------------------
 // private helping methods
 // ------------------------------

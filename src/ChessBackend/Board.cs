@@ -445,7 +445,7 @@ public partial class Board
         // and performing checks for game endings
             
         _clearCheck();
-        _movingColor = _movingColor == Figure.ColorT.White ? Figure.ColorT.Black : Figure.ColorT.White;
+        _movingColor = _colorMetadataMap[(int)_movingColor].EnemyColor;
         
         _blockedTiles[(int)_movingColor] = new TileState[BoardSize,BoardSize];
         
@@ -455,9 +455,6 @@ public partial class Board
             _figuresArray[i].IsBlocked = false;
         }
         _blockAllLinesOnKing(_movingColor);
-        // TODO: temporary blocked - to be solved in future
-        // _blockFigures(_movingColor);
-        // _blockFigures(_colorMetadataMap[(int)_movingColor].EnemyColor);
         _blockTiles(_movingColor);
         
         // only moving color can lose a game
@@ -704,7 +701,6 @@ public partial class Board
             _figuresArray[i].IsBlocked = false;
         }
         _blockAllLinesOnKing(_movingColor);
-        
         _blockTiles(_movingColor);
     }
     
@@ -722,6 +718,8 @@ public partial class Board
     {
         _replaceFigure(historicalMove.Fig, 
             _boardFigures[historicalMove.MadeMove.X, historicalMove.MadeMove.Y]);
+        _boardFigures[historicalMove.MadeMove.X, historicalMove.MadeMove.Y] = null;
+
     }
 
     private void _undoKill(HistoricalMove historicalMove)
@@ -750,6 +748,7 @@ public partial class Board
     {
         _boardFigures[historicalMove.MadeMove.X, historicalMove.MadeMove.Y] = null;
         _boardFigures[historicalMove.MadeMove.X, historicalMove.OldY] = historicalMove.KilledFig;
+        _colorMetadataMap[(int)historicalMove.KilledFig.Color].FiguresCount++;
         historicalMove.KilledFig.IsAlive = true;
     }
     

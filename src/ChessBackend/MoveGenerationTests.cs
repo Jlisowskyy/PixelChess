@@ -8,6 +8,37 @@ namespace PixelChess.ChessBackend;
 
 public partial class Board
 {
+    
+    void _undoMoveTest()
+    {
+        _undoMove();
+        // _criticalErrorCheck1();
+    }
+    
+    private bool _isNotAliveFigOnBoard()
+    {
+        foreach (var fig in _boardFigures)
+            if (fig != null && !fig.IsAlive) return true;
+
+        return false;
+    }
+
+    private bool _isGameEndedOnTest()
+        => _isGameEnded;
+        
+    private void _criticalErrorCheck1()
+    {
+        if (_isGameEndedOnTest())
+            Console.Error.WriteLine("[ ERROR ] Game ended flag detected during test");
+            
+        if (_isNotAliveFigOnBoard())
+        {
+            Console.Error.WriteLine("[ CRITICAL ERROR ] Detected killed figure on map!");
+            FenTranslator.PrintSimpleFenPos(FenTranslator.GetPosString(this));
+        }
+                
+    }
+    
     private class MoveGenerationTester
     {
         // ------------------------------------
@@ -68,6 +99,7 @@ public partial class Board
                 $"On depth {arr.Length}, game generated {arr[^1]} moves" :
                 $"On depth {arr.Length}, game generated {arr[^1]} moves ({stockResult}, diff={diff})" 
                 );
+            Console.WriteLine($"Generated moves on first layer: {arr[0]}, Stockfish moves: {processedStock.Count-1}");
 
             return (arr, diff == 0);
         }
@@ -95,11 +127,12 @@ public partial class Board
                 foreach (var invalidMove in invalidMoves)
                 {
                     var list = new LinkedList<string>();
-                    list.AddLast(invalidMove);;
+                    list.AddLast(invalidMove);
                     ret.AddLast(list);
                     --maxPaths;
                 }
-
+                
+                FenTranslator.PrintSimpleFenPos(FenTranslator.GetPosString(_bd));
                 return ret;
             }
 
@@ -109,7 +142,7 @@ public partial class Board
                 _bd.MakeUciMove(invalidMove);
                 var recResult = _findInvalidPaths(depth - 1, ref maxPaths);
                 _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
-                _bd._undoMove();
+                _bd._undoMoveTest();
                 
                 foreach (var list in recResult)
                 {
@@ -157,8 +190,8 @@ public partial class Board
                                 _bd._processMove(mv.moves[j]);
                                 _bd.Promote(upgrade);
                                 var recResult = _testMoveGeneration(depth - 1, depth, correctNumbers);
-                                _bd._undoMove();
                                 _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
+                                _bd._undoMoveTest();
 
                                 // adding to invalid moves list if necessary
                                 string uciMoveCode = UciTranslator.GetUciMoveCode(_bd._figuresArray[i].Pos,
@@ -172,8 +205,8 @@ public partial class Board
                             _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
                             _bd._processMove(mv.moves[j]);
                             var recResult = _testMoveGeneration(depth - 1, depth, correctNumbers);
-                            _bd._undoMove(); 
                             _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
+                            _bd._undoMoveTest(); 
                             
                             // adding to invalid moves list if necessary
                             string uciMoveCode = UciTranslator.GetUciMoveCode(_bd._figuresArray[i].Pos, mv.moves[j]);
@@ -272,7 +305,7 @@ public partial class Board
                         // performing promotions when necessary
                         if ((mv.moves[j].MoveT & BoardPos.MoveType.PromotionMove) != 0)
                         {
-                            Figure[] upgrades = new Figure[] {
+                            Figure[] upgrades = {
                                 new Knight(mv.moves[j].X, mv.moves[j].Y, _bd._figuresArray[i].Color),
                                 new Bishop(mv.moves[j].X, mv.moves[j].Y, _bd._figuresArray[i].Color),
                                 new Rook(mv.moves[j].X, mv.moves[j].Y, _bd._figuresArray[i].Color),
@@ -289,8 +322,8 @@ public partial class Board
                                 _bd._processMove(mv.moves[j]);
                                 _bd.Promote(upgrade);
                                 recResult = _testMoveGeneration(depth - 1, maxDepth, correctNumbers);
-                                _bd._undoMove(); 
                                 _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
+                                _bd._undoMoveTest();
                                 
                                 // displaying results after specific moves
                                 if (depth == maxDepth)
@@ -313,8 +346,8 @@ public partial class Board
                             _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
                             _bd._processMove(mv.moves[j]);
                             recResult = _testMoveGeneration(depth - 1, maxDepth, correctNumbers);
-                            _bd._undoMove(); 
                             _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
+                            _bd._undoMoveTest(); 
                             
                             // displaying results after specific moves
                             if (depth == maxDepth)

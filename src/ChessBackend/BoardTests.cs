@@ -7,13 +7,13 @@ public abstract class BoardTests
     // Collection of well known testing positions, most of them are quite tricky.
     public static readonly string[] MainTestPositions =
     {
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-        "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
-        "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
-        "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
-        "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1",
-        "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
-        "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",                     // check
+        "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",         // NO
+        "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",                                    // NO
+        "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",             // check
+        "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1",             // check
+        "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",                    // check
+        "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",     // check
     };
     
     public static void MoveGenerationTest(int depth)
@@ -29,7 +29,7 @@ public abstract class BoardTests
             try
             {
                 Console.WriteLine($"[ TEST {++testCount} ] Testing position: {position}");
-                _printSimpleFenPos(position);
+                FenTranslator.PrintSimpleFenPos(position);
                 bool result = bd.PerformShallowTest(depth);
 
                 if (!result)
@@ -45,7 +45,7 @@ public abstract class BoardTests
                 Console.Error.WriteLine($"[ ERROR ] Aborted test, critical error occured!\nError: {exc}\nPosition before error:");
                 string fenPos = FenTranslator.GetPosString(bd);
                 Console.WriteLine(fenPos);
-                _printSimpleFenPos(fenPos);
+                FenTranslator.PrintSimpleFenPos(fenPos);
             }
 
         }
@@ -66,21 +66,5 @@ public abstract class BoardTests
             
             Console.WriteLine("-----------------------------------------------------------------------------");
         }
-    }
-
-    private static void _printSimpleFenPos(string fenPos)
-    {
-        Console.Write("+---+---+---+---+---+---+---+---+\n|");
-        for (int i = 0; i < fenPos.Length && fenPos[i] != ' '; ++i)
-        {
-            if (fenPos[i] == '/') Console.Write("\n+---+---+---+---+---+---+---+---+\n|");
-            else if (char.IsNumber(fenPos[i]))
-            {
-                for (int j = 0; j < fenPos[i] - '0'; ++j)
-                    Console.Write($"   |");
-            }
-            else Console.Write($" {fenPos[i]} |");
-        }
-        Console.Write("\n+---+---+---+---+---+---+---+---+\n");
     }
 }

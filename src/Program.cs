@@ -10,10 +10,10 @@ public static class Program
         // BoardTests.FenGeneratingTest();
         // BoardTests.MoveGenerationTest(5);
 
-        string testCase = "        r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10\n";
-        // var bd = new Board(testCase);
-        // bd.PerformShallowTest(3);
-        // // bd.PerformDeepTest(3, 32);
+        string testCase = " rr3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1\n";
+        var bd = new Board(testCase);
+        // bd.PerformShallowTest(4);
+        bd.PerformDeepTest(5,1);
         using var game = new PixelChess(testCase);
         game.Run();
     }
