@@ -19,7 +19,6 @@ namespace PixelChess.ChessBackend;
  *   - add sounds
  *   - update readme and docs
  *
- *   - checking errors
  *   - remove ismoved flag from figure, replace with iswhitekingmoved etc
  * 
  */

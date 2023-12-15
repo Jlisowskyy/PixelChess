@@ -132,7 +132,7 @@ public partial class Board
                     --maxPaths;
                 }
                 
-                FenTranslator.PrintSimpleFenPos(FenTranslator.GetPosString(_bd));
+                // FenTranslator.PrintSimpleFenPos(FenTranslator.GetPosString(_bd));
                 return ret;
             }
 
