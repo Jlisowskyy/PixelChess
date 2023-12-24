@@ -132,6 +132,9 @@ public partial class PixelChess
     }
     
     private void _enableLoggingToFile()
+        // Function enables logging to file, what means that stdout and stderr will be redirected to the file
+        // if possible. Therefore every calls to Console.Write or Console.Error.Write will be written to the file,
+        // during game object lifetime across whole program.
     {
         var dT = DateTime.Now;
         
@@ -150,6 +153,8 @@ public partial class PixelChess
         {
             Console.WriteLine($"[ ERROR ] Not able to correctly prepare debugging file:\n{exc}");
             _debugToFile = false;
+            Console.SetError(_stdErr);
+            Console.SetOut(_stdOut);
         }
     }
 }

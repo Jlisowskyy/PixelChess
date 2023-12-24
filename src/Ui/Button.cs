@@ -1,6 +1,6 @@
 namespace PixelChess.Ui;
 
-public abstract class Button: UiObject
+public abstract class Button: StaticUiObject
     // IMPORTANT: Button should not be rotated, only scaling will work
 {
     protected Button(string textureName) : base(textureName) {}

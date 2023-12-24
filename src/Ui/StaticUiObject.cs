@@ -1,15 +1,22 @@
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace PixelChess.Ui;
 
-public abstract class UiObject
+public interface IComplexDrawable
+{
+    public void LoadTextures(ContentManager textureLoader);
+    public void Draw(SpriteBatch batch);
+}
+
+public abstract class StaticUiObject
 {
 // --------------------------------
 // type construction / setups
 // --------------------------------
 
-    protected UiObject(string textureName) => _textureName = textureName;
+    protected StaticUiObject(string textureName) => _textureName = textureName;
     
     public void Initialize(int xOffset, int yOffset, SpriteBatch batch, float xScale = 1, float yScale = 1)
     {

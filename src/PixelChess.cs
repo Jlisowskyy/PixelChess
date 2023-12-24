@@ -21,6 +21,10 @@ namespace PixelChess
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
+            
+            // Saving old console streams
+            _stdErr = Console.Error;
+            _stdOut = Console.Out;
         
             // Actual elements
             _board = new Board();
@@ -37,7 +41,9 @@ namespace PixelChess
         {
             base.Dispose();
             _debugSWriter?.Close();
-            _debugFStream?.Close();
+            _debugFStream?.Close(); 
+            Console.SetError(_stdErr);
+            Console.SetOut(_stdOut);
         }
 
         protected override void Initialize()
@@ -199,5 +205,7 @@ namespace PixelChess
         private bool _debugToFile;
         private FileStream _debugFStream;
         private StreamWriter _debugSWriter;
+        private TextWriter _stdOut;
+        private TextWriter _stdErr;
     }
 }
