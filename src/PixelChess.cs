@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -7,14 +8,14 @@ using PixelChess.Ui;
 
 namespace PixelChess
 {
-    public class PixelChess : Game
+    public partial class PixelChess : Game
     { 
     
 // ------------------------------------
 // type creation / initialization
 // ------------------------------------
 
-        public PixelChess(string begLayout = Board.BasicStartingLayoutFen)
+        public PixelChess()
         {
             // Monogame components
             _graphics = new GraphicsDeviceManager(this);
@@ -22,7 +23,7 @@ namespace PixelChess
             IsMouseVisible = true;
         
             // Actual elements
-            _board = new Board(begLayout);
+            _board = new Board();
         
             _promMenu = new PromotionMenu();
             _timer = new Timer();
@@ -32,10 +33,20 @@ namespace PixelChess
             );
         }
 
+        ~PixelChess()
+        {
+            _debugSWriter?.Close();
+            _debugFStream?.Close();
+        }
+
         protected override void Initialize()
         {
             base.Initialize();
 
+            // Load configuration parameters from file
+            InitOptions opt = ConfigReader.LoadSettings();
+            _applyInitSettings(opt);
+            
             // calculating minimal possible sizes of window to fit all elements
             const int minHeight = Board.Height;
             const int minWidth = Board.Width + Timer.TimerBoardOffset * 4 + Timer.TimerXSize * 2;
@@ -182,5 +193,10 @@ namespace PixelChess
     
         // Mouse state
         private bool _isMouseHold;
+
+        // debugging state
+        private bool _debugToFile;
+        private FileStream _debugFStream;
+        private StreamWriter _debugSWriter;
     }
 }
