@@ -8,7 +8,7 @@ using PixelChess.Ui;
 
 namespace PixelChess
 {
-    public partial class PixelChess : Game
+    public partial class PixelChess : Game, IDisposable
     { 
     
 // ------------------------------------
@@ -33,8 +33,9 @@ namespace PixelChess
             );
         }
 
-        ~PixelChess()
+        public new void Dispose()
         {
+            base.Dispose();
             _debugSWriter?.Close();
             _debugFStream?.Close();
         }
