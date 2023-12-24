@@ -3,9 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 using PixelChess.Figures;
 using static PixelChess.ChessBackend.BoardPos;
 using IDrawable = PixelChess.Ui.IDrawable;
@@ -13,10 +11,6 @@ using IDrawable = PixelChess.Ui.IDrawable;
 namespace PixelChess.ChessBackend;
 
 /*          GENERAL TODOS
- *   - repair drawing offsets XD
- *   - change structure of game elements
- *   - change texture holding
- * 
  *   - add sounds
  *   - update readme and docs
  *
@@ -145,13 +139,14 @@ public partial class Board : IDrawable
         _halfMoves = _startFiguresLayout.HalfMoves;
         _whiteTime = _startingWhiteTime;
         _blackTime = _startingBlackTime;
-
+        
         _checkForPositionRepetitions(FenTranslator.GetPosString(this));
+        Console.WriteLine("[ OK ] Correctly loaded position!");
     }
 
     public void ProcTimers(double spentTime)
     {
-        if (_moveCounter == 0 || _isGameEnded) return;
+        if (!IsGameStarted || _isGameEnded) return;
 
         if (_movingColor == Figure.ColorT.White)
         {
@@ -1018,7 +1013,6 @@ public partial class Board : IDrawable
     }
 
     // used to represent texture index of corresponding tile highlighter,
-    // TODO: DONT UNDERSTAND THIS YET XDDD ATTACK | PROM ???
     public enum TileHighlighters
     {
         MoveTile = 0,
@@ -1103,6 +1097,7 @@ public partial class Board : IDrawable
     public TileState[][,] BlockedTiles => _blockedTiles;
     // used during moves generation to filter illegal moves
     public bool IsHold => _isHold;
+    public bool IsGameStarted => _moveCounter != 0;
 
     public Figure.ColorT MovingColor => _movingColor;
 
@@ -1161,6 +1156,7 @@ public partial class Board : IDrawable
     private TileState[][,] _blockedTiles;
     // filtering maps used to block moves
     
+    // Game control variables
     private bool _isHold;
     
     // Game ending variables
@@ -1187,7 +1183,7 @@ public partial class Board : IDrawable
     private double _whiteTime;
     private double _blackTime;
 
-    // in game made moves
+    // Counts total number of processed moves by object.
     private int _moveCounter;
     // full moves defined by rules
     private int _fullMoves;

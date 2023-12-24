@@ -31,7 +31,7 @@ public class ButtonList : IDrawable
         _yButtonOffset = buttonHeight + verButtonDist;
     }
 
-    public void Initialize(int xOffset, int yOffset, SpriteBatch batch)
+    public void Initialize(int xOffset, int yOffset)
     {
         _xOffset = xOffset;
         _yOffset = yOffset;

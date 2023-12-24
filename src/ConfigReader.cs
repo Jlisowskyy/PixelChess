@@ -123,9 +123,6 @@ public partial class PixelChess
         if (opt.StartPosition != "NONE")
             _board.ChangeGameLayout(opt.StartPosition);
 
-        if (opt.ChessEngineDir != "NONE")
-            Console.WriteLine();
-
         _debugToFile = opt.LoggingToFileEnabled;
         if (_debugToFile)
             _enableLoggingToFile();

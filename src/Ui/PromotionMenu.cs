@@ -13,9 +13,8 @@ public class PromotionMenu : IDrawable
 // type construction / setups
 // --------------------------------
 
-    public void Initialize(int xOffset, SpriteBatch batch)
+    public void Initialize(int xOffset)
     {
-        _spriteBatch = batch;
         _xOffset = xOffset;
         _drawXStartPos = _xOffset + Board.XTilesBeg + (float)(Board.Width - Width) / 2;
 
@@ -84,11 +83,11 @@ public class PromotionMenu : IDrawable
         if (_isOn == false) return;
         
         int textIndOffset = _promotionPawn.Color == Figure.ColorT.White ? 0 : 4;
-        _spriteBatch.Draw(_texture, new Vector2( _drawXStartPos, 0), Color.White);
+        batch.Draw(_texture, new Vector2( _drawXStartPos, 0), Color.White);
 
         for (int i = 0; i < FieldsCount; ++i)
         {
-            _spriteBatch.Draw(Board.ComponentsTextures[TextureIndexes[textIndOffset + i]], _fields[i], Color.White);
+            batch.Draw(Board.ComponentsTextures[TextureIndexes[textIndOffset + i]], _fields[i], Color.White);
         }
     }
 
@@ -101,7 +100,6 @@ public class PromotionMenu : IDrawable
 // private variables
 // ------------------------------
     
-    private SpriteBatch _spriteBatch;
     private int _xOffset; 
     private Figure _promotionPawn;
     private Texture2D _texture;

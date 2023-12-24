@@ -1,11 +1,57 @@
 #define DEBUG_
 using System;
+using System.Diagnostics;
 using PixelChess.Figures;
 
 namespace PixelChess.ChessBackend;
 
-public abstract class UciTranslator
+public class UciTranslator : IDisposable
 {
+// --------------------------------------
+// Type creation and initialization
+// --------------------------------------
+
+    public void Initialize(Board board, string chessEngineDir)
+    {
+        _board = board;
+        _chessEngine = new Process();
+        _chessEngine.StartInfo.UseShellExecute = false;
+        _chessEngine.StartInfo.RedirectStandardError = true;
+        _chessEngine.StartInfo.RedirectStandardInput = true;
+        _chessEngine.StartInfo.RedirectStandardOutput = true;
+        _chessEngine.StartInfo.FileName = chessEngineDir;
+
+        try
+        {
+            _chessEngine.Start();
+            Console.WriteLine("[ OK ] Correctly started Chess Engine!");
+        }
+        catch (Exception exc)
+        {
+            Console.Error.WriteLine($"[ ERROR ] Not able to startup chess engine! Cause:\n{exc}");
+            _chessEngine = null;
+        }
+    }
+    
+// ------------------------------
+// Type methods
+// ------------------------------
+
+    public void Dispose()
+    {
+        if (IsOperational)
+        {
+            _chessEngine.Kill();
+            _chessEngine.WaitForExit();
+            
+            Console.WriteLine("[ OK ] Correctly closed Chess Engine!");
+        }
+    }
+    
+// ------------------------------
+// Static methods
+// ------------------------------
+
     public static string GetUciMoveCode(BoardPos prevPos, BoardPos nextPos, Figure updatedFigure = null)
     {
         string fPos = $"{(char)('a' + prevPos.X)}{1 + prevPos.Y}";
@@ -55,4 +101,18 @@ public abstract class UciTranslator
             _ => throw new ApplicationException("Passed character is not recognizable as promotion character!!!"),
 #endif
         };
+
+// ------------------------------
+// public properties
+// ------------------------------
+
+    public bool IsOperational => _chessEngine != null && !_chessEngine.HasExited;
+    
+// ------------------------------
+// private fields
+// ------------------------------
+
+    private Board _board;
+    private Process _chessEngine;
+
 }
