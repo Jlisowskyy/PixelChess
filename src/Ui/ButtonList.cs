@@ -6,7 +6,7 @@ namespace PixelChess.Ui;
 
 // TODO: add here button list to creat cycling menus or just static on ui buttons
 
-public class ButtonList
+public class ButtonList : IDrawable
 {
 // ------------------------------
 // type creation
@@ -43,16 +43,16 @@ public class ButtonList
                 (int xO, int yO) = _getOffsets(x, y);
                 
                 var button = _buttonArray[_getIndex(x, y)];
-                button.Initialize(xO, yO, batch, (float)_buttonWidth / button.XSize, (float)_buttonHeight / button.YSize);
+                button.Initialize(xO, yO, (float)_buttonWidth / button.XSize, (float)_buttonHeight / button.YSize);
             }
         }
     }
 
-    public void Load(ContentManager manager)
+    public void LoadTextures(ContentManager manager)
     {
         foreach (var button in _buttonArray)
         {
-            button.Texture = manager.Load<Texture2D>(button.TextureName);
+            button.LoadTextures(manager);
         }
     }
     
@@ -69,10 +69,10 @@ public class ButtonList
         return false;
     }
 
-    public void Draw()
+    public void Draw(SpriteBatch batch)
     {
         foreach (var button in _buttonArray)
-            button.Draw();
+            button.Draw(batch);
     }
 
 // ------------------------------

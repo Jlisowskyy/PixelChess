@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using PixelChess.ChessBackend;
 using PixelChess.Ui;
+using IDrawable = PixelChess.Ui.IDrawable;
 
 namespace PixelChess
 {
@@ -32,9 +34,19 @@ namespace PixelChess
             _promMenu = new PromotionMenu();
             _timer = new Timer();
             _leftButtons = new ButtonList(
-                new Button[,] { { new ResetButton(_board, _promMenu), new FenButton(_board), new UndoButton(_board) } },
+                new Button[,]
+                {
+                    { 
+                        new ModeChangeButton(_board, null),
+                        new ResetButton(_board, _promMenu),
+                        new FenButton(_board),
+                        new UndoButton(_board) 
+                    }
+                },
                 0, Timer.TimerNameBoardOffset, 35, 120
             );
+            
+            _uiTargets = new []{ (IDrawable)_promMenu, _board, _timer, _leftButtons} ;
         }
 
         public new void Dispose()
@@ -66,11 +78,11 @@ namespace PixelChess
             // centring board position and creating connection with spriteBatch class
             int boardHorOffset = (_graphics.PreferredBackBufferWidth - Board.Width) / 2;
             int boardVerOffset = (_graphics.PreferredBackBufferHeight - Board.Height) / 2;
-            _board.InitializeUiApp(boardHorOffset, boardVerOffset, _spriteBatch);
+            _board.InitializeUiApp(boardHorOffset, boardVerOffset);
         
             // centring other components with respects to others
             _promMenu.Initialize(boardHorOffset, _spriteBatch);
-            _timer.Initialize(boardHorOffset, _spriteBatch);
+            _timer.Initialize(boardHorOffset, _board);
             _leftButtons.Initialize(_timer.TimerWhiteX, 2 * (Timer.FontHeight + Timer.TimerNameBoardOffset), _spriteBatch);
             _graphics.ApplyChanges();
         }
@@ -82,29 +94,9 @@ namespace PixelChess
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-        
-            foreach (var val in Enum.GetValues<Board.TileHighlighters>())
-            {
-                Board.TileHighlightersTextures[(int)val] = Content.Load<Texture2D>(Enum.GetName(val));
-            }
-        
-            foreach (var val in Enum.GetValues<Board.ChessComponents>())
-            {
-                Board.ComponentsTextures[(int)val] = Content.Load<Texture2D>(Enum.GetName(val));
-            }
-        
-            foreach (var val in Enum.GetValues<Board.EndGameTexts>())
-            {
-                Board.GameEnds[(int)val] = Content.Load<Texture2D>(Enum.GetName(val));
-            }
 
-            Board.TileHighlightersTextures[(int)BoardPos.MoveType.PromAndAttack] =
-                Board.TileHighlightersTextures[(int)BoardPos.MoveType.AttackMove];
-        
-            _promMenu.Texture = Content.Load<Texture2D>(_promMenu.TextureName);
-            _timer.GameFont = Content.Load<SpriteFont>(_timer.FontName);
-
-            _leftButtons.Load(Content);
+            foreach (var uiTarget in _uiTargets)
+                uiTarget.LoadTextures(Content);
         }
     
 // ------------------------------
@@ -171,11 +163,9 @@ namespace PixelChess
             GraphicsDevice.Clear(Color.White);
 
             _spriteBatch.Begin();
-        
-            _board.Draw();
-            _promMenu.Draw();
-            _timer.Draw(_board.WhiteTime, _board.BlackTime);
-            _leftButtons.Draw();
+
+            foreach (var uiTarget in _uiTargets)
+                uiTarget.Draw(_spriteBatch);
         
             _spriteBatch.End();
         
@@ -198,6 +188,9 @@ namespace PixelChess
         private readonly Timer _timer;
         private readonly ButtonList _leftButtons;
     
+        // Aggregated UI components
+        private readonly IDrawable[] _uiTargets;
+        
         // Mouse state
         private bool _isMouseHold;
 
@@ -205,7 +198,7 @@ namespace PixelChess
         private bool _debugToFile;
         private FileStream _debugFStream;
         private StreamWriter _debugSWriter;
-        private TextWriter _stdOut;
-        private TextWriter _stdErr;
+        private readonly TextWriter _stdOut;
+        private readonly TextWriter _stdErr;
     }
 }

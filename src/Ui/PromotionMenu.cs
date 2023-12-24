@@ -1,12 +1,13 @@
 using System;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using PixelChess.ChessBackend;
 using PixelChess.Figures;
 
 namespace PixelChess.Ui;
 
-public class PromotionMenu
+public class PromotionMenu : IDrawable
 {
 // --------------------------------
 // type construction / setups
@@ -78,20 +79,25 @@ public class PromotionMenu
         return fig;
     }
 
-    public void Draw()
+    public void Draw(SpriteBatch batch)
     {
         if (_isOn == false) return;
         
-        int TextIndOffset = _promotionPawn.Color == Figure.ColorT.White ? 0 : 4;
+        int textIndOffset = _promotionPawn.Color == Figure.ColorT.White ? 0 : 4;
         _spriteBatch.Draw(_texture, new Vector2( _drawXStartPos, 0), Color.White);
 
         for (int i = 0; i < FieldsCount; ++i)
         {
-            _spriteBatch.Draw(Board.ComponentsTextures[TextureIndexes[TextIndOffset + i]], _fields[i], Color.White);
+            _spriteBatch.Draw(Board.ComponentsTextures[TextureIndexes[textIndOffset + i]], _fields[i], Color.White);
         }
     }
-    
-// ------------------------------
+
+    public void LoadTextures(ContentManager textureLoader)
+    {
+        _texture = textureLoader.Load<Texture2D>(TextureName);
+    }
+
+    // ------------------------------
 // private variables
 // ------------------------------
     
@@ -99,7 +105,7 @@ public class PromotionMenu
     private int _xOffset; 
     private Figure _promotionPawn;
     private Texture2D _texture;
-    private bool _isOn = false;
+    private bool _isOn;
     private const int FieldsCount = 4;
     private const int Width = 462;
     private const int Height = 444;
@@ -112,10 +118,9 @@ public class PromotionMenu
     private const int Rook = 2;
     private const int Queen = 3;
     private float _drawXStartPos;
-    private Vector2[] _fields = new Vector2[FieldsCount];
+    private readonly Vector2[] _fields = new Vector2[FieldsCount];
 
-    private static int[] TextureIndexes = new int[2 * FieldsCount]
-    {
+    private static readonly int[] TextureIndexes = {
         (int) Board.ChessComponents.WhiteKnight,
         (int) Board.ChessComponents.WhiteBishop,
         (int) Board.ChessComponents.WhiteRook,
@@ -130,10 +135,7 @@ public class PromotionMenu
 // public properties
 // ------------------------------
 
-    public readonly String TextureName = "PromotionMenu";
+    private const String TextureName = "PromotionMenu";
     public bool IsOn => _isOn;
-    public Texture2D Texture
-    {
-        set => _texture = value;
-    }
+
 }

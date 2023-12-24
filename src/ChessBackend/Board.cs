@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using PixelChess.Figures;
 using static PixelChess.ChessBackend.BoardPos;
+using IDrawable = PixelChess.Ui.IDrawable;
 
 namespace PixelChess.ChessBackend;
 
@@ -23,7 +24,7 @@ namespace PixelChess.ChessBackend;
  * 
  */
 
-public partial class Board
+public partial class Board : IDrawable
 {
 // --------------------------------
 // type construction / setups
@@ -54,13 +55,12 @@ public partial class Board
         GameEnds = new Texture2D[Enum.GetNames(typeof(EndGameTexts)).Length];
     }
 
-    public void InitializeUiApp(int xOffset, int yOffset, SpriteBatch batch)
+    public void InitializeUiApp(int xOffset, int yOffset)
     {
         _xOffset = xOffset;
         _yOffset = yOffset;
         _xTilesCordOnScreenBeg = XTilesBoardCordBeg + xOffset;
         _yTilesCordOnScreenBeg = YTilesBoardCordBeg + yOffset;
-        _spriteBatch = batch;
     }
 
     public void ChangeGameLayout(string fenNotationInput)
@@ -280,79 +280,7 @@ public partial class Board
     }
 
     private bool IsSelectedFigure() => _selectedFigure != null;
-
-    private Vector2 CenterFigurePosOnMouse(int x, int y) => new(x + MouseCentX, y + MouseCentY);
-
-    private Vector2 Translate(BoardPos pos)
-        => new Vector2(_xTilesCordOnScreenBeg + pos.X * FigureWidth, _yTilesCordOnScreenBeg - pos.Y * FigureHeight - 1);
-
-    public BoardPos Translate(int x, int y)
-        => new BoardPos((x - _xTilesCordOnScreenBeg) / FigureWidth, (_yTilesCordOnScreenBeg + 68 - y) / FigureHeight);
     
-
-// ------------------------------
-// drawing methods
-// ------------------------------
-    public void Draw()
-    {
-        _drawBoard();
-        _drawHighlightedTiles();
-        _drawStaticFigures();
-        _drawHoveringFigure();
-        _drawEndGameSign();
-    }
-    
-    private void _drawBoard() => _spriteBatch.Draw(ComponentsTextures[(int)ChessComponents.Board], new Vector2(_xOffset, _yOffset), Color.White);
-
-    private void _drawHighlightedTiles()
-        // draws applies highlighting layers on the board to inform player about allowed move and ongoing actions
-    {
-        if (IsSelectedFigure())
-        {
-            var moves = _selectedFigure.GetMoves();
-            
-            _spriteBatch.Draw(TileHighlightersTextures[(int)TileHighlighters.SelectedTile], Translate(_selectedFigure.Pos), Color.White);
-            
-            for (int i = 0; i < moves.movesCount; ++i)
-                _spriteBatch.Draw(TileHighlightersTextures[(int)moves.moves[i].MoveT], Translate(moves.moves[i]), Color.White);
-        }
-
-        if (IsChecked)
-            _spriteBatch.Draw(TileHighlightersTextures[(int)TileHighlighters.KingAttackTile], Translate(_colorMetadataMap[(int)_movingColor].King.Pos), Color.White);
-    }
-
-    private void _drawStaticFigures()
-        // draws not moving figures on the board
-    {
-        foreach (var actFig in _figuresArray)
-        {
-            if (actFig.IsAlive)
-                _spriteBatch.Draw(ComponentsTextures[(int)actFig.TextureIndex], Translate(actFig.Pos), Color.White);
-        }
-    }
-
-    private void _drawHoveringFigure()
-        // draws figure on cursor, when figure is hold
-    {
-        if (_isHold)
-        {
-            var mState = Mouse.GetState();
-                
-            _spriteBatch.Draw(ComponentsTextures[(int)_selectedFigure.TextureIndex],
-                CenterFigurePosOnMouse(mState.X, mState.Y), Color.White);
-        }
-    }
-
-    private void _drawEndGameSign()
-    {
-        if (!_isGameEnded) return;
-        int horOffset = (Width - GameEnds[_endGameTextureInd].Width) / 2;
-        int verOffset = (Height - GameEnds[_endGameTextureInd].Height) / 2;
-
-        
-        _spriteBatch.Draw(GameEnds[_endGameTextureInd], new Vector2(_xOffset + horOffset, _yOffset + verOffset), Color.White);
-    }
-
 // --------------------------------
 // Next round/move processing
 // --------------------------------
@@ -1053,16 +981,6 @@ public partial class Board
 // -----------------------------------
 // debugging and testing methods
 // -----------------------------------
-    private void _drawDesiredBishopColoredTiles(Figure.ColorT col)
-        // used in tests - debug only
-    {
-        int posMod = col == Figure.ColorT.White ? 1 : 0;
-        
-        for (int x = MinPos; x <= MaxPos; ++x)
-        for (int y = MinPos; y <= MaxPos; ++y)
-            if (Math.Abs(x - y) % 2 == posMod)
-                _spriteBatch.Draw(TileHighlightersTextures[(int)TileHighlighters.SelectedTile], Translate(new BoardPos(x, y)), Color.White);
-    }
 
     public bool PerformShallowTest(int depth)
     {
@@ -1275,9 +1193,6 @@ public partial class Board
     private int _fullMoves;
     // half moves to apply 50 moves rule
     private int _halfMoves;
-    
-    // to allow drawing from inside of the class
-    private SpriteBatch _spriteBatch;
     
 // ------------------------------
 // static fields

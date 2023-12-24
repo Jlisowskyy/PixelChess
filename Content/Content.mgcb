@@ -133,6 +133,18 @@
 /processorParam:TextureFormat=Color
 /build:CastlingMove.png
 
+#begin computer.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:computer.png
+
 #begin draw.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -193,6 +205,18 @@
 /processorParam:TextureFormat=Color
 /build:MoveTile.png
 
+#begin null.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:null.png
+
 #begin pat.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -204,6 +228,18 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:pat.png
+
+#begin player.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:player.png
 
 #begin PromotionMenu.png
 /importer:TextureImporter
@@ -228,6 +264,18 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:PromotionTile.png
+
+#begin remote.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:remote.png
 
 #begin reset.png
 /importer:TextureImporter

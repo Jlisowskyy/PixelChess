@@ -1,18 +1,19 @@
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using PixelChess.ChessBackend;
 
 namespace PixelChess.Ui;
 
-public class Timer
+public class Timer : IDrawable
 {
 // --------------------------------
 // type construction / setups
 // --------------------------------
 
-    public void Initialize(int horOffset, SpriteBatch batch)
+    public void Initialize(int horOffset, Board board)
     {
-        _spriteBatch = batch;
+        _board = board;
         _horOffset = horOffset;
 
         _timerWhiteX = _horOffset - TimerBoardOffset - TimerXSize;
@@ -23,19 +24,24 @@ public class Timer
 // type interaction
 // ------------------------------
 
-    public void Draw(double whiteTime, double blackTime)
+    public void Draw(SpriteBatch batch)
     {
         string wString = "White:\n";
         string bString = "Black:\n";
         
-        _spriteBatch.DrawString(_gameFont, wString, new Vector2(_timerWhiteX, TimerNameBoardOffset), Color.Black);
-        _spriteBatch.DrawString(_gameFont, bString, new Vector2(_timerBlackX, TimerNameBoardOffset), Color.Black);
+        batch.DrawString(_gameFont, wString, new Vector2(_timerWhiteX, TimerNameBoardOffset), Color.Black);
+        batch.DrawString(_gameFont, bString, new Vector2(_timerBlackX, TimerNameBoardOffset), Color.Black);
         
-        var tWhite = TranslateMs(whiteTime);
-        var tBlack = TranslateMs(blackTime);
+        var tWhite = TranslateMs(_board.WhiteTime);
+        var tBlack = TranslateMs(_board.BlackTime);
         
-        _spriteBatch.DrawString(_gameFont, tWhite, new Vector2(_timerWhiteX, TimerBoardOffset), Color.Black);
-        _spriteBatch.DrawString(_gameFont, tBlack, new Vector2(_timerBlackX, TimerBoardOffset), Color.Black);
+        batch.DrawString(_gameFont, tWhite, new Vector2(_timerWhiteX, TimerBoardOffset), Color.Black);
+        batch.DrawString(_gameFont, tBlack, new Vector2(_timerBlackX, TimerBoardOffset), Color.Black);
+    }
+
+    public void LoadTextures(ContentManager manager)
+    {
+        _gameFont = manager.Load<SpriteFont>(FontName);
     }
     
 // ------------------------------
@@ -44,18 +50,18 @@ public class Timer
 
     private string TranslateMs(double time)
     {
-        int mins = (int)(time / Board.Minute);
+        int minutes = (int)(time / Board.Minute);
         int secs = (int)(time % Board.Minute / Board.Second);
         
-        return $"{mins:D2}:{secs:D2}";
+        return $"{minutes:D2}:{secs:D2}";
     }
 
 // ------------------------------
 // private variables
 // ------------------------------
 
+    private Board _board;
     private SpriteFont _gameFont;
-    private SpriteBatch _spriteBatch;
     private int _horOffset;
     private int _timerWhiteX;
     private int _timerBlackX;
@@ -68,12 +74,7 @@ public class Timer
     public const int TimerXSize = 120;
     public const int FontHeight = 50;
     public const int TimerBoardOffset = FontHeight + TimerNameBoardOffset;
-    public readonly string FontName = "GameFont";
+    private const string FontName = "GameFont";
 
     public int TimerWhiteX => _timerWhiteX;
-
-    public SpriteFont GameFont
-    {
-        set => _gameFont = value;
-    }
 }
