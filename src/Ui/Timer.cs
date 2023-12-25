@@ -51,7 +51,7 @@ public class Timer : IDrawable
     private string TranslateMs(double time)
     {
         int minutes = (int)(time / Board.Minute);
-        int secs = (int)(time % Board.Minute / Board.Second);
+        int secs = (int)(time % Board.Minute / Board.SecondToMs);
         
         return $"{minutes:D2}:{secs:D2}";
     }

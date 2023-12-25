@@ -3,9 +3,11 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Xna.Framework;
 using PixelChess.Figures;
 
 namespace PixelChess.ChessBackend;
@@ -59,8 +61,11 @@ public class UciTranslator : IDisposable
 
     public void SetupNewGame()
     {
-        if (!IsOperational) return;
-        
+        if (!IsOperational) throw new ApplicationException("[ ERROR ] Engine was shut down!");
+
+
+        lock (_recordQueue) _recordQueue.Clear();
+        _chessEngine.StandardInput.WriteLine("stop");
         _chessEngine.StandardInput.WriteLine($"position fen {FenTranslator.Translate(_board)}");
         _chessEngine.StandardInput.WriteLine("ucinewgame");
 
@@ -70,7 +75,14 @@ public class UciTranslator : IDisposable
             Dispose();
             _chessEngine = null;
         }
-        else Console.WriteLine("[ OK ] Correctly started new game inside the engine!");
+        else
+        {
+            Console.WriteLine("[ OK ] Correctly started new game inside the engine!");
+            
+            // TODO: temporary blind try to change used threads:
+            _chessEngine.StandardInput.WriteLine($"setoption name Threads value {Environment.ProcessorCount}");
+        }
+        
     }
 
     private const int Ping10msTries = 20;
@@ -97,6 +109,42 @@ public class UciTranslator : IDisposable
         return false;
     }
 
+    public void StartSearch()
+    {
+        if (!IsOperational) throw new ApplicationException("[ ERROR ] Engine was shut down!");
+
+        StringBuilder builder = new();
+        foreach (var move in _board.MovesHistory.Skip(1))
+        {
+            string mvCode = GetUciMoveCode(move);
+            builder.Append(mvCode);
+            builder.Append(' ');
+        }
+        
+        _chessEngine.StandardInput.WriteLine($"position startpos moves {builder}");
+        _chessEngine.StandardInput.WriteLine($"go movetime {MaxSearchTime}");
+        _spentTimeOnSearch = 0;
+        _searchTries = 0;
+    }
+
+    private const int MaxSearchResultRepeatingTries = 5;
+    public string ChecksForSearchResult(GameTime spentTime)
+        // walks through all commands available and processes them all
+        // until bestmove command is encountered or queue is empty.
+    {
+        _spentTimeOnSearch += spentTime.ElapsedGameTime.TotalMilliseconds;
+        string bestMove = _processRunningCommands();
+        
+        if (_spentTimeOnSearch > MaxSearchTime && bestMove == String.Empty && ++_searchTries == MaxSearchResultRepeatingTries)
+        {
+            Console.Error.WriteLine("[ ERROR ] Maximum amount of repeated tries to retrieve bestmove command exceeded. Terminating the engine...");
+            Dispose();
+            return "err";
+        }
+
+        return bestMove;
+    }
+
 // ------------------------------
 // Type methods
 // ------------------------------
@@ -119,6 +167,14 @@ public class UciTranslator : IDisposable
 // Static methods
 // ------------------------------
 
+    public static string GetUciMoveCode(HistoricalMove move)
+    {
+        if ((move.MadeMove.MoveT & BoardPos.MoveType.PromotionMove) == 0)
+            return $"{(char)('a' + move.OldX)}{1 + move.OldY}{(char)('a' + move.MadeMove.X)}{1 + move.MadeMove.Y}";
+
+        return $"{(char)('a' + move.OldX)}{1 + move.OldY}{(char)('a' + move.MadeMove.X)}{1 + move.MadeMove.Y}{move.figureUpdateChar}";
+    }
+
     public static string GetUciMoveCode(BoardPos prevPos, BoardPos nextPos, Figure updatedFigure = null)
     {
         string fPos = $"{(char)('a' + prevPos.X)}{1 + prevPos.Y}";
@@ -131,20 +187,22 @@ public class UciTranslator : IDisposable
                 throw new ApplicationException("Not able to correctly translate move to UCI, updateFigure not passed!");
 #endif
 
-            return fPos + nPos + updatedFigure switch
-            {
-                Rook => 'r',
-                Knight => 'n',
-                Bishop => 'b',
-                Queen => 'q',
-#if DEBUG_
-                _ =>
-                    throw new ApplicationException("Passed figure is not valid update figure!")
-#endif
-            };
+            return fPos + nPos + GetUpdateFigureChar(updatedFigure);
         }
         else return fPos + nPos;
     }
+    
+    public static char GetUpdateFigureChar(Figure updatedFigure) => updatedFigure switch
+    {
+        Rook => 'r',
+        Knight => 'n',
+        Bishop => 'b',
+        Queen => 'q',
+#if DEBUG_
+        _ =>
+            throw new ApplicationException("Passed figure is not valid update figure!")
+#endif
+    };
 
     public static (BoardPos fPos, BoardPos nPos, char prom) FromUciToInGame(string uciCode)
         // Does not perform any sanity checks, before use make sure that input is correct
@@ -173,7 +231,44 @@ public class UciTranslator : IDisposable
 // private methods
 // ------------------------------
 
-    private const int ChessEngineBootingMaxTimeMS = 1000;
+    private string _processRunningCommands()
+        // In actual state translator is able to process  bestmove command and info command only.
+        // Outputs best move result if encountered.
+    {
+        string bestMove = string.Empty;
+        
+        while (_recordQueue.Count != 0)
+        {
+            string record;
+            lock (_recordQueue) record = _recordQueue.Dequeue();
+
+            int result = record.IndexOf("bestmove", StringComparison.Ordinal);
+            if (result != -1)
+            {
+                if (bestMove != string.Empty)
+                    Console.Error.WriteLine("[ WARNING ] Double best move reply received!");
+
+                var cleanedStr = record.Substring(result + 8).Trim();
+                int wordEnd = cleanedStr.IndexOfAny("\n ".ToCharArray());
+
+                if (wordEnd == 0 || wordEnd == -1)
+                {
+                    Console.Error.WriteLine($"[ ERROR ] Invalid bestmove command occured!");
+                    continue;
+                }
+
+                bestMove = cleanedStr.Substring(0, wordEnd);
+            }
+            else if (record.IndexOf("info", StringComparison.Ordinal) != -1)
+                Console.WriteLine($"Info message from the engine\n:{record}");
+            else
+                Console.Error.WriteLine($"[ WARNING ] Received invalid UCI command:\n{record}");
+        }
+
+        return bestMove;
+    }
+
+    private const int ChessEngineBootingMaxTimeMs = 1000;
     private (bool isUciCompatible, string initOutput) _verifyUciCompliance()
         // Functions asks engine whether it is compatible with UCI protocol.
         // Additionally processes all boot process output command.
@@ -182,22 +277,24 @@ public class UciTranslator : IDisposable
         _chessEngine.StandardInput.WriteLine("uci");
         
         // Amount of time given to engine, after which if it does not identify itself as UCI compatible is terminated.
-        Thread.Sleep(ChessEngineBootingMaxTimeMS);
+        Thread.Sleep(ChessEngineBootingMaxTimeMs);
         
         // Processing all commands
         bool uciokResponseEncountered = false;
         StringBuilder builder = new();
         while (_recordQueue.Count != 0)
         {
-            string record = null;
+            string record;
             lock (_recordQueue)
             {
                 record = _recordQueue.Dequeue();
-                builder.Append(record);
-                
-                if (_processBootRecord(record) == EngineCommandType.uciokCommand)
-                    uciokResponseEncountered = true;
             }
+            
+            builder.Append(record);
+            builder.Append('\n');
+                
+            if (_processBootRecord(record) == EngineCommandType.uciokCommand)
+                uciokResponseEncountered = true;
         }
         
         return (uciokResponseEncountered, builder.ToString());
@@ -309,6 +406,7 @@ public class UciTranslator : IDisposable
 // ------------------------------
 
     public bool IsOperational => _chessEngine != null && !_chessEngine.HasExited;
+    public int MaxSearchTime { get; set; }
     
 // ------------------------------
 // private fields
@@ -322,6 +420,8 @@ public class UciTranslator : IDisposable
     private string _engineName;
     // private Dictionary<string, OptionType> _optionsAvailable;
 
+    private double _spentTimeOnSearch;
+    private int _searchTries;
     private Thread _messageReceiver;
     private Board _board;
     private Process _chessEngine;

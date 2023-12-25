@@ -39,7 +39,7 @@ public partial class PixelChess : Game, IDisposable
             {
                 { 
                     new ModeChangeButton(_board, _chessEngineToGameInterface, _gameMode),
-                    new ResetButton(_board, _promMenu),
+                    new ResetButton(_board, _promMenu, _chessEngineToGameInterface),
                     new FenButton(_board),
                     new UndoButton(_board) 
                 }
@@ -47,7 +47,7 @@ public partial class PixelChess : Game, IDisposable
             0, Timer.TimerNameBoardOffset, 35, 120
         );
         
-        _uiTargets = new []{ (IDrawable)_promMenu, _board, _timer, _leftButtons} ;
+        _uiTargets = new []{ _board, (IDrawable)_promMenu,  _timer, _leftButtons} ;
     }
 
     public new void Dispose()
@@ -139,19 +139,22 @@ public partial class PixelChess : Game, IDisposable
                     return;
                 }
                 
-                ProcessBoardInteraction(ProcessClickOnBoard, mState);
+                _processBoardInteraction(_processClickOnBoard, mState, gameTime);
             }
             _isMouseHold = true;
         }
         else
         {
             if (_isMouseHold)
-                ProcessBoardInteraction(ProcessDropOnBoard, mState);
+                _processBoardInteraction(_processDropOnBoard, mState, gameTime);
 
             _isMouseHold = false;
         }
     
         _board.ProcTimers(gameTime.ElapsedGameTime.TotalMilliseconds);
+        if (_gameMode.ActMod == ModeChangeButton.GameMode.ModeT.PlayerVsComputer)
+            _processComputersRound(gameTime);
+        
         base.Update(gameTime);
     }
 
@@ -173,7 +176,7 @@ public partial class PixelChess : Game, IDisposable
 // Chess board interaction methods
 // -------------------------------------
 
-    bool ProcessClickOnBoard(MouseState mState)
+    private bool _processClickOnBoard(MouseState mState)
     {
         bool wasHold = _board.IsHold;
         var res = _board.DropFigure(_board.Translate(mState.X, mState.Y));
@@ -187,7 +190,7 @@ public partial class PixelChess : Game, IDisposable
         return res.WasHit;
     }
 
-    bool ProcessDropOnBoard(MouseState mState)
+    private bool _processDropOnBoard(MouseState mState)
     {
         var ret = _board.DropFigure(_board.Translate(mState.X, mState.Y));
         if (ret.mType == BoardPos.MoveType.PromotionMove || ret.mType == BoardPos.MoveType.PromAndAttack)
@@ -196,8 +199,10 @@ public partial class PixelChess : Game, IDisposable
         return ret.WasHit;
     }
 
-    void ProcessBoardInteraction(Func<MouseState, bool> reactionMethod, MouseState mState)
+    private void _processBoardInteraction(Func<MouseState, bool> reactionMethod, MouseState mState, GameTime time)
     {
+        if (_board.IsGameEnded) return;
+        
         switch (_gameMode.ActMod)
         {
             case ModeChangeButton.GameMode.ModeT.PlayerVsPlayerLocal:
@@ -209,19 +214,26 @@ public partial class PixelChess : Game, IDisposable
                     var wasHit = reactionMethod(mState);
 
                     if (wasHit)
-                    {
-                        // TODO: HERE START SEARCH
-                    }
-                }
-                else
-                {
-                    // TODO: Here check if search ended
+                        _chessEngineToGameInterface.StartSearch();
                 }
                 break;
         }
     }
-    
-    
+
+    private void _processComputersRound(GameTime timeSpent)
+    {
+        if (_board.MovingColor == Figure.ColorT.White) return;
+        
+        var result = _chessEngineToGameInterface.ChecksForSearchResult(timeSpent);
+        if (result == "err")
+            // Faulty engine, rebooting to Player versus player mode.
+        {
+            _gameMode.ActMod = ModeChangeButton.GameMode.ModeT.PlayerVsPlayerLocal;
+            _board.ResetBoard();
+        }
+        else if (result != String.Empty)
+            _board.MakeUciMove(result);
+    }
 // ------------------------------
 // private fields
 // ------------------------------

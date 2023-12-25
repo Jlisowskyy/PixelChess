@@ -10,6 +10,12 @@ public class ModeChangeButton : Button
         _board = board;
         _uciUnit = translationUnit;
         _mode = mode;
+        mode.GameModeChange += GameModeChangeHandler;
+    }
+
+    private void GameModeChangeHandler(object sender, GameMode.ModeEventArgs args)
+    {
+        _stateCounter = (int)args.Mode;
     }
 
     protected sealed override void ClickReaction()
@@ -44,8 +50,20 @@ public class ModeChangeButton : Button
             PlayerVsComputer,
             PlayerVsPlayerRemote
         }
-        
-        public ModeT ActMod { get; set; }
+
+        public class ModeEventArgs : EventArgs
+        {
+            public ModeT Mode { get; init; }
+        }
+
+        public event EventHandler<ModeEventArgs> GameModeChange;
+
+        private ModeT _actMod;
+        public ModeT ActMod
+        {
+            get => _actMod;
+            set { _actMod = value; GameModeChange?.Invoke(this, new ModeEventArgs { Mode = _actMod }); }
+        }
     }
 
     private void _switchToNextTexture()

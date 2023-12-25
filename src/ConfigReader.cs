@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using PixelChess.ChessBackend;
 
 namespace PixelChess;
 
@@ -11,9 +12,13 @@ public partial class PixelChess
             public string ChessEngineDir { get; set; }
             public string StartPosition { get; set; }
             public bool LoggingToFileEnabled { get; set; }
+            public int WhiteTimeSeconds { get; set; }
+            public int BlackTimeSeconds { get; set; }
+            public int ChessEngineSearchTimeMs { get; set; }
 
             public override string ToString()
-                => $"ChessEngineDir={ChessEngineDir}\nStartPosition={StartPosition}\nLoggingToFileEnabled={LoggingToFileEnabled}";
+                => $"ChessEngineDir={ChessEngineDir}\nStartPosition={StartPosition}\nLoggingToFileEnabled={LoggingToFileEnabled}" +
+                   $"\nWhiteTimeSeconds={WhiteTimeSeconds}\nBlackTimeSeconds={BlackTimeSeconds}\nChessEngineSearchTimeMs={ChessEngineSearchTimeMs}";
         }
 
     private abstract class ConfigReader
@@ -78,13 +83,29 @@ public partial class PixelChess
                         retOptions.StartPosition = keyValuePair[1];
                         break;
                     case "LoggingToFileEnabled":
-
                         if (bool.TryParse(keyValuePair[1], out bool value))
                             retOptions.LoggingToFileEnabled = value;
                         else
                             _announceInvalidRecord(record);
                         break;
-                    
+                    case "WhiteTimeSeconds":
+                        if (int.TryParse(keyValuePair[1], out int wTime))
+                            retOptions.WhiteTimeSeconds = wTime;
+                        else
+                            _announceInvalidRecord(record);
+                        break;
+                    case "BlackTimeSeconds":
+                        if (int.TryParse(keyValuePair[1], out int bTime))
+                            retOptions.BlackTimeSeconds = bTime;
+                        else
+                            _announceInvalidRecord(record);
+                        break;
+                    case "ChessEngineSearchTimeMs":
+                        if (int.TryParse(keyValuePair[1], out int enTime))
+                            retOptions.ChessEngineSearchTimeMs = enTime;
+                        else
+                            _announceInvalidRecord(record);
+                        break;
                     default:
                         _announceInvalidRecord(record);
                         break;
@@ -112,8 +133,11 @@ public partial class PixelChess
         // private fields
         // ------------------------------
         
-        private static readonly InitOptions DefaultOptions = new InitOptions()
-            { ChessEngineDir = "NONE", LoggingToFileEnabled = false, StartPosition = "NONE" };
+        private static readonly InitOptions DefaultOptions = new()
+        {
+            ChessEngineDir = "NONE", LoggingToFileEnabled = false, StartPosition = "NONE",
+            BlackTimeSeconds = 600, WhiteTimeSeconds = 600, ChessEngineSearchTimeMs = 5000,
+        };
         
         private const int MaxConfFileSize = 32 * 1024; // 32kB
     }
@@ -126,6 +150,11 @@ public partial class PixelChess
         _debugToFile = opt.LoggingToFileEnabled;
         if (_debugToFile)
             _enableLoggingToFile();
+        
+        _board.SetTimers(opt.WhiteTimeSeconds * Board.SecondToMs,
+            opt.BlackTimeSeconds * Board.SecondToMs);
+
+        _chessEngineToGameInterface.MaxSearchTime = opt.ChessEngineSearchTimeMs;
     }
     
     private void _enableLoggingToFile()

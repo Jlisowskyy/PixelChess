@@ -262,13 +262,21 @@ public partial class Board : IDrawable
 #endif
         
         if (promFig == null)
+        {
+            Console.Error.WriteLine("[ WARNING ] Passed null promFig to method!");
             return;
+        }
 
         _replaceFigure(promFig, _promotionPawn);
         _promotionPawn = null;
         
         // adds promoted pawn to important figures metadata
         _extractDataFromFig(promFig);
+        
+        // TODO: necessary for uci communication! Change structure
+        var lMove = _movesHistory.Last.Value;
+        lMove.figureUpdateChar = UciTranslator.GetUpdateFigureChar(promFig);
+        _movesHistory.Last.Value = lMove;
         
         // restarts processing to next round
         _processToNextRound();
@@ -1098,6 +1106,7 @@ public partial class Board : IDrawable
     // used during moves generation to filter illegal moves
     public bool IsHold => _isHold;
     public bool IsGameStarted => _moveCounter != 0;
+    public bool IsGameEnded => _isGameEnded;
 
     public Figure.ColorT MovingColor => _movingColor;
 
@@ -1198,8 +1207,8 @@ public partial class Board : IDrawable
     public static readonly Texture2D[] TileHighlightersTextures;
     public static readonly Texture2D[] GameEnds;
 
-    public const double Second = 1000;
-    public const double Minute = 60 * Second;
+    public const double SecondToMs = 1000;
+    public const double Minute = 60 * SecondToMs;
     public const double BasicWhiteTime = 10 * Minute;
     public const double BasicBlackTIme = 10 * Minute;
 

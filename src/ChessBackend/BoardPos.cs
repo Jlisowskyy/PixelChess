@@ -70,6 +70,7 @@ public struct HistoricalMove
 
     public readonly int OldX;
     public readonly int OldY;
+    public char figureUpdateChar;
     public readonly bool WasUnmoved;
     public readonly BoardPos MadeMove;
     public readonly Figure Fig;
