@@ -80,7 +80,7 @@ public class UciTranslator : IDisposable
             Console.WriteLine("[ OK ] Correctly started new game inside the engine!");
             
             // TODO: temporary blind try to change used threads:
-            _chessEngine.StandardInput.WriteLine($"setoption name Threads value {Environment.ProcessorCount}");
+            _chessEngine.StandardInput.WriteLine($"setoption name Threads value {Environment.ProcessorCount/2}");
         }
         
     }
@@ -251,13 +251,7 @@ public class UciTranslator : IDisposable
                 var cleanedStr = record.Substring(result + 8).Trim();
                 int wordEnd = cleanedStr.IndexOfAny("\n ".ToCharArray());
 
-                if (wordEnd == 0 || wordEnd == -1)
-                {
-                    Console.Error.WriteLine($"[ ERROR ] Invalid bestmove command occured!");
-                    continue;
-                }
-
-                bestMove = cleanedStr.Substring(0, wordEnd);
+                bestMove = wordEnd == -1 ? cleanedStr : cleanedStr.Substring(0, wordEnd);
             }
             else if (record.IndexOf("info", StringComparison.Ordinal) != -1)
                 Console.WriteLine($"Info message from the engine\n:{record}");

@@ -2,6 +2,7 @@
 
 # Sripts downloads the dependiences and builds the executable
 mkdir Deps
+mkdir Game
 cd Deps
 git clone https://github.com/official-stockfish/Stockfish
 cd Stockfish
@@ -11,5 +12,5 @@ cp stockfish ../..
 cd ../../..
 dotnet new --install MonoGame.Templates.CSharp:
 dotnet build
-cp -r bin/Debug/net7.0/ Game
+cp -r bin/Debug/net7.0/* Game
 mv  Deps Game/
