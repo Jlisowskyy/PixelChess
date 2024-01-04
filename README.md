@@ -43,6 +43,8 @@ You can just use your IDE of choice to compile the program or use c# compiler by
 dotnet build
 ```
 
+Otherwise in case that you are able to use bash scripts, there is install.bash script provided.
+
 ## Roadmap
 
 Progress in this repository may be slower due to demanding university duties.
@@ -52,7 +54,8 @@ However, future plans include the incorporation of the following features:
 - [x] Working simple UI
 - [x] Fen notation support
 - [ ] Own pixel-art chess pieces
-- [ ] UCI implemented to enable connecting with any bot
+- [x] UCI implemented to enable connecting with any bot
+- [ ] More user friendly configuration
 - [ ] Remote games
 - [ ] Position editing tools
 - [ ] Own competitive chess-engine written in C++

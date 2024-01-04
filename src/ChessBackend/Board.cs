@@ -274,7 +274,7 @@ public partial class Board : IDrawable
         _extractDataFromFig(promFig);
         
         // TODO: necessary for uci communication! Change structure
-        var lMove = _movesHistory.Last.Value;
+        var lMove = _movesHistory.Last!.Value;
         lMove.figureUpdateChar = UciTranslator.GetUpdateFigureChar(promFig);
         _movesHistory.Last.Value = lMove;
         
@@ -362,7 +362,8 @@ public partial class Board : IDrawable
         (int oldRookX, int newRookX) pos = newKingPos.X switch
         {
             King.LongCastlingX => (MinPos, King.LongCastlingRookX),
-            King.ShortCastlingX => (MaxPos, King.ShortCastlingRookX)
+            King.ShortCastlingX => (MaxPos, King.ShortCastlingRookX),
+            _ => throw new ArgumentOutOfRangeException()
         };
         
         _boardFigures[pos.oldRookX, newKingPos.Y].Pos = new(pos.newRookX, newKingPos.Y);
@@ -554,18 +555,16 @@ public partial class Board : IDrawable
         _endGameTextureInd = (int) EndGameTexts.pat;
     }
     
-    bool _checkForPositionRepetitions(string pos)
+    private bool _checkForPositionRepetitions(string pos)
     {
         const int maxRepetitions = 3;
         
-        // if (_layoutDict.ContainsKey(pos))
-        // {
-        //     // TODO: replaced only to test positions
-        //     // if ((_layoutDict[pos] += 1) == maxRepetitions) return true;
-        //
-        //     return false;
-        // }
-        // else _layoutDict.Add(pos, 1);
+        if (!_layoutDict.TryAdd(pos, 1))
+        {
+            if ((_layoutDict[pos] += 1) == maxRepetitions) return true;
+        
+            return false;
+        }
 
         return false;
     }
@@ -666,7 +665,8 @@ public partial class Board : IDrawable
         (int oldRookX, int newRookX) pos = historicalMove.MadeMove.X switch
         {
             King.LongCastlingX => (MinPos, King.LongCastlingRookX),
-            King.ShortCastlingX => (MaxPos, King.ShortCastlingRookX)
+            King.ShortCastlingX => (MaxPos, King.ShortCastlingRookX),
+            _ => throw new ArgumentOutOfRangeException()
         };
         
         _boardFigures[pos.newRookX, historicalMove.OldY].Pos = new BoardPos(pos.oldRookX, historicalMove.OldY);
@@ -1030,6 +1030,7 @@ public partial class Board : IDrawable
         ElPass = 8,
         SelectedTile = 9,
         KingAttackTile = 10,
+        LastMove = 11,
     }
 
     public enum EndGameTexts

@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Sripts downloads the dependiences and builds the executable
+# Scripts downloads the dependencies and builds the executable
 mkdir Deps
 mkdir Game
-cd Deps
+cd Deps || exit
 git clone https://github.com/official-stockfish/Stockfish
-cd Stockfish
-cd src
+cd Stockfish || exit
+cd src || exit
 make -j profile-build ARCH=x86-64-avx2 COMP=gcc
 cp stockfish ../..
 cd ../../..

@@ -1,12 +1,10 @@
 #define DEBUG_
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using PixelChess.Figures;
 
@@ -85,13 +83,13 @@ public class UciTranslator : IDisposable
         
     }
 
-    private const int Ping10msTries = 20;
+    private const int Ping10MsTries = 20;
     public bool PingEngine()
     {
         if (!IsOperational) return false;
         
         _chessEngine.StandardInput.WriteLine("isready");
-        for (int i = 0; i < Ping10msTries; ++i)
+        for (int i = 0; i < Ping10MsTries; ++i)
         {
             Thread.Sleep(10);
 

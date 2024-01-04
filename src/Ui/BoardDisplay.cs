@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using PixelChess.Figures;
 
 namespace PixelChess.ChessBackend;
 
@@ -44,6 +45,17 @@ public partial class Board
         _drawStaticFigures(batch);
         _drawHoveringFigure(batch);
         _drawEndGameSign(batch);
+        _drawLastMove(batch);
+    }
+
+    private void _drawLastMove(SpriteBatch batch)
+    {
+        var lMove = _movesHistory.Last!.Value;
+        
+        if (lMove.HalfMoves == -1) return;
+
+        batch.Draw(TileHighlightersTextures[(int)TileHighlighters.LastMove], Translate(lMove.MadeMove), Color.White);
+        batch.Draw(TileHighlightersTextures[(int)TileHighlighters.LastMove], Translate(new BoardPos(lMove.OldX, lMove.OldY)), Color.White);
     }
     
     private void _drawBoard(SpriteBatch batch) 
@@ -64,6 +76,7 @@ public partial class Board
 
         if (IsChecked)
             batch.Draw(TileHighlightersTextures[(int)TileHighlighters.KingAttackTile], Translate(_colorMetadataMap[(int)_movingColor].King.Pos), Color.White);
+        
     }
 
     private void _drawStaticFigures(SpriteBatch batch)
@@ -105,9 +118,20 @@ public partial class Board
 
     private Vector2 CenterFigurePosOnMouse(int x, int y) => new(x + MouseCentX, y + MouseCentY);
 
+
     private Vector2 Translate(BoardPos pos)
-        => new Vector2(_xTilesCordOnScreenBeg + pos.X * FigureWidth, _yTilesCordOnScreenBeg - pos.Y * FigureHeight - 1);
+    {
+        if (_movingColor == Figure.ColorT.White)
+            return new Vector2(_xTilesCordOnScreenBeg + pos.X * FigureWidth, _yTilesCordOnScreenBeg - pos.Y * FigureHeight - 1);
+        
+        return new Vector2(_xTilesCordOnScreenBeg + pos.X * FigureWidth, pos.Y * FigureHeight - 1);
+    }
 
     public BoardPos Translate(int x, int y)
-        => new BoardPos((x - _xTilesCordOnScreenBeg) / FigureWidth, (_yTilesCordOnScreenBeg + 68 - y) / FigureHeight);
+    {
+        if (_movingColor == Figure.ColorT.White)
+            return new BoardPos((x - _xTilesCordOnScreenBeg) / FigureWidth, (_yTilesCordOnScreenBeg + 68 - y) / FigureHeight);
+        
+        return new BoardPos((x - _xTilesCordOnScreenBeg) / FigureWidth, y / FigureHeight);
+    }
 }
