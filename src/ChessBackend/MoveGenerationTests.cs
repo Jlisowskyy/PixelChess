@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using PixelChess.Figures;
 
 namespace PixelChess.ChessBackend;
@@ -186,11 +185,11 @@ public partial class Board
                                 upgrade.Parent = _bd;
                                 
                                 _bd._selectedFigure = _bd._figuresArray[i];
-                                _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
+                                _bd._isGameEnded = false; // necessary due to move counting draws and position reps draws
                                 _bd._processMove(mv.moves[j]);
                                 _bd.Promote(upgrade);
                                 var recResult = _testMoveGeneration(depth - 1, depth, correctNumbers);
-                                _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
+                                _bd._isGameEnded = false; // necessary due to move counting draws and position reps draws
                                 _bd._undoMoveTest();
 
                                 // adding to invalid moves list if necessary
@@ -202,10 +201,10 @@ public partial class Board
                         else
                         {
                             _bd._selectedFigure = _bd._figuresArray[i];
-                            _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
+                            _bd._isGameEnded = false; // necessary due to move counting draws and position reps draws
                             _bd._processMove(mv.moves[j]);
                             var recResult = _testMoveGeneration(depth - 1, depth, correctNumbers);
-                            _bd._isGameEnded = false; // TODO: there is some reason that this flags turns on - repair it
+                            _bd._isGameEnded = false; // necessary due to move counting draws and position reps draws
                             _bd._undoMoveTest(); 
                             
                             // adding to invalid moves list if necessary
@@ -394,4 +393,71 @@ public partial class Board
         
         private readonly Board _bd;
     }
+    
+    // ------------------------------
+    // Utility methods
+    // ------------------------------
+    
+    public void PerformMoveTraversal(Action<Board> action, int depth)
+        {
+            if (depth == 0) return;
+            
+            var range = _colorMetadataMap[(int)_movingColor].AliesRangeOnFigArr;
+            for (int i = range[0]; i < range[1]; ++i)
+                if (_figuresArray[i].IsAlive)
+                {
+                    var mv = _figuresArray[i].GetMoves();
+                    
+                    for (int j = 0; j < mv.movesCount; ++j)
+                    {
+                        
+                        // performing promotions when necessary
+                        if ((mv.moves[j].MoveT & BoardPos.MoveType.PromotionMove) != 0)
+                        {
+                            Figure[] upgrades = {
+                                new Knight(mv.moves[j].X, mv.moves[j].Y, _figuresArray[i].Color),
+                                new Bishop(mv.moves[j].X, mv.moves[j].Y, _figuresArray[i].Color),
+                                new Rook(mv.moves[j].X, mv.moves[j].Y, _figuresArray[i].Color),
+                                new Queen(mv.moves[j].X, mv.moves[j].Y, _figuresArray[i].Color)
+                            };
+                            
+                            foreach (var upgrade in upgrades)
+                            {
+                                // Preparing upgrade figue
+                                upgrade.IsMoved = true;
+                                upgrade.Parent = this;
+                                
+                                // upgrading figure
+                                _selectedFigure = _figuresArray[i];
+                                _isGameEnded = false; // necessary due to move counting draws and position reps draws
+                                _processMove(mv.moves[j]);
+                                Promote(upgrade);
+                                
+                                // Main job
+                                PerformMoveTraversal(action, depth - 1);
+                                action(this);
+                                
+                                // reverting changes
+                                _isGameEnded = false; // necessary due to move counting draws and position reps draws
+                                _undoMove();
+                            }
+                        }
+                        else
+                        {
+                            // Making move
+                            _selectedFigure = _figuresArray[i];
+                            _isGameEnded = false; // necessary due to move counting draws and position reps draws
+                            _processMove(mv.moves[j]);
+                            
+                            // Main job
+                            PerformMoveTraversal(action, depth - 1);
+                            action(this);
+                            
+                            // reverting changes
+                            _isGameEnded = false; // necessary due to move counting draws and position reps draws
+                            _undoMoveTest(); 
+                        }
+                    }
+                }
+        }
 }

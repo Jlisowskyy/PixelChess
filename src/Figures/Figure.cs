@@ -1,11 +1,6 @@
 using PixelChess.ChessBackend;
 
 namespace PixelChess.Figures;
-    
-    /*  GENERAL TODO:
-     * - make fen translator
-     * - add top level class to interact better with monogame
-     */
 
 public abstract class Figure
     // All figures expects to have board attached, otherwise undefined
