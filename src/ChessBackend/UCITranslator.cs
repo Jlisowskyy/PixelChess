@@ -133,12 +133,14 @@ public class UciTranslator : IDisposable
         _spentTimeOnSearch += spentTime.ElapsedGameTime.TotalMilliseconds;
         string bestMove = _processRunningCommands();
         
-        if (_spentTimeOnSearch > MaxSearchTime && bestMove == String.Empty && ++_searchTries == MaxSearchResultRepeatingTries)
-        {
-            Console.Error.WriteLine("[ ERROR ] Maximum amount of repeated tries to retrieve bestmove command exceeded. Terminating the engine...");
-            Dispose();
-            return "err";
-        }
+        
+        // TODO: temporary disable behavior
+        // if (_spentTimeOnSearch > MaxSearchTime && bestMove == String.Empty && ++_searchTries == MaxSearchResultRepeatingTries)
+        // {
+        //     Console.Error.WriteLine("[ ERROR ] Maximum amount of repeated tries to retrieve bestmove command exceeded. Terminating the engine...");
+        //     Dispose();
+        //     return "err";
+        // }
 
         return bestMove;
     }

@@ -13,4 +13,5 @@ cd ../../..
 dotnet new --install MonoGame.Templates.CSharp:
 dotnet build
 cp -r bin/Debug/net7.0/* Game
-mv  Deps Game/
+mv  Deps Game/ || exit
+rm -rf Deps
