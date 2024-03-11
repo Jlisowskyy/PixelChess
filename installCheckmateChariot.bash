@@ -6,10 +6,10 @@ mkdir Game
 cd Deps || exit
 git clone https://github.com/Jlisowskyy/Checkmate-Chariot engine
 cd engine || exit
-cmake CMakeLists.txt
+cmake CMakeLists.txt -DCMAKE_BUILD_TYPE=Release
 make
 cp Checkmate-Chariot ../
-cp uci_ready ../../
+cp resources/uci_ready_long ../../Game
 cd .. || exit
 rm -rf engine || exit
 cd ..

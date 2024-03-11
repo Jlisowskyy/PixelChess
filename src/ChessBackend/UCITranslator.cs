@@ -120,7 +120,7 @@ public class UciTranslator : IDisposable
         }
         
         _chessEngine.StandardInput.WriteLine($"position startpos moves {builder}");
-        _chessEngine.StandardInput.WriteLine($"go movetime {MaxSearchTime}");
+        _chessEngine.StandardInput.WriteLine($"go depth 7");
         _spentTimeOnSearch = 0;
         _searchTries = 0;
     }
